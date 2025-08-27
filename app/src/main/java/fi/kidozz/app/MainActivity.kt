@@ -1,6 +1,9 @@
 package fi.kidozz.app
 
 import android.os.Bundle
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import androidx.compose.ui.platform.LocalContext
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -79,6 +82,10 @@ import androidx.compose.ui.unit.dp
 import fi.kidozz.app.ui.theme.KiddozzTheme
 import kotlinx.coroutines.launch
 import java.util.UUID
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.TextStyle
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -458,6 +465,7 @@ fun AddEventForm(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var eventTitle by remember { mutableStateOf("") }
     var eventDescription by remember { mutableStateOf("") }
     var isAllDayEvent by remember { mutableStateOf(false) }
@@ -495,18 +503,67 @@ fun AddEventForm(
                 }
             }
             item {
-                Button(onClick = { /* TODO: Implement Date Picker */ eventDate = "2024-12-25" }, modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = {
+                        val today = java.util.Calendar.getInstance()
+                        val year = today.get(java.util.Calendar.YEAR)
+                        val month = today.get(java.util.Calendar.MONTH)
+                        val day = today.get(java.util.Calendar.DAY_OF_MONTH)
+                        DatePickerDialog(
+                            context,
+                            { _, y, m, d ->
+                                eventDate = String.format("%04d-%02d-%02d", y, m + 1, d)
+                            },
+                            year,
+                            month,
+                            day
+                        ).show()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(if (eventDate.isEmpty()) "Select Date" else "Date: $eventDate")
                 }
             }
             if (!isAllDayEvent) {
                 item {
-                    Button(onClick = { /* TODO: Implement Time Picker */ eventStartTime = "10:00" }, modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = {
+                            val now = java.util.Calendar.getInstance()
+                            val hour = now.get(java.util.Calendar.HOUR_OF_DAY)
+                            val minute = now.get(java.util.Calendar.MINUTE)
+                            TimePickerDialog(
+                                context,
+                                { _, h, m ->
+                                    eventStartTime = String.format("%02d:%02d", h, m)
+                                },
+                                hour,
+                                minute,
+                                true
+                            ).show()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text(if (eventStartTime.isEmpty()) "Select Start Time" else "Start: $eventStartTime")
                     }
                 }
                 item {
-                    Button(onClick = { /* TODO: Implement Time Picker */ eventEndTime = "11:00" }, modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = {
+                            val now = java.util.Calendar.getInstance()
+                            val hour = now.get(java.util.Calendar.HOUR_OF_DAY)
+                            val minute = now.get(java.util.Calendar.MINUTE)
+                            TimePickerDialog(
+                                context,
+                                { _, h, m ->
+                                    eventEndTime = String.format("%02d:%02d", h, m)
+                                },
+                                hour,
+                                minute,
+                                true
+                            ).show()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text(if (eventEndTime.isEmpty()) "Select End Time" else "End: $eventEndTime")
                     }
                 }
@@ -546,6 +603,8 @@ fun EducatorCalendarScreen(modifier: Modifier = Modifier) {
     var addingEvent by remember { mutableStateOf(false) }
     val sessionAddedEvents = remember { mutableStateListOf<CalendarEvent>() }
     var currentCalendarView by remember { mutableStateOf(CalendarDisplayMode.GRID) }
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+    var dayDialogDate by remember { mutableStateOf<LocalDate?>(null) }
 
     val updateEventInList = { updatedEvent: CalendarEvent, list: MutableList<CalendarEvent> ->
         val index = list.indexOfFirst { it.id == updatedEvent.id }
@@ -555,17 +614,15 @@ fun EducatorCalendarScreen(modifier: Modifier = Modifier) {
     }
 
     val deleteEventFromList = { eventId: String, list: MutableList<CalendarEvent> ->
-        list.removeIf { it.id == eventId } // This returns Boolean
+        list.removeIf { it.id == eventId }
     }
 
-    // Explicitly type handleEventUpdated to ensure it's (CalendarEvent) -> Unit
     val handleEventUpdated: (CalendarEvent) -> Unit = { updatedEvent ->
         updateEventInList(updatedEvent, sampleUpcomingEvents)
         updateEventInList(updatedEvent, samplePastEvents)
         updateEventInList(updatedEvent, sessionAddedEvents)
     }
 
-    // Explicitly type handleEventDeleted to ensure it's (String) -> Unit
     val handleEventDeleted: (String) -> Unit = { eventId: String ->
         deleteEventFromList(eventId, sampleUpcomingEvents)
         deleteEventFromList(eventId, samplePastEvents)
@@ -595,7 +652,7 @@ fun EducatorCalendarScreen(modifier: Modifier = Modifier) {
             title = "Upcoming Events",
             events = upcomingEventsToShow,
             onNavigateBackToGrid = { currentCalendarView = CalendarDisplayMode.GRID },
-            onDeleteEvent = handleEventDeleted, // Now (String) -> Unit
+            onDeleteEvent = handleEventDeleted,
             onEventUpdated = handleEventUpdated,
             modifier = modifier
         )
@@ -603,20 +660,30 @@ fun EducatorCalendarScreen(modifier: Modifier = Modifier) {
             title = "Past Events",
             events = pastEventsToShow,
             onNavigateBackToGrid = { currentCalendarView = CalendarDisplayMode.GRID },
-            onDeleteEvent = handleEventDeleted, // Now (String) -> Unit
+            onDeleteEvent = handleEventDeleted,
             onEventUpdated = handleEventUpdated,
             modifier = modifier
         )
-        else -> { // GRID view
-            Column(modifier = modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        else -> {
+            Column(
+                modifier = modifier.fillMaxSize().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { /* TODO: Previous Month */ }, enabled = false) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Previous Month") }
-                    Text("Month Year", style = MaterialTheme.typography.headlineSmall)
-                    IconButton(onClick = { /* TODO: Next Month */ }, enabled = false) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Next Month") }
+                    IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Month")
+                    }
+                    Text(
+                        text = currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) + " " + currentMonth.year,
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Next Month")
+                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
@@ -625,17 +692,114 @@ fun EducatorCalendarScreen(modifier: Modifier = Modifier) {
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+                // Build a set of LocalDate for all events in the visible month
+                val allEvents = remember(sampleUpcomingEvents, samplePastEvents, sessionAddedEvents) {
+                    (sampleUpcomingEvents + samplePastEvents + sessionAddedEvents)
+                }
+                val eventDatesInMonth: Set<LocalDate> = remember(allEvents, currentMonth) {
+                    allEvents.mapNotNull { ev ->
+                        val d = ev.date
+                        if (d.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) {
+                            try {
+                                LocalDate.parse(d)
+                            } catch (_: Exception) { null }
+                        } else null
+                    }.filter { it.year == currentMonth.year && it.monthValue == currentMonth.monthValue }
+                        .toSet()
+                }
+                val eventsForSelectedDate = remember(allEvents, dayDialogDate) {
+                    val sel = dayDialogDate
+                    if (sel == null) emptyList() else allEvents.filter { ev ->
+                        val d = ev.date
+                        if (d.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) {
+                            try {
+                                LocalDate.parse(d) == sel
+                            } catch (_: Exception) { false }
+                        } else false
+                    }
+                }
+
+                val firstOfMonth = LocalDate.of(currentMonth.year, currentMonth.month, 1)
+                val daysInMonth = currentMonth.lengthOfMonth()
+                // DayOfWeek: Monday=1..Sunday=7. We want Sunday-first grid, so map Sunday->0, Mon->1, ...
+                val leadingBlankDays = (firstOfMonth.dayOfWeek.value % 7)
+                val totalCells = ((leadingBlankDays + daysInMonth + 6) / 7) * 7 // round up to full weeks
+
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(7),
-                    modifier = Modifier.fillMaxWidth().weight(1f).background(Color.LightGray.copy(alpha = 0.2f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .background(Color.LightGray.copy(alpha = 0.2f)),
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    gridItems((1..31).toList()) { day ->
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(4.dp).aspectRatio(1f)) {
-                            Text(text = day.toString(), style = MaterialTheme.typography.bodyLarge)
+                    gridItems((0 until totalCells).toList()) { index ->
+                        val dayNumber = index - leadingBlankDays + 1
+                        if (dayNumber in 1..daysInMonth) {
+                            val date = LocalDate.of(currentMonth.year, currentMonth.monthValue, dayNumber)
+                            val hasEvent = date in eventDatesInMonth
+                            Box(
+                                contentAlignment = Alignment.TopCenter,
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .aspectRatio(1f)
+                                    .clickable(enabled = hasEvent) { dayDialogDate = date }
+                            ) {
+                                Column(
+                                    Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Top
+                                ) {
+                                    Text(text = dayNumber.toString(), style = MaterialTheme.typography.bodyLarge)
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    if (hasEvent) {
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(bottom = 6.dp)
+                                                .size(6.dp)
+                                                .background(MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.small)
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                    }
+                                }
+                            }
+                        } else {
+                            Box(modifier = Modifier.padding(4.dp).aspectRatio(1f)) {}
                         }
                     }
+                }
+                if (dayDialogDate != null) {
+                    AlertDialog(
+                        onDismissRequest = { dayDialogDate = null },
+                        title = { Text("Events on ${dayDialogDate}") },
+                        text = {
+                            if (eventsForSelectedDate.isEmpty()) {
+                                Text("No events on this day.")
+                            } else {
+                                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    items(eventsForSelectedDate, key = { it.id }) { ev ->
+                                        EventAccordionItem(
+                                            event = ev,
+                                            onDeleteRequest = {
+                                                handleEventDeleted(ev.id)
+                                                // If deleting last event for the day, close dialog
+                                                val remaining = eventsForSelectedDate.size - 1
+                                                if (remaining <= 0) dayDialogDate = null
+                                            },
+                                            onEventUpdated = { updated ->
+                                                handleEventUpdated(updated)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { dayDialogDate = null }) { Text("Close") }
+                        }
+                    )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
