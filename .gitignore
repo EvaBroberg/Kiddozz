@@ -1,0 +1,42 @@
+# === Android / Gradle ===
+.gradle/
+build/
+**/build/
+!app/src/**/build.gradle
+!**/build.gradle
+!**/build.gradle.kts
+
+# Local configuration
+local.properties
+*.keystore
+*.jks
+
+# IDE
+.idea/
+*.iml
+
+# Logs & captures
+*.log
+captures/
+outputs/
+
+# Artifacts
+*.apk
+*.aab
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Kotlin/Java
+*.class
+*.jar
+*.war
+*.ear
+
+# NDK / CMake
+.cxx/
+.externalNativeBuild/
+
+# Misc tools
+/.fleet/
