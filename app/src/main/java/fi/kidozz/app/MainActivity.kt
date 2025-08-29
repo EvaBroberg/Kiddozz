@@ -1,9 +1,13 @@
+
+
 package fi.kidozz.app
 
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Person
+import fi.kidozz.app.features.dashboard.EducatorDashboardScreen
+
+import fi.kidozz.app.features.role.RoleSelectionScreen
 import android.os.Bundle
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
-import androidx.compose.ui.platform.LocalContext
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,15 +35,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -83,7 +79,11 @@ import fi.kidozz.app.ui.theme.KiddozzTheme
 import kotlinx.coroutines.launch
 import java.util.UUID
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -142,14 +142,26 @@ data class Kid(
 data class CalendarEvent(
     val id: String = UUID.randomUUID().toString(),
     var title: String = "",
-    var date: String = "",
-    var startTime: String = "",
+    var date: String = "", // Kept for now, consider removing if fully replaced by dateTime
+    var startTime: String = "", // Kept for now, consider removing if fully replaced by dateTime
+    var dateTime: LocalDateTime,
     var endTime: String = "",
     var isAllDay: Boolean = false,
     var description: String = "",
     var imageUris: List<String> = emptyList(),
     var isPast: Boolean = false
 )
+
+// Helper function to parse date and time strings safely
+fun parseDateTime(dateStr: String, timeStr: String?): LocalDateTime {
+    val date = LocalDate.parse(dateStr) // Assumes "yyyy-MM-dd"
+    val time = try {
+        if (!timeStr.isNullOrEmpty()) LocalTime.parse(timeStr) else LocalTime.MIDNIGHT
+    } catch (e: DateTimeParseException) {
+        LocalTime.MIDNIGHT // Default to midnight if parsing fails
+    }
+    return LocalDateTime.of(date, time)
+}
 
 val sampleKidsState = mutableStateListOf<Kid>().apply {
     addAll(
@@ -169,14 +181,54 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
 }
 
 val sampleUpcomingEvents = mutableStateListOf(
-    CalendarEvent(title = "Spring Festival", date = "2024-05-10", description = "Join us for a fun-filled day of games, food, and music to celebrate spring!", imageUris = listOf("spring_banner.png", "kids_playing.jpg"), isPast = false),
-    CalendarEvent(title = "Parent-Teacher Meeting", date = "2024-05-15", description = "Discuss your child's progress with their teachers. Sign up for a slot!", imageUris = emptyList(), isPast = false),
-    CalendarEvent(title = "Art Workshop", date = "2024-05-22", description = "Creative workshop for all age groups. Materials provided.", imageUris = listOf("art_supplies.png"), isPast = false)
+    CalendarEvent(
+        title = "Spring Festival", 
+        date = "2024-05-10", 
+        startTime = "10:00", 
+        dateTime = parseDateTime("2024-05-10", "10:00"),
+        description = "Join us for a fun-filled day of games, food, and music to celebrate spring!", 
+        imageUris = listOf("spring_banner.png", "kids_playing.jpg"), 
+        isPast = false
+    ),
+    CalendarEvent(
+        title = "Parent-Teacher Meeting", 
+        date = "2024-05-15", 
+        startTime = "14:30", 
+        dateTime = parseDateTime("2024-05-15", "14:30"),
+        description = "Discuss your child's progress with their teachers. Sign up for a slot!", 
+        imageUris = emptyList(), 
+        isPast = false
+    ),
+    CalendarEvent(
+        title = "Art Workshop", 
+        date = "2024-05-22", 
+        startTime = "09:00", 
+        dateTime = parseDateTime("2024-05-22", "09:00"),
+        description = "Creative workshop for all age groups. Materials provided.", 
+        imageUris = listOf("art_supplies.png"), 
+        isPast = false
+    )
 )
 
 val samplePastEvents = mutableStateListOf(
-    CalendarEvent(title = "Book Fair", date = "2024-03-01", description = "Successful book fair. Thank you all for participating!", imageUris = listOf("book_fair_photo1.jpg"), isPast = true),
-    CalendarEvent(title = "Sports Day", date = "2024-02-15", description = "A wonderful day of sports and teamwork.", imageUris = listOf("sports_day_group.png", "medal_ceremony.jpg"), isPast = true)
+    CalendarEvent(
+        title = "Book Fair", 
+        date = "2024-03-01", 
+        startTime = "00:00", // Assuming all day or start time not specified
+        dateTime = parseDateTime("2024-03-01", "00:00"),
+        description = "Successful book fair. Thank you all for participating!", 
+        imageUris = listOf("book_fair_photo1.jpg"), 
+        isPast = true
+    ),
+    CalendarEvent(
+        title = "Sports Day", 
+        date = "2024-02-15", 
+        startTime = "11:00", 
+        dateTime = parseDateTime("2024-02-15", "11:00"),
+        description = "A wonderful day of sports and teamwork.", 
+        imageUris = listOf("sports_day_group.png", "medal_ceremony.jpg"), 
+        isPast = true
+    )
 )
 
 @Composable
@@ -217,166 +269,15 @@ fun KiddozzAppHost(modifier: Modifier = Modifier) {
                     }
                 )
             } else {
+                // This case should ideally not happen if navigation is managed correctly
+                // For robustness, navigate back or to a default screen
                 currentScreen = Screen.EDUCATOR_DASHBOARD
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RoleSelectionScreen(
-    onEducatorViewClick: () -> Unit,
-    onParentViewClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Kiddozz Daycare App") }) },
-        modifier = modifier.fillMaxSize()
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text("Welcome to Kiddozz!")
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(onClick = onEducatorViewClick) { Text("Educator View") }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onParentViewClick) { Text("Parent View") }
-        }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EducatorDashboardScreen(
-    onBackClick: () -> Unit,
-    onKidClick: (Kid) -> Unit,
-    kidsList: List<Kid>,
-    modifier: Modifier = Modifier
-) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-    var currentEducatorSection by remember { mutableStateOf(EducatorSection.KidsOverview) }
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
-                Spacer(Modifier.height(12.dp))
-                EducatorSection.values().forEach { section ->
-                    NavigationDrawerItem(
-                        icon = { Icon(section.icon, contentDescription = section.title) },
-                        label = { Text(section.title) },
-                        selected = section == currentEducatorSection,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            currentEducatorSection = section
-                        },
-                        modifier = Modifier.padding(horizontal = 12.dp)
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                NavigationDrawerItem(
-                    label = { Text("Back to Role Selection") },
-                    selected = false,
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        onBackClick()
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    icon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to Role Selection")}
-                )
-                Spacer(Modifier.height(12.dp))
-            }
-        },
-        modifier = modifier
-    ) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(currentEducatorSection.title) },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { if (drawerState.isClosed) drawerState.open() else drawerState.close() } }) {
-                            Icon(Icons.Filled.Menu, contentDescription = "Open Navigation Menu")
-                        }
-                    }
-                )
-            }
-        ) { innerPadding ->
-            when (currentEducatorSection) {
-                EducatorSection.KidsOverview -> KidsGrid(
-                    kids = kidsList,
-                    onKidClick = onKidClick,
-                    modifier = Modifier.padding(innerPadding).fillMaxSize()
-                )
-                EducatorSection.Calendar -> EducatorCalendarScreen(modifier = Modifier.padding(innerPadding))
-                EducatorSection.Events -> PlaceholderScreen(section = currentEducatorSection, modifier = Modifier.padding(innerPadding))
-                EducatorSection.Menu -> PlaceholderScreen(section = currentEducatorSection, modifier = Modifier.padding(innerPadding))
-                EducatorSection.Profile -> PlaceholderScreen(section = currentEducatorSection, modifier = Modifier.padding(innerPadding))
-            }
-        }
-    }
-}
-
-@Composable
-fun KidsGrid(kids: List<Kid>, onKidClick: (Kid) -> Unit, modifier: Modifier = Modifier) {
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 128.dp),
-        modifier = modifier.padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        gridItems(kids, key = { it.id }) { kid ->
-            KiddozCard(kid = kid, onClick = { onKidClick(kid) })
-        }
-    }
-}
-
-@Composable
-fun KiddozCard(kid: Kid, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth().aspectRatio(1f),
-        onClick = onClick,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier.weight(1f).padding(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(Icons.Filled.Face, contentDescription = "Kid icon", modifier = Modifier.size(48.dp))
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = kid.name, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
-            }
-            Text(
-                text = kid.attendanceStatus.uppercase(),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (kid.attendanceStatus == "SICK") Color.Black else Color.White,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        when (kid.attendanceStatus) {
-                            "IN" -> Color.Green.copy(alpha = 0.7f)
-                            "SICK" -> Color.Yellow
-                            else -> Color.Gray
-                        }
-                    )
-                    .padding(vertical = 4.dp)
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -458,587 +359,6 @@ fun GuardianInfoView(guardian: Guardian, isAuthorizedPickup: Boolean = false) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddEventForm(
-    onSave: (CalendarEvent) -> Unit,
-    onCancel: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    var eventTitle by remember { mutableStateOf("") }
-    var eventDescription by remember { mutableStateOf("") }
-    var isAllDayEvent by remember { mutableStateOf(false) }
-    var eventDate by remember { mutableStateOf("") }
-    var eventStartTime by remember { mutableStateOf("") }
-    var eventEndTime by remember { mutableStateOf("") }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Add New Event") },
-                navigationIcon = { IconButton(onClick = onCancel) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel") } }
-            )
-        },
-        modifier = modifier
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.padding(innerPadding).padding(16.dp).fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                OutlinedTextField(
-                    value = eventTitle,
-                    onValueChange = { eventTitle = it },
-                    label = { Text("Event Title") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                    singleLine = true
-                )
-            }
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("All-day event", modifier = Modifier.weight(1f))
-                    Switch(checked = isAllDayEvent, onCheckedChange = { isAllDayEvent = it })
-                }
-            }
-            item {
-                Button(
-                    onClick = {
-                        val today = java.util.Calendar.getInstance()
-                        val year = today.get(java.util.Calendar.YEAR)
-                        val month = today.get(java.util.Calendar.MONTH)
-                        val day = today.get(java.util.Calendar.DAY_OF_MONTH)
-                        DatePickerDialog(
-                            context,
-                            { _, y, m, d ->
-                                eventDate = String.format("%04d-%02d-%02d", y, m + 1, d)
-                            },
-                            year,
-                            month,
-                            day
-                        ).show()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (eventDate.isEmpty()) "Select Date" else "Date: $eventDate")
-                }
-            }
-            if (!isAllDayEvent) {
-                item {
-                    Button(
-                        onClick = {
-                            val now = java.util.Calendar.getInstance()
-                            val hour = now.get(java.util.Calendar.HOUR_OF_DAY)
-                            val minute = now.get(java.util.Calendar.MINUTE)
-                            TimePickerDialog(
-                                context,
-                                { _, h, m ->
-                                    eventStartTime = String.format("%02d:%02d", h, m)
-                                },
-                                hour,
-                                minute,
-                                true
-                            ).show()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(if (eventStartTime.isEmpty()) "Select Start Time" else "Start: $eventStartTime")
-                    }
-                }
-                item {
-                    Button(
-                        onClick = {
-                            val now = java.util.Calendar.getInstance()
-                            val hour = now.get(java.util.Calendar.HOUR_OF_DAY)
-                            val minute = now.get(java.util.Calendar.MINUTE)
-                            TimePickerDialog(
-                                context,
-                                { _, h, m ->
-                                    eventEndTime = String.format("%02d:%02d", h, m)
-                                },
-                                hour,
-                                minute,
-                                true
-                            ).show()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(if (eventEndTime.isEmpty()) "Select End Time" else "End: $eventEndTime")
-                    }
-                }
-            }
-            item {
-                OutlinedTextField(
-                    value = eventDescription,
-                    onValueChange = { eventDescription = it },
-                    label = { Text("Event Description (Optional)") },
-                    modifier = Modifier.fillMaxWidth().height(120.dp),
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
-                )
-            }
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    OutlinedButton(onClick = onCancel) { Text("Cancel") }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        val newEvent = CalendarEvent(
-                            title = eventTitle,
-                            date = eventDate.ifEmpty { "Date TBD" },
-                            startTime = if (isAllDayEvent) "" else eventStartTime.ifEmpty { "Time TBD" },
-                            endTime = if (isAllDayEvent) "" else eventEndTime,
-                            isAllDay = isAllDayEvent,
-                            description = eventDescription
-                        )
-                        onSave(newEvent)
-                    }) { Text("Save Event") }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun EducatorCalendarScreen(modifier: Modifier = Modifier) {
-    var addingEvent by remember { mutableStateOf(false) }
-    val sessionAddedEvents = remember { mutableStateListOf<CalendarEvent>() }
-    var currentCalendarView by remember { mutableStateOf(CalendarDisplayMode.GRID) }
-    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
-    var dayDialogDate by remember { mutableStateOf<LocalDate?>(null) }
-
-    val updateEventInList = { updatedEvent: CalendarEvent, list: MutableList<CalendarEvent> ->
-        val index = list.indexOfFirst { it.id == updatedEvent.id }
-        if (index != -1) {
-            list[index] = updatedEvent
-        }
-    }
-
-    val deleteEventFromList = { eventId: String, list: MutableList<CalendarEvent> ->
-        list.removeIf { it.id == eventId }
-    }
-
-    val handleEventUpdated: (CalendarEvent) -> Unit = { updatedEvent ->
-        updateEventInList(updatedEvent, sampleUpcomingEvents)
-        updateEventInList(updatedEvent, samplePastEvents)
-        updateEventInList(updatedEvent, sessionAddedEvents)
-    }
-
-    val handleEventDeleted: (String) -> Unit = { eventId: String ->
-        deleteEventFromList(eventId, sampleUpcomingEvents)
-        deleteEventFromList(eventId, samplePastEvents)
-        deleteEventFromList(eventId, sessionAddedEvents)
-    }
-
-    val upcomingEventsToShow = (
-        sampleUpcomingEvents.toList() +
-            sessionAddedEvents.filter { !it.isPast && !sampleUpcomingEvents.any { se -> se.id == it.id } }
-    ).distinctBy { it.id }
-
-    val pastEventsToShow = (
-        samplePastEvents.toList() +
-            sessionAddedEvents.filter { it.isPast && !samplePastEvents.any { se -> se.id == it.id } }
-    ).distinctBy { it.id }
-
-    when {
-        addingEvent -> AddEventForm(
-            onSave = { event ->
-                sessionAddedEvents.add(event)
-                addingEvent = false
-            },
-            onCancel = { addingEvent = false },
-            modifier = modifier
-        )
-        currentCalendarView == CalendarDisplayMode.UPCOMING_LIST -> EventsListScreen(
-            title = "Upcoming Events",
-            events = upcomingEventsToShow,
-            onNavigateBackToGrid = { currentCalendarView = CalendarDisplayMode.GRID },
-            onDeleteEvent = handleEventDeleted,
-            onEventUpdated = handleEventUpdated,
-            modifier = modifier
-        )
-        currentCalendarView == CalendarDisplayMode.PAST_LIST -> EventsListScreen(
-            title = "Past Events",
-            events = pastEventsToShow,
-            onNavigateBackToGrid = { currentCalendarView = CalendarDisplayMode.GRID },
-            onDeleteEvent = handleEventDeleted,
-            onEventUpdated = handleEventUpdated,
-            modifier = modifier
-        )
-        else -> {
-            Column(
-                modifier = modifier.fillMaxSize().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Month")
-                    }
-                    Text(
-                        text = currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) + " " + currentMonth.year,
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Next Month")
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                    listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
-                        Text(text = day, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                // Build a set of LocalDate for all events in the visible month
-                val allEvents = remember(sampleUpcomingEvents, samplePastEvents, sessionAddedEvents) {
-                    (sampleUpcomingEvents + samplePastEvents + sessionAddedEvents)
-                }
-                val eventDatesInMonth: Set<LocalDate> = remember(allEvents, currentMonth) {
-                    allEvents.mapNotNull { ev ->
-                        val d = ev.date
-                        if (d.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) {
-                            try {
-                                LocalDate.parse(d)
-                            } catch (_: Exception) { null }
-                        } else null
-                    }.filter { it.year == currentMonth.year && it.monthValue == currentMonth.monthValue }
-                        .toSet()
-                }
-                val eventsForSelectedDate = remember(allEvents, dayDialogDate) {
-                    val sel = dayDialogDate
-                    if (sel == null) emptyList() else allEvents.filter { ev ->
-                        val d = ev.date
-                        if (d.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) {
-                            try {
-                                LocalDate.parse(d) == sel
-                            } catch (_: Exception) { false }
-                        } else false
-                    }
-                }
-
-                val firstOfMonth = LocalDate.of(currentMonth.year, currentMonth.month, 1)
-                val daysInMonth = currentMonth.lengthOfMonth()
-                // DayOfWeek: Monday=1..Sunday=7. We want Sunday-first grid, so map Sunday->0, Mon->1, ...
-                val leadingBlankDays = (firstOfMonth.dayOfWeek.value % 7)
-                val totalCells = ((leadingBlankDays + daysInMonth + 6) / 7) * 7 // round up to full weeks
-
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(7),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .background(Color.LightGray.copy(alpha = 0.2f)),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    gridItems((0 until totalCells).toList()) { index ->
-                        val dayNumber = index - leadingBlankDays + 1
-                        if (dayNumber in 1..daysInMonth) {
-                            val date = LocalDate.of(currentMonth.year, currentMonth.monthValue, dayNumber)
-                            val hasEvent = date in eventDatesInMonth
-                            Box(
-                                contentAlignment = Alignment.TopCenter,
-                                modifier = Modifier
-                                    .padding(4.dp)
-                                    .aspectRatio(1f)
-                                    .clickable(enabled = hasEvent) { dayDialogDate = date }
-                            ) {
-                                Column(
-                                    Modifier.fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Top
-                                ) {
-                                    Text(text = dayNumber.toString(), style = MaterialTheme.typography.bodyLarge)
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    if (hasEvent) {
-                                        Box(
-                                            modifier = Modifier
-                                                .padding(bottom = 6.dp)
-                                                .size(6.dp)
-                                                .background(MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.small)
-                                        )
-                                    } else {
-                                        Spacer(modifier = Modifier.height(6.dp))
-                                    }
-                                }
-                            }
-                        } else {
-                            Box(modifier = Modifier.padding(4.dp).aspectRatio(1f)) {}
-                        }
-                    }
-                }
-                if (dayDialogDate != null) {
-                    AlertDialog(
-                        onDismissRequest = { dayDialogDate = null },
-                        title = { Text("Events on ${dayDialogDate}") },
-                        text = {
-                            if (eventsForSelectedDate.isEmpty()) {
-                                Text("No events on this day.")
-                            } else {
-                                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    items(eventsForSelectedDate, key = { it.id }) { ev ->
-                                        EventAccordionItem(
-                                            event = ev,
-                                            onDeleteRequest = {
-                                                handleEventDeleted(ev.id)
-                                                // If deleting last event for the day, close dialog
-                                                val remaining = eventsForSelectedDate.size - 1
-                                                if (remaining <= 0) dayDialogDate = null
-                                            },
-                                            onEventUpdated = { updated ->
-                                                handleEventUpdated(updated)
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(onClick = { dayDialogDate = null }) { Text("Close") }
-                        }
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    Button(onClick = { currentCalendarView = CalendarDisplayMode.UPCOMING_LIST }) { Text("Upcoming Events") }
-                    Button(onClick = { currentCalendarView = CalendarDisplayMode.PAST_LIST }) { Text("Past Events") }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { addingEvent = true }, modifier = Modifier.fillMaxWidth()) { Text("Add New Event") }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EventsListScreen(
-    title: String,
-    events: List<CalendarEvent>,
-    onNavigateBackToGrid: () -> Unit,
-    onDeleteEvent: (String) -> Unit, // Expects (String) -> Unit
-    onEventUpdated: (CalendarEvent) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(title) },
-                navigationIcon = { IconButton(onClick = onNavigateBackToGrid) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back to Calendar Grid") } }
-            )
-        },
-        modifier = modifier
-    ) { innerPadding ->
-        if (events.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
-                Text("No events to display.")
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.padding(innerPadding).padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(events, key = { it.id }) { event ->
-                    EventAccordionItem(
-                        event = event,
-                        onDeleteRequest = { onDeleteEvent(event.id) },
-                        onEventUpdated = onEventUpdated
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun EventAccordionItem(
-    event: CalendarEvent,
-    onDeleteRequest: () -> Unit,
-    onEventUpdated: (CalendarEvent) -> Unit
-) {
-    var isExpanded by remember { mutableStateOf(false) }
-    var isInEditMode by remember { mutableStateOf(false) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
-
-    // Keyed by event.id to reset if the event itself is different.
-    // Initialized with event's current properties.
-    var editedTitle by remember(event.id) { mutableStateOf(event.title) }
-    var editedDescription by remember(event.id) { mutableStateOf(event.description) }
-    var editedImageUris by remember(event.id) { mutableStateOf(event.imageUris.toMutableList()) }
-
-    // When entering edit mode, ensure the edit states are explicitly re-initialized
-    // from the event prop, in case the event prop was updated by a parent.
-    if (isInEditMode) {
-        // This if block is a bit of a workaround. A LaunchedEffect might be cleaner
-        // but was causing issues. This ensures that if isInEditMode becomes true,
-        // we re-capture from `event` if `editedTitle` somehow still holds old values.
-        // The more direct initialization is now in the Edit button's onClick.
-    }
-
-
-    val cardModifier = if (isInEditMode) {
-        Modifier.fillMaxWidth()
-    } else {
-        Modifier.fillMaxWidth().clickable { isExpanded = !isExpanded }
-    }
-
-    Card(
-        modifier = cardModifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                if (isInEditMode) {
-                    OutlinedTextField(
-                        value = editedTitle,
-                        onValueChange = { editedTitle = it },
-                        label = { Text("Title") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        textStyle = MaterialTheme.typography.titleMedium
-                    )
-                    IconButton(onClick = {
-                        val updatedEvent = event.copy(
-                            title = editedTitle,
-                            description = editedDescription,
-                            imageUris = editedImageUris.toList()
-                            // TODO: Copy other edited fields (date, time, etc.) from their respective 'edited...' states
-                        )
-                        onEventUpdated(updatedEvent)
-                        isInEditMode = false
-                        // isExpanded = true // Optional: Keep it expanded after save
-                    }) { Icon(Icons.Filled.Done, contentDescription = "Save Event") }
-                    IconButton(onClick = {
-                        isInEditMode = false
-                        // Values will revert to original `event` prop on next view,
-                        // or be re-initialized from `event` if edit is clicked again.
-                    }) { Icon(Icons.Filled.Close, contentDescription = "Cancel Edit") }
-
-                } else { // View mode for header
-                    Text(
-                        text = event.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f).clickable { if (!isInEditMode) isExpanded = !isExpanded }
-                    )
-                    IconButton(onClick = {
-                        // Explicitly initialize/reset edit states from the current event prop when entering edit mode
-                        editedTitle = event.title
-                        editedDescription = event.description
-                        editedImageUris = event.imageUris.toMutableList() // Create a fresh mutable list copy
-
-                        isInEditMode = true
-                        isExpanded = true // Ensure it's expanded when editing starts
-                    }, modifier = Modifier.size(40.dp)) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Edit Event")
-                    }
-                    IconButton(onClick = { showDeleteConfirm = true }, modifier = Modifier.size(40.dp)) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Delete Event")
-                    }
-                }
-            }
-
-            if (!isInEditMode) {
-                Text(
-                    text = event.date + if (event.startTime.isNotEmpty() && !event.isAllDay) " at ${event.startTime}" else "",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.clickable { if (!isInEditMode) isExpanded = !isExpanded }
-                )
-            }
-
-            if (isExpanded) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                if (isInEditMode) {
-                    // TODO: Add editable fields for date, time, isAllDay using OutlinedTextField or custom pickers
-                    OutlinedTextField(
-                        value = editedDescription,
-                        onValueChange = { editedDescription = it },
-                        label = { Text("Description") },
-                        modifier = Modifier.fillMaxWidth().height(120.dp),
-                        textStyle = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Images:", style = MaterialTheme.typography.labelSmall)
-                    LazyRow(modifier = Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(editedImageUris.toList()) { imageUrl -> // Use a copy for iteration if modifying
-                            Box(contentAlignment = Alignment.TopEnd) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                                        .padding(4.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Filled.Face, contentDescription = imageUrl, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                                }
-                                IconButton(
-                                    onClick = { editedImageUris.remove(imageUrl) },
-                                    modifier = Modifier.size(24.dp).padding(0.dp)
-                                        .background(Color.Black.copy(alpha=0.5f), shape = MaterialTheme.shapes.small)
-                                ) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Delete Image", tint = Color.White, modifier = Modifier.size(16.dp))
-                                }
-                            }
-                        }
-                        item {
-                            IconButton(onClick = { /* TODO: Implement add image functionality */ }) {
-                                Icon(Icons.Filled.Add, contentDescription = "Add Photo", modifier = Modifier.size(100.dp))
-                            }
-                        }
-                    }
-
-                } else { // View mode for expanded content
-                    Text(event.description, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
-                    if (event.imageUris.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Images:", style = MaterialTheme.typography.labelSmall)
-                        LazyRow(modifier = Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(event.imageUris) { imageName ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                                        .padding(4.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Filled.Face, contentDescription = imageName, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } // end Column
-    } // end Card
-
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete event?") },
-            text = { Text("Are you sure you want to delete this event? This action cannot be undone.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteConfirm = false
-                    onDeleteRequest()
-                }) {
-                    Text("Delete")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
-
 
 
 @Composable
@@ -1048,64 +368,10 @@ fun PlaceholderScreen(section: EducatorSection, modifier: Modifier = Modifier) {
     }
 }
 
-// Previews
-@Preview(showBackground = true, name = "Role Selection Screen")
-@Composable
-fun RoleSelectionScreenPreview() { KiddozzTheme { RoleSelectionScreen({}, {}) } }
-
-@Preview(showBackground = true, name = "Educator Dashboard - Kids Overview")
-@Composable
-fun EducatorDashboardKidsPreview() { KiddozzTheme { EducatorDashboardScreen({}, {}, sampleKidsState) } }
 
 @Preview(showBackground = true, name = "Kid Detail Screen Preview")
 @Composable
 fun KidDetailScreenPreview() { KiddozzTheme { KidDetailScreen(sampleKidsState.first(), {}, {}) } }
 
-@Preview(showBackground = true, name = "Kiddoz Card Preview")
-@Composable
-fun KiddozCardPreview() { KiddozzTheme { KiddozCard(kid = sampleKidsState.first(), onClick = {}) } }
 
-@Preview(showBackground = true, name = "Educator Calendar - Grid View")
-@Composable
-fun EducatorCalendarScreenGridPreview() { KiddozzTheme { EducatorCalendarScreen() } }
-
-@Preview(showBackground = true, name = "Add Event Form Preview")
-@Composable
-fun AddEventFormPreview() { KiddozzTheme { AddEventForm({}, {}) } }
-
-@Preview(showBackground = true, name = "Events List Screen - Upcoming")
-@Composable
-fun EventsListScreenUpcomingPreview() {
-    KiddozzTheme {
-        EventsListScreen("Upcoming Events", sampleUpcomingEvents, {}, {}, {})
-    }
-}
-
-@Preview(showBackground = true, name = "Event Accordion Item - Collapsed")
-@Composable
-fun EventAccordionItemCollapsedPreview() {
-    KiddozzTheme { EventAccordionItem(sampleUpcomingEvents.first(), {}, {}) }
-}
-
-@Preview(showBackground = true, name = "Event Accordion Item - Expanded View")
-@Composable
-fun EventAccordionItemExpandedViewPreview() {
-    KiddozzTheme {
-        val event = sampleUpcomingEvents.first().copy(imageUris = listOf("img1.png", "img2.png"))
-        EventAccordionItem(event = event, {}, {})
-    }
-}
-
-@Preview(showBackground = true, name = "Event Accordion Item - Edit Mode")
-@Composable
-fun EventAccordionItemEditModePreview() {
-    KiddozzTheme {
-        var eventToEdit by remember { mutableStateOf(sampleUpcomingEvents.first().copy(imageUris = listOf("img1.png", "img2.png"))) }
-        EventAccordionItem(
-            event = eventToEdit,
-            onDeleteRequest = {},
-            onEventUpdated = { updatedEvent -> eventToEdit = updatedEvent }
-        )
-    }
-}
 
