@@ -13,15 +13,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import fi.kidozz.app.CalendarEvent
-import fi.kidozz.app.Kid // Added import for Kid
-import fi.kidozz.app.EducatorSection // Added import for EducatorSection
+import fi.kidozz.app.data.models.CalendarEvent
+import fi.kidozz.app.data.models.Kid
+import fi.kidozz.app.core.EducatorSection
 import fi.kidozz.app.features.calendar.EducatorCalendarScreen
+import fi.kidozz.app.data.sample.sampleUpcomingEvents
+import fi.kidozz.app.data.sample.samplePastEvents
 import java.time.format.DateTimeFormatter
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EducatorDashboardScreen(
+    navController: NavController,
     onBackClick: () -> Unit,
     onKidClick: (Kid) -> Unit, // Assuming Kid is a data class you have defined
     modifier: Modifier = Modifier,
@@ -64,7 +68,10 @@ fun EducatorDashboardScreen(
                 onKidClick = onKidClick,
                 modifier = Modifier.padding(innerPadding).fillMaxSize()
             )
-            EducatorSection.Calendar -> EducatorCalendarScreen(modifier = Modifier.padding(innerPadding).fillMaxSize())
+            EducatorSection.Calendar -> EducatorCalendarScreen(
+                navController = navController,
+                modifier = Modifier.padding(innerPadding).fillMaxSize()
+            )
             else -> PlaceholderScreen(
                 section = currentEducatorSection,
                 modifier = Modifier.padding(innerPadding).fillMaxSize()
@@ -83,50 +90,4 @@ fun PlaceholderScreen(section: EducatorSection, modifier: Modifier = Modifier) {
     }
 }
 
-// Existing EventAccordion and EventAccordionItem code from the file
-@Composable
-fun EventAccordion(events: List<CalendarEvent>, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize()
-    ) {
-        events.forEach { event ->
-            EventAccordionItem(event = event)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-}
 
-@Composable
-fun EventAccordionItem(event: CalendarEvent) {
-    var expanded by remember { mutableStateOf(false) }
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { expanded = !expanded },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = event.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                    contentDescription = if (expanded) "Collapse" else "Expand"
-                )
-            }
-
-            if (expanded) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Date: ${event.dateTime.format(formatter)}")
-                Text(text = "Location info unavailable") // Placeholder for location
-            }
-        }
-    }
-}

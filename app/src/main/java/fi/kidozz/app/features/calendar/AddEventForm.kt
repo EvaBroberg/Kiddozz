@@ -25,6 +25,7 @@ fun AddEventForm(
     var eventTitle by remember { mutableStateOf(TextFieldValue("")) }
     var eventDateTime by remember { mutableStateOf(LocalDateTime.now()) }
     var location by remember { mutableStateOf(TextFieldValue("")) }
+    
 
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 

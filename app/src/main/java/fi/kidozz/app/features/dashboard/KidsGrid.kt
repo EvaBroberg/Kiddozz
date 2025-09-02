@@ -10,7 +10,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import fi.kidozz.app.Kid
+import fi.kidozz.app.data.models.Kid
 
 @Composable
 fun KidsGrid(

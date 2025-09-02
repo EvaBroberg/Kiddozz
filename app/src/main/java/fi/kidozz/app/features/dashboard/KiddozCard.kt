@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import fi.kidozz.app.Kid
+import fi.kidozz.app.data.models.Kid
 
 @Composable
 fun KiddozCard(kid: Kid, onClick: () -> Unit, modifier: Modifier = Modifier) {

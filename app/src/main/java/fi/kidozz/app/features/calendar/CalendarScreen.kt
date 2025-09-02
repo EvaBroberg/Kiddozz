@@ -6,8 +6,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,17 +18,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import fi.kidozz.app.CalendarEvent
+import fi.kidozz.app.data.models.CalendarEvent
+import androidx.compose.foundation.shape.CircleShape
 import java.time.LocalDate
-import java.time.YearMonth // Ensured import
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import androidx.compose.foundation.shape.CircleShape // Was in original, keeping
-import fi.kidozz.app.features.calendar.EducatorCalendarScreen
+import fi.kidozz.app.data.sample.sampleUpcomingEvents
+import fi.kidozz.app.data.sample.samplePastEvents
+import fi.kidozz.app.ui.components.EventAccordion
+import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun EducatorCalendarScreen(modifier: Modifier = Modifier) {
+fun EducatorCalendarScreen(
+    navController: NavController,
+    modifier: Modifier = Modifier
+) {
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    val events = remember { mutableStateListOf<CalendarEvent>() }
+    var showAddEventDialog by remember { mutableStateOf(false) }
+    val viewModel: EventViewModel = viewModel()
+    val allEvents by remember { mutableStateOf(viewModel.getAllEvents()) }
 
     Column(
         modifier = modifier
@@ -38,42 +50,74 @@ fun EducatorCalendarScreen(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        BasicCalendarView( // Corrected call
+        BasicCalendarView(
             currentMonth = java.time.YearMonth.now(),
-            events = events,
+            events = allEvents,
             onDateSelected = { selectedDate = it }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        AddEventForm(
-            onEventAdded = { title, dateTime, location ->
-                val eventDateTime = dateTime 
-                events.add(
-                    CalendarEvent(
-                        title = title,
-                        dateTime = eventDateTime,
-                        date = eventDateTime.toLocalDate().toString(), 
-                        startTime = eventDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")), 
-                        description = location 
-                    )
-                )
+        // Event navigation buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = { navController.navigate("upcoming_events") },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Upcoming Events")
             }
-        )
+            
+            Button(
+                onClick = { navController.navigate("previous_events") },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Previous Events")
+            }
+        }
+
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        selectedDate?.let { date ->
-            val filteredEvents = events.filter {
-                try {
-                    java.time.LocalDate.parse(it.date) == date
-                } catch (e: Exception) {
-                    false
+        // Add Event button
+        Button(
+            onClick = { showAddEventDialog = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Add Event")
+        }
+
+        // Add Event Dialog
+        if (showAddEventDialog) {
+            AlertDialog(
+                onDismissRequest = { showAddEventDialog = false },
+                title = { Text("Add New Event") },
+                text = {
+                    AddEventForm(
+                        onEventAdded = { title, dateTime, location ->
+                            val eventDateTime = dateTime 
+                            val newEvent = CalendarEvent(
+                                title = title,
+                                dateTime = eventDateTime,
+                                date = eventDateTime.toLocalDate().toString(), 
+                                startTime = eventDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")), 
+                                description = location 
+                            )
+                            viewModel.addEvent(newEvent)
+                            showAddEventDialog = false
+                        }
+                    )
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { showAddEventDialog = false }) {
+                        Text("Cancel")
+                    }
                 }
-            }
-            if (filteredEvents.isNotEmpty()) {
-                EventAccordion(events = filteredEvents)
-            }
+            )
         }
     }
 }
