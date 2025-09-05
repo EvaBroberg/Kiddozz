@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class EventViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = EventRepository(application)
+    private val repository = EventRepository.getInstance(application)
     
     val upcomingEvents: StateFlow<List<CalendarEvent>> = repository.upcomingEvents
     val pastEvents: StateFlow<List<CalendarEvent>> = repository.pastEvents

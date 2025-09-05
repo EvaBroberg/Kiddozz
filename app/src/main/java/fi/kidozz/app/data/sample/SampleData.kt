@@ -45,7 +45,10 @@ val sampleUpcomingEvents = mutableStateListOf(
         startTime = "10:00",
         dateTime = parseDateTime("2024-05-10", "10:00"),
         description = "Join us for a fun-filled day of games, food, and music to celebrate spring!",
-        imageUris = listOf("spring_banner.png", "kids_playing.jpg"),
+        imageUris = listOf(
+            "https://picsum.photos/200/150?random=1",
+            "android.resource://fi.kidozz.app/drawable/placeholder_image"
+        ),
         isPast = false
     ),
     CalendarEvent(
@@ -63,7 +66,7 @@ val sampleUpcomingEvents = mutableStateListOf(
         startTime = "09:00",
         dateTime = parseDateTime("2024-05-22", "09:00"),
         description = "Creative workshop for all age groups. Materials provided.",
-        imageUris = listOf("art_supplies.png"),
+        imageUris = listOf("android.resource://fi.kidozz.app/drawable/placeholder_image"),
         isPast = false
     )
 )
@@ -75,7 +78,7 @@ val samplePastEvents = mutableStateListOf(
         startTime = "00:00", // Assuming all day or start time not specified
         dateTime = parseDateTime("2024-03-01", "00:00"),
         description = "Successful book fair. Thank you all for participating!",
-        imageUris = listOf("book_fair_photo1.jpg"),
+        imageUris = listOf("android.resource://fi.kidozz.app/drawable/placeholder_image"),
         isPast = true
     ),
     CalendarEvent(
@@ -84,7 +87,10 @@ val samplePastEvents = mutableStateListOf(
         startTime = "11:00",
         dateTime = parseDateTime("2024-02-15", "11:00"),
         description = "A wonderful day of sports and teamwork.",
-        imageUris = listOf("sports_day_group.png", "medal_ceremony.jpg"),
+        imageUris = listOf(
+            "android.resource://fi.kidozz.app/drawable/placeholder_image",
+            "android.resource://fi.kidozz.app/drawable/placeholder_image"
+        ),
         isPast = true
     )
 )

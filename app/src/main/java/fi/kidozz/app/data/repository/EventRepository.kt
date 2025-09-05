@@ -11,7 +11,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class EventRepository(private val context: Context) {
+class EventRepository private constructor(private val context: Context) {
+    
+    companion object {
+        @Volatile
+        private var INSTANCE: EventRepository? = null
+        
+        fun getInstance(context: Context): EventRepository {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: EventRepository(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+    }
     private val prefs: SharedPreferences = context.getSharedPreferences("events_prefs", Context.MODE_PRIVATE)
     private val gson = Gson()
     
@@ -29,37 +40,46 @@ class EventRepository(private val context: Context) {
         val upcomingJson = prefs.getString("upcoming_events", null)
         val pastJson = prefs.getString("past_events", null)
         
+        android.util.Log.d("EventRepository", "Loading events - upcoming: ${upcomingJson != null}, past: ${pastJson != null}")
+        
         if (upcomingJson != null) {
             val type = object : TypeToken<List<CalendarEvent>>() {}.type
             _upcomingEvents.value = gson.fromJson(upcomingJson, type)
+            android.util.Log.d("EventRepository", "Loaded ${_upcomingEvents.value.size} upcoming events from storage")
         } else {
             // Load sample data if no saved data exists
             _upcomingEvents.value = sampleUpcomingEvents
             saveUpcomingEvents()
+            android.util.Log.d("EventRepository", "Loaded ${_upcomingEvents.value.size} sample upcoming events")
         }
         
         if (pastJson != null) {
             val type = object : TypeToken<List<CalendarEvent>>() {}.type
             _pastEvents.value = gson.fromJson(pastJson, type)
+            android.util.Log.d("EventRepository", "Loaded ${_pastEvents.value.size} past events from storage")
         } else {
             // Load sample data if no saved data exists
             _pastEvents.value = samplePastEvents
             savePastEvents()
+            android.util.Log.d("EventRepository", "Loaded ${_pastEvents.value.size} sample past events")
         }
     }
     
     private fun saveUpcomingEvents() {
         val json = gson.toJson(_upcomingEvents.value)
         prefs.edit().putString("upcoming_events", json).apply()
+        android.util.Log.d("EventRepository", "Saved upcoming events: ${_upcomingEvents.value.size} events")
     }
     
     private fun savePastEvents() {
         val json = gson.toJson(_pastEvents.value)
         prefs.edit().putString("past_events", json).apply()
+        android.util.Log.d("EventRepository", "Saved past events: ${_pastEvents.value.size} events")
     }
     
     fun addEvent(event: CalendarEvent) {
         val currentTime = java.time.LocalDateTime.now()
+        android.util.Log.d("EventRepository", "Adding event: ${event.title} at ${event.dateTime}")
         if (event.dateTime.isAfter(currentTime)) {
             val updatedList = _upcomingEvents.value.toMutableList()
             updatedList.add(event)
@@ -75,6 +95,7 @@ class EventRepository(private val context: Context) {
     
     fun updateEvent(updatedEvent: CalendarEvent) {
         val currentTime = java.time.LocalDateTime.now()
+        android.util.Log.d("EventRepository", "Updating event: ${updatedEvent.title} at ${updatedEvent.dateTime}")
         
         // Remove from both lists first
         val upcomingList = _upcomingEvents.value.toMutableList()
@@ -96,6 +117,7 @@ class EventRepository(private val context: Context) {
     }
     
     fun deleteEvent(eventId: String) {
+        android.util.Log.d("EventRepository", "Deleting event with ID: $eventId")
         val upcomingList = _upcomingEvents.value.toMutableList()
         val pastList = _pastEvents.value.toMutableList()
         
@@ -105,11 +127,13 @@ class EventRepository(private val context: Context) {
         if (upcomingRemoved) {
             _upcomingEvents.value = upcomingList
             saveUpcomingEvents()
+            android.util.Log.d("EventRepository", "Removed from upcoming events")
         }
         
         if (pastRemoved) {
             _pastEvents.value = pastList
             savePastEvents()
+            android.util.Log.d("EventRepository", "Removed from past events")
         }
     }
     

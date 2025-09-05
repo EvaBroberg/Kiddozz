@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +29,8 @@ import fi.kidozz.app.data.sample.samplePastEvents
 import fi.kidozz.app.ui.components.EventAccordion
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
+import android.app.Application
 
 @Composable
 fun EducatorCalendarScreen(
@@ -36,8 +39,17 @@ fun EducatorCalendarScreen(
 ) {
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     var showAddEventDialog by remember { mutableStateOf(false) }
-    val viewModel: EventViewModel = viewModel()
-    val allEvents by remember { mutableStateOf(viewModel.getAllEvents()) }
+    val context = LocalContext.current
+    val viewModel: EventViewModel = viewModel(
+        factory = EventViewModelFactory(context.applicationContext as Application)
+    )
+    
+    // Combine both event streams to get all events
+    val upcomingEvents by viewModel.upcomingEvents.collectAsState()
+    val pastEvents by viewModel.pastEvents.collectAsState()
+    val allEvents = remember(upcomingEvents, pastEvents) { 
+        upcomingEvents + pastEvents 
+    }
 
     Column(
         modifier = modifier

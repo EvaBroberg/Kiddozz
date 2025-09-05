@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import fi.kidozz.app.ui.components.EventAccordion
 import fi.kidozz.app.data.models.CalendarEvent
+import android.app.Application
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -18,7 +19,10 @@ fun UpcomingEventsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val viewModel: EventViewModel = viewModel()
+    val context = LocalContext.current
+    val viewModel: EventViewModel = viewModel(
+        factory = EventViewModelFactory(context.applicationContext as Application)
+    )
     val events by viewModel.upcomingEvents.collectAsState()
     Scaffold(
         topBar = {
