@@ -1,0 +1,125 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.sqlite3
+*.db
+*$py.class
+*.so
+.Python
+
+# ---- Environment ----
+.env
+*.env
+.env.*
+.env.local
+.env.production
+.env.staging
+
+# ---- Virtual Envs ----
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# ---- Testing ----
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# ---- Build/Packaging ----
+build/
+dist/
+*.egg-info/
+.eggs/
+develop-eggs/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ---- Logs ----
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---- IDEs ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- OS ----
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ---- Docker ----
+*.pid
+*.seed
+*.pid.lock
+
+# ---- Alembic ----
+# Keep migration scripts under version control
+!alembic/versions/*.py
+
+# ---- Project-specific ----
+test.db
+
+# ---- Jupyter Notebook ----
+.ipynb_checkpoints
+
+# ---- pyenv ----
+.python-version
+
+# ---- pipenv ----
+Pipfile.lock
+
+# ---- PEP 582 ----
+__pypackages__/
+
+# ---- Celery ----
+celerybeat-schedule
+celerybeat.pid
+
+# ---- SageMath parsed files ----
+*.sage.py
+
+# ---- Spyder project settings ----
+.spyderproject
+.spyproject
+
+# ---- Rope project settings ----
+.ropeproject
+
+# ---- mkdocs documentation ----
+/site
+
+# ---- mypy ----
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ---- Pyre type checker ----
+.pyre/
