@@ -24,3 +24,7 @@ format:
 
 lint:
 	poetry run ruff check app tests
+
+fix:
+	poetry run black app tests
+	poetry run ruff check --fix app tests
