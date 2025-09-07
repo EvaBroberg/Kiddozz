@@ -7,9 +7,36 @@ on:
     branches: [ main ]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry install --no-interaction --no-root
+
+      - name: Run ruff
+        working-directory: backend
+        run: poetry run ruff check app tests
+
+      - name: Run black --check
+        working-directory: backend
+        run: poetry run black --check app tests
+
   test:
     runs-on: ubuntu-latest
-
     env:
       DATABASE_URL: "sqlite:///./test.db"
 
@@ -25,12 +52,12 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Configure Poetry and install dependencies
+      - name: Install dependencies
         working-directory: backend
         run: |
           poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-root
 
-      - name: Run tests (make test)
+      - name: Run tests
         working-directory: backend
         run: poetry run make test

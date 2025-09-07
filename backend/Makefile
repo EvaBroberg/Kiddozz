@@ -18,3 +18,9 @@ migrate:
 
 makemigration:
 	poetry run alembic revision --autogenerate -m "$(name)"
+
+format:
+	poetry run black app tests
+
+lint:
+	poetry run ruff check app tests

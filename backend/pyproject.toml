@@ -31,4 +31,16 @@ pytest = "^8.4.2"
 httpx = "^0.28.1"
 pytest-asyncio = "^1.1.0"
 pytest-github-actions-annotate-failures = "^0.2.0"
+black = "^25.1.0"
+ruff = "^0.12.12"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+select = ["E", "F", "I"]
+ignore = ["E501"]
 
