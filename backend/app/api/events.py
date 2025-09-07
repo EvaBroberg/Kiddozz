@@ -198,23 +198,19 @@ def delete_event_image(
 @router.post("/{event_id}/images")
 def get_upload_url(event_id: int, filename: str, db: Session = Depends(get_db)):
     """Get presigned URL for uploading image to event"""
-    # Ensure event exists
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         return {"error": "Event not found"}
 
-    # Create DB record
     key = f"daycares/demo/events/{event_id}/images/{filename}"
     image = EventImage(event_id=event_id, file_name=filename, s3_key=key)
     db.add(image)
     db.commit()
     db.refresh(image)
 
-    # Generate presigned URL (use dummy URL for testing if AWS not configured)
     try:
         url = create_presigned_url(os.getenv("AWS_BUCKET_NAME"), key)
     except:
-        # Fallback to dummy URL for testing
         url = f"https://s3.amazonaws.com/bucket/{key}"
     
     return {"upload_url": url, "image_id": image.id}
