@@ -31,6 +31,6 @@ jobs:
           poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-root
 
-      - name: Run tests
+      - name: Run tests (make test)
         working-directory: backend
-        run: poetry run pytest -v
+        run: poetry run make test
