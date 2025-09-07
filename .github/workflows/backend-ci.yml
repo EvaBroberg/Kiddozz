@@ -26,11 +26,11 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Configure Poetry
-        run: |
-          poetry config virtualenvs.in-project true  # ✅ venv inside project (.venv folder)
-          poetry install --no-interaction --no-root
+      - name: Configure Poetry and install deps
         working-directory: backend
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry install --no-interaction --no-root
 
       - name: Run tests
         working-directory: backend
