@@ -10,7 +10,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: "sqlite:///./test.db"
+      DATABASE_URL: "sqlite:///./test.db"   # Use SQLite for CI
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,8 +26,8 @@ jobs:
 
       - name: Install dependencies
         working-directory: backend
-        run: poetry install
+        run: poetry install --no-interaction --no-root
 
-      - name: Run tests
+      - name: Run tests (pytest -v)
         working-directory: backend
-        run: pytest -v
+        run: poetry run pytest -v
