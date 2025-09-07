@@ -46,20 +46,39 @@ Tests will automatically use SQLite in-memory unless configured otherwise.
 
 ---
 
-### 4. GitHub Actions CI
+### 4. Database Migrations
+
+We use **Alembic** to manage database schema changes.
+
+- When to create a migration: whenever you add, remove, or modify SQLAlchemy models in app/models/.
+
+- Create a migration:
+  alembic revision --autogenerate -m "Describe your change"
+
+- Apply migrations:
+  alembic upgrade head
+
+- Rollback migrations:
+  alembic downgrade -1
+
+Always inspect the generated script under alembic/versions/ before committing. Migration scripts must be version-controlled to ensure consistency for CI/CD and other developers.
+
+---
+
+### 5. GitHub Actions CI
 Every **push** and every **pull request into `main`** triggers GitHub Actions:
 
 - ✅ **Lint check** (`Backend CI / lint`)  
   Runs `ruff` and `black --check` to ensure code style.
 
 - ✅ **Test check** (`Backend CI / test`)  
-  Runs `pytest` inside Poetry’s environment to validate backend functionality.
+  Runs `pytest` inside Poetry's environment to validate backend functionality.
 
 Merges into `main` are blocked unless both checks pass.
 
 ---
 
-### 5. Branch Protection Rules
+### 6. Branch Protection Rules
 The `main` branch is protected:
 - All PRs into `main` must pass **linting** and **tests**.  
 - Direct pushes to `main` are discouraged.  
@@ -67,7 +86,7 @@ The `main` branch is protected:
 
 ---
 
-### 6. Commit Conventions
+### 7. Commit Conventions
 Please write clear commit messages. Recommended prefixes:
 - `feat:` → new feature
 - `fix:` → bug fix
@@ -84,7 +103,7 @@ fix: correct S3 presigned URL path
 
 ---
 
-### 7. Submitting a PR
+### 8. Submitting a PR
 1. Create a feature branch from `main`.  
 2. Run `make fix` and `make test`.  
 3. Commit your changes with a clear message.  

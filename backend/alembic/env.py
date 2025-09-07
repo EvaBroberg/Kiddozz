@@ -12,7 +12,9 @@ load_dotenv()
 # Add the app directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# add your model imports here
 from app.core.database import Base
+from app.models.event import Event, EventImage
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -27,8 +29,7 @@ config.set_main_option("sqlalchemy.url", DATABASE_URL)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
+# set the target metadata
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

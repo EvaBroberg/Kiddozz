@@ -28,7 +28,7 @@ class EventImage(Base):
     __tablename__ = "event_images"
 
     id = Column(Integer, primary_key=True, index=True)
-    event_id = Column(Integer, ForeignKey("events.id", ondelete="CASCADE"))
+    event_id = Column(Integer, ForeignKey("events.id", ondelete="CASCADE"), index=True)
     file_name = Column(String, nullable=False)
     s3_key = Column(String, unique=True, nullable=False)
     status = Column(String, default="pending")  # pending | approved

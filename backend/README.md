@@ -240,16 +240,18 @@ pytest
 
 ### Database Migrations
 
-```bash
-# Create new migration
-alembic revision --autogenerate -m "Description of changes"
+Migrations are managed with **Alembic** to keep the database schema in sync with the SQLAlchemy models in `app/models/`.
 
-# Apply migrations
-alembic upgrade head
+- Create a new migration (after changing models):
+  alembic revision --autogenerate -m "Describe your change"
 
-# Rollback migration
-alembic downgrade -1
-```
+- Apply migrations:
+  alembic upgrade head
+
+- Rollback the last migration:
+  alembic downgrade -1
+
+Always review the generated migration script in alembic/versions/. Migration scripts must be committed to Git so all environments (local, CI, production) stay consistent.
 
 ### Code Formatting
 
