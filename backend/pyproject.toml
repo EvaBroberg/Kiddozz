@@ -30,4 +30,5 @@ package-mode = false
 pytest = "^8.4.2"
 httpx = "^0.28.1"
 pytest-asyncio = "^1.1.0"
+pytest-github-actions-annotate-failures = "^0.2.0"
 
