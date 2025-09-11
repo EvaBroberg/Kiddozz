@@ -26,6 +26,22 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {
+            // debug setup
+        }
+    }
+
+    flavorDimensions += "environment"
+
+    productFlavors {
+        create("staging") {
+            dimension = "environment"
+            buildConfigField("String", "BASE_URL", "\"https://staging-api.kiddozz.com\"")
+        }
+        create("prod") {
+            dimension = "environment"
+            buildConfigField("String", "BASE_URL", "\"https://prod-api.kiddozz.com\"")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -36,7 +52,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
-        compose = true
+        buildConfig = true
     }
 }
 
