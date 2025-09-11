@@ -1,5 +1,18 @@
 # Contributing Guide
 
+## Table of Contents
+- [Development Workflow](#development-workflow)
+  - [1. Setup](#1-setup)
+  - [2. Linting & Formatting](#2-linting--formatting)
+  - [3. Running Tests](#3-running-tests)
+  - [4. Database Migrations](#4-database-migrations)
+  - [5. GitHub Actions CI](#5-github-actions-ci)
+  - [6. Branch Protection Rules](#6-branch-protection-rules)
+  - [7. Commit Conventions](#7-commit-conventions)
+  - [8. Submitting a PR](#8-submitting-a-pr)
+  - [9. Release Workflow](#9-release-workflow)
+- [License](#license)
+
 Thanks for your interest in contributing to **Kiddozz Backend API**!  
 This document explains the development workflow, coding standards, and CI rules for this repository.
 
@@ -109,6 +122,30 @@ fix: correct S3 presigned URL path
 3. Commit your changes with a clear message.  
 4. Push your branch and open a pull request.  
 5. Ensure CI checks are green before merging.
+
+---
+
+### 9. Release Workflow
+
+We use separate workflows for staging and production:
+
+- **Staging**
+  - Auto-deploys on every push to `main`.
+  - Used for internal testing (QA & partner feedback).
+  - Staging APKs are auto-built for testers.
+
+- **Production**
+  - Deploys only when a release branch/tag is created in GitHub.
+  - Backend redeploys from the release tag.
+  - Production APKs are only built on release.
+  - Ensure the release branch passes all CI checks before tagging.
+
+**Developer steps for release:**
+1. Finish development on feature branches → merge into `main`.
+2. Verify staging deployment and APK functionality.
+3. When stable, create a GitHub release (tag) from `main`.
+4. Railway will redeploy production backend from the release.
+5. GitHub Actions will build the production APK.
 
 ---
 
