@@ -21,7 +21,7 @@ jobs:
       - name: Build Staging APK
         run: ./gradlew assembleStagingDebug
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: staging-apk
           path: app/build/outputs/apk/staging/debug/*.apk
@@ -39,7 +39,7 @@ jobs:
       - name: Build Production APK
         run: ./gradlew assembleProdRelease
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: prod-apk
           path: app/build/outputs/apk/prod/release/*.apk
