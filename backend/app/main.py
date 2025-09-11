@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import api_router
+from app.api import api_router, health
 from app.core.config import settings
 from app.core.database import Base, engine
 
@@ -24,6 +24,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register routes
+app.include_router(health.router)
+
 # Include API routes
 app.include_router(api_router, prefix=settings.api_v1_str)
 
@@ -32,12 +35,6 @@ app.include_router(api_router, prefix=settings.api_v1_str)
 def read_root():
     """Root endpoint"""
     return {"message": "Welcome to Kiddozz API", "version": "1.0.0", "docs": "/docs"}
-
-
-@app.get("/health")
-def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
 
 
 if __name__ == "__main__":
