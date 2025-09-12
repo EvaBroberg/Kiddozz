@@ -11,6 +11,9 @@ jobs:
   migrate-staging:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,18 +27,19 @@ jobs:
         run: pip install poetry
 
       - name: Install dependencies
-        working-directory: backend
         run: poetry install
 
       - name: Run Alembic migrations on Staging
-        working-directory: backend
+        run: poetry run alembic upgrade head
         env:
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-        run: poetry run alembic upgrade head
 
   migrate-prod:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,11 +53,9 @@ jobs:
         run: pip install poetry
 
       - name: Install dependencies
-        working-directory: backend
         run: poetry install
 
       - name: Run Alembic migrations on Production
-        working-directory: backend
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
         run: poetry run alembic upgrade head
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
