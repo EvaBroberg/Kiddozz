@@ -43,14 +43,10 @@ except Exception as e:
     exit(1)
 "
 
-# Run database migrations
-echo "🗄️  Running database migrations..."
-alembic upgrade head
-
 # Start the application
 echo "🌟 Starting FastAPI server..."
 echo "📖 API Documentation: http://localhost:8000/docs"
 echo "🔗 API Base URL: http://localhost:8000"
 echo ""
 
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --host 0.0.0.0 --port ${PORT}

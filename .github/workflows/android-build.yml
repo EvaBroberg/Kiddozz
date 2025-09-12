@@ -19,6 +19,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Build Staging APK
+        working-directory: app
         run: ./gradlew assembleStagingDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -37,6 +38,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Build Production APK
+        working-directory: app
         run: ./gradlew assembleProdRelease
       - name: Upload APK
         uses: actions/upload-artifact@v4
