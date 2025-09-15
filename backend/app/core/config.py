@@ -1,6 +1,10 @@
-from typing import List
-
+from typing import List, Union
+from dotenv import load_dotenv
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -16,6 +20,7 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
     aws_region: str = "us-east-1"
+    aws_bucket_name: str = "kiddozz-images"
     s3_bucket_name: str = "kiddozz-images"
 
     # Application Configuration
@@ -24,7 +29,14 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
 
     # CORS Configuration
-    allowed_origins: List[str] = ["http://localhost:3000", "http://localhost:8080"]
+    allowed_origins: Union[List[str], str] = ["http://localhost:3000", "http://localhost:8080"]
+    
+    @field_validator('allowed_origins', mode='before')
+    @classmethod
+    def parse_allowed_origins(cls, v):
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(',')]
+        return v
 
     # API Configuration
     api_v1_str: str = "/api/v1"
@@ -33,6 +45,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        env_parse_none_str = "None"
 
 
 settings = Settings()
