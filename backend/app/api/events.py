@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.deps import require_role
 from app.models.event import Event, EventImage
 from app.models.schemas import (
     Event as EventSchema,
@@ -24,6 +25,12 @@ from app.services.event_service import EventService
 from app.services.s3_service import create_presigned_url
 
 router = APIRouter()
+
+
+@router.get("/educator-only")
+def get_educator_only_events(current_user: dict = Depends(require_role("educator"))):
+    """Protected endpoint that only educators can access."""
+    return {"message": "Educator-only endpoint", "user": current_user}
 
 
 @router.post("/", response_model=EventSchema, status_code=status.HTTP_201_CREATED)

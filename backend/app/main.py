@@ -2,12 +2,13 @@ import os
 
 from fastapi import FastAPI
 
-from app.api import events, health
+from app.api import auth, events, health
 
 app = FastAPI(title="Kiddozz Backend API", version="1.0.0")
 
 # Register routers
 app.include_router(health.router)
+app.include_router(auth.router, prefix="/api/v1")
 app.include_router(events.router, prefix="/api/v1/events")
 
 
