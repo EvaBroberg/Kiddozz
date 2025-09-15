@@ -30,13 +30,16 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
 
     # CORS Configuration
-    allowed_origins: Union[List[str], str] = ["http://localhost:3000", "http://localhost:8080"]
-    
-    @field_validator('allowed_origins', mode='before')
+    allowed_origins: Union[List[str], str] = [
+        "http://localhost:3000",
+        "http://localhost:8080",
+    ]
+
+    @field_validator("allowed_origins", mode="before")
     @classmethod
     def parse_allowed_origins(cls, v):
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(',')]
+            return [origin.strip() for origin in v.split(",")]
         return v
 
     # API Configuration
