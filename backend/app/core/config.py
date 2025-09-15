@@ -1,3 +1,4 @@
+import os
 from typing import List, Union
 
 from dotenv import load_dotenv
@@ -30,7 +31,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
 
     # Environment Configuration
-    environment: str = "development"
+    environment: str = os.getenv("ENVIRONMENT", "development")
 
     # CORS Configuration
     allowed_origins: Union[List[str], str] = [
