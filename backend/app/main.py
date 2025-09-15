@@ -9,7 +9,7 @@ app = FastAPI(
 
 # Register routers
 app.include_router(health.router)
-app.include_router(events.router, prefix="/api/v1")
+app.include_router(events.router, prefix="/api/v1/events")
 
 
 @app.get("/")

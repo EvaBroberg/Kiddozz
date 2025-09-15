@@ -199,8 +199,8 @@ async def test_create_event_async(setup_database):
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         payload = {
             "title": "Test Event",
-            "date": "2025-09-10",
-            "startTime": "10:00",
+            "date": "2025-09-10T10:00:00",
+            "start_time": "10:00",
             "description": "This is a test event",
         }
         response = await ac.post("/api/v1/events/", json=payload)
