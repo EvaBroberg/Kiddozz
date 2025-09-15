@@ -17,7 +17,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials"
+                detail="Invalid authentication credentials",
             )
         return payload
     except HTTPException:
@@ -25,19 +25,22 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Could not validate credentials: {str(e)}"
+            detail=f"Could not validate credentials: {str(e)}",
         )
 
 
 def require_role(role: str):
     """Create a dependency that requires a specific role."""
-    def role_checker(current_user: Dict[str, Any] = Depends(get_current_user)) -> Dict[str, Any]:
+
+    def role_checker(
+        current_user: Dict[str, Any] = Depends(get_current_user),
+    ) -> Dict[str, Any]:
         user_role = current_user.get("role")
         if user_role != role:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Required role: {role}, current role: {user_role}"
+                detail=f"Access denied. Required role: {role}, current role: {user_role}",
             )
         return current_user
-    
+
     return role_checker
