@@ -10,9 +10,8 @@ Base.metadata.create_all(bind=engine)
 
 # Create FastAPI app
 app = FastAPI(
-    title=settings.project_name,
-    description="Kiddozz API for managing events and images",
-    version="1.0.0",
+    title="Kiddozz Backend API",
+    version="1.0.0"
 )
 
 # Add CORS middleware
@@ -24,10 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routes
+# Register routers
 app.include_router(health.router)
-
-# Include API routes
 app.include_router(api_router, prefix=settings.api_v1_str)
 
 
