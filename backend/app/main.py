@@ -1,6 +1,8 @@
 import os
+
 from fastapi import FastAPI
-from app.api import health, events
+
+from app.api import events, health
 
 app = FastAPI(
     title="Kiddozz Backend API",
