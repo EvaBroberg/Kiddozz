@@ -11,7 +11,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/switch-role")
 def switch_role(
-    role: str = Query(..., description="Role to switch to", regex="^(parent|educator)$")
+    role: str = Query(..., description="Role to switch to", pattern="^(parent|educator)$")
 ) -> Dict[str, Any]:
     """
     Switch user role (staging only).
