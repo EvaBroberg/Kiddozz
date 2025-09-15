@@ -48,6 +48,12 @@ def test_create_event(setup_database):
     }
 
     response = client.post("/api/v1/events/", json=event_data)
+    
+    # Print debug information if assertion fails
+    if response.status_code != 201:
+        print(f"Response status code: {response.status_code}")
+        print(f"Response body: {response.json()}")
+    
     assert response.status_code == 201
 
     data = response.json()

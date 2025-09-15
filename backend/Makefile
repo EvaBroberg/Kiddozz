@@ -4,7 +4,7 @@ run:
 	poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 test:
-	pytest -v --maxfail=1 --disable-warnings
+	pytest -vv --tb=long --disable-warnings
 
 shell:
 	poetry shell
