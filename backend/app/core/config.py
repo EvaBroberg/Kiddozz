@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
+    # Environment Configuration
+    environment: str = "development"
+
     # CORS Configuration
     allowed_origins: Union[List[str], str] = [
         "http://localhost:3000",

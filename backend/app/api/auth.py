@@ -1,12 +1,19 @@
 from datetime import timedelta
 from typing import Any, Dict
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 
+from app.core.config import settings
 from app.core.deps import get_current_user
 from app.core.security import create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+class TestTokenRequest(BaseModel):
+    role: str
+    user_id: int = 1
 
 
 @router.post("/switch-role")
@@ -39,6 +46,43 @@ def switch_role(
         "user_id": user_id,
         "role": role,
         "expires_in": 24 * 60 * 60,  # 24 hours in seconds
+    }
+
+
+@router.post("/test-token")
+def test_token(request: TestTokenRequest) -> Dict[str, Any]:
+    """
+    Generate a test token for the specified role and user_id.
+    Only available in staging environment.
+    """
+    # Check if environment is staging
+    if settings.environment != "staging":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Endpoint not available in this environment"
+        )
+    
+    # Validate role
+    if request.role not in ["parent", "educator"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Role must be 'parent' or 'educator'"
+        )
+    
+    # Create token data
+    token_data = {
+        "user_id": str(request.user_id),
+        "role": request.role,
+    }
+    
+    # Create access token
+    access_token = create_access_token(data=token_data)
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": request.user_id,
+        "role": request.role,
     }
 
 
