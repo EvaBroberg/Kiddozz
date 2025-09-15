@@ -59,25 +59,25 @@ def test_token(request: TestTokenRequest) -> Dict[str, Any]:
     if settings.environment != "staging":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Endpoint not available in this environment"
+            detail="Endpoint not available in this environment",
         )
-    
+
     # Validate role
     if request.role not in ["parent", "educator"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Role must be 'parent' or 'educator'"
+            detail="Role must be 'parent' or 'educator'",
         )
-    
+
     # Create token data
     token_data = {
         "user_id": str(request.user_id),
         "role": request.role,
     }
-    
+
     # Create access token
     access_token = create_access_token(data=token_data)
-    
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
