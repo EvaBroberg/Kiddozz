@@ -26,6 +26,7 @@ fun KiddozzAppHost(
             RoleSelectionScreen(
                 onEducatorViewClick = { navController.navigate("educator_dashboard") },
                 onParentViewClick = { /* TODO: Navigate to Parent View */ },
+                onSuperEducatorViewClick = { navController.navigate("educator_dashboard") }, // Same as educator for now
                 modifier = modifier
             )
         }

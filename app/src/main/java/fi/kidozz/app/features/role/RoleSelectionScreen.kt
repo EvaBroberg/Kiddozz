@@ -2,22 +2,85 @@ package fi.kidozz.app.features.role
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import fi.kidozz.app.BuildConfig
+import fi.kidozz.app.data.auth.TokenManager
+import fi.kidozz.app.data.models.DummyUser
+import fi.kidozz.app.data.network.NetworkModule
+import fi.kidozz.app.data.repository.AuthRepository
 import fi.kidozz.app.ui.theme.KiddozzTheme
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoleSelectionScreen(
     onEducatorViewClick: () -> Unit,
     onParentViewClick: () -> Unit,
+    onSuperEducatorViewClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Only show role selection in staging builds
+    if (!BuildConfig.DEBUG) {
+        // In production, go directly to the main app
+        LaunchedEffect(Unit) {
+            onEducatorViewClick()
+        }
+        return
+    }
+    
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    val authRepository = remember {
+        AuthRepository(
+            NetworkModule.authApiService,
+            TokenManager(context)
+        )
+    }
+    
+    fun handleRoleSelection(role: String) {
+        coroutineScope.launch {
+            isLoading = true
+            errorMessage = null
+            
+            try {
+                val result = authRepository.getDummyUsers()
+                result.fold(
+                    onSuccess = { users ->
+                        val user = users.find { it.role == role }
+                        if (user != null) {
+                            authRepository.loginWithToken(user.token)
+                            when (role) {
+                                "educator" -> onEducatorViewClick()
+                                "parent" -> onParentViewClick()
+                                "super_educator" -> onSuperEducatorViewClick()
+                            }
+                        } else {
+                            errorMessage = "User with role $role not found"
+                        }
+                    },
+                    onFailure = { exception ->
+                        errorMessage = "Failed to fetch users: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                errorMessage = "Network error: ${e.message}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+    
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Kiddozz Daycare App") }) },
+        topBar = { TopAppBar(title = { Text("Kiddozz Daycare App - Staging") }) },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
@@ -29,10 +92,46 @@ fun RoleSelectionScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text("Welcome to Kiddozz!")
+            Text("Staging Environment", style = MaterialTheme.typography.bodySmall)
             Spacer(modifier = Modifier.height(32.dp))
-            Button(onClick = onEducatorViewClick) { Text("Educator View") }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onParentViewClick) { Text("Parent View") }
+            
+            if (isLoading) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Loading users...")
+            } else {
+                Button(
+                    onClick = { handleRoleSelection("educator") },
+                    enabled = !isLoading
+                ) { 
+                    Text("Educator View") 
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = { handleRoleSelection("parent") },
+                    enabled = !isLoading
+                ) { 
+                    Text("Parent View") 
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = { handleRoleSelection("super_educator") },
+                    enabled = !isLoading
+                ) { 
+                    Text("Super-Educator View") 
+                }
+            }
+            
+            errorMessage?.let { error ->
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }
@@ -41,6 +140,10 @@ fun RoleSelectionScreen(
 @Composable
 fun RoleSelectionScreenPreview() {
     KiddozzTheme {
-        RoleSelectionScreen(onEducatorViewClick = {}, onParentViewClick = {})
+        RoleSelectionScreen(
+            onEducatorViewClick = {}, 
+            onParentViewClick = {},
+            onSuperEducatorViewClick = {}
+        )
     }
 }

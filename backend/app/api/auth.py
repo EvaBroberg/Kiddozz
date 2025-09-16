@@ -1,12 +1,15 @@
 from datetime import timedelta
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.security import create_access_token
+from app.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -14,6 +17,17 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 class TestTokenRequest(BaseModel):
     role: str
     user_id: int = 1
+
+
+class DummyUserResponse(BaseModel):
+    id: int
+    name: str
+    role: str
+    token: str
+
+
+class DummyUsersResponse(BaseModel):
+    users: List[DummyUserResponse]
 
 
 @router.post("/switch-role")
@@ -102,3 +116,31 @@ def get_current_user_info(
         "role": current_user.get("role"),
         "exp": current_user.get("exp"),
     }
+
+
+@router.get("/dummy-users", response_model=DummyUsersResponse)
+def get_dummy_users(db: Session = Depends(get_db)) -> DummyUsersResponse:
+    """
+    Get dummy users with JWT tokens from the database.
+    Returns users: Jessica (educator), Sara (parent), Mervi (super_educator).
+    """
+    # Query users from database
+    users = db.query(User).filter(User.name.in_(["Jessica", "Sara", "Mervi"])).all()
+    
+    if not users:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dummy users not found in database"
+        )
+    
+    # Convert to response format
+    user_responses = []
+    for user in users:
+        user_responses.append(DummyUserResponse(
+            id=user.id,
+            name=user.name,
+            role=user.role,
+            token=user.jwt_token
+        ))
+    
+    return DummyUsersResponse(users=user_responses)
