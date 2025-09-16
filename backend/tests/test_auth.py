@@ -396,7 +396,8 @@ class TestTestTokenEndpoint:
             mock_settings.environment = "staging"
 
             response = client.post(
-                "/api/v1/auth/test-token", json={"role": "super_educator", "user_id": 789}
+                "/api/v1/auth/test-token",
+                json={"role": "super_educator", "user_id": 789},
             )
 
             assert response.status_code == 200

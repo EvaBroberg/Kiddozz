@@ -19,7 +19,9 @@ class TestTokenRequest(BaseModel):
 @router.post("/switch-role")
 def switch_role(
     role: str = Query(
-        ..., description="Role to switch to", pattern="^(parent|educator|super_educator)$"
+        ...,
+        description="Role to switch to",
+        pattern="^(parent|educator|super_educator)$",
     )
 ) -> Dict[str, Any]:
     """
@@ -65,7 +67,7 @@ def test_token(request: TestTokenRequest) -> Dict[str, Any]:
     # Define allowed roles
     ALLOWED_ROLES = {"parent", "educator", "super_educator"}
     role = request.role.lower().strip()
-    
+
     # Validate role
     if role not in ALLOWED_ROLES:
         raise HTTPException(

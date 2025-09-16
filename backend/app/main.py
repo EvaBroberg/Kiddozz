@@ -3,7 +3,6 @@ import os
 from fastapi import FastAPI
 
 from app.api import auth, events, health
-from app.models import User  # Import User model to register it with Base
 
 app = FastAPI(title="Kiddozz Backend API", version="1.0.0")
 
