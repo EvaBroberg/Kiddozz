@@ -44,3 +44,20 @@ def require_role(role: str):
         return current_user
 
     return role_checker
+
+
+def require_any_role(*roles: str):
+    """Create a dependency that requires any of the specified roles."""
+
+    def _require_any(
+        current_user: Dict[str, Any] = Depends(get_current_user),
+    ) -> Dict[str, Any]:
+        current = current_user.get("role")
+        if current not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Requires one of roles: {roles}",
+            )
+        return current_user
+
+    return _require_any

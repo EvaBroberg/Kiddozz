@@ -256,9 +256,9 @@ class TestRoleBasedAccessControl:
         data = response.json()
 
         # Verify error message
-        assert "Access denied" in data["detail"]
-        assert "Required role: educator" in data["detail"]
-        assert "current role: parent" in data["detail"]
+        assert "Requires one of roles:" in data["detail"]
+        assert "educator" in data["detail"]
+        assert "super_educator" in data["detail"]
 
     def test_educator_only_endpoint_without_token_fails(self):
         """Test educator-only endpoint fails without token."""
@@ -274,6 +274,24 @@ class TestRoleBasedAccessControl:
 
         assert response.status_code == 401
         assert "Invalid authentication credentials" in response.json()["detail"]
+
+    def test_educator_only_endpoint_with_super_educator_token_succeeds(self):
+        """Test educator-only endpoint allows super_educator access."""
+        # Get super_educator token
+        switch_response = client.post("/api/v1/auth/switch-role?role=super_educator")
+        token = switch_response.json()["access_token"]
+
+        # Access protected endpoint
+        headers = {"Authorization": f"Bearer {token}"}
+        response = client.get("/api/v1/events/educator-only", headers=headers)
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Verify response
+        assert data["message"] == "Educator-only endpoint"
+        assert "user" in data
+        assert data["user"]["role"] == "super_educator"
 
 
 class TestTokenExpiry:
@@ -372,18 +390,45 @@ class TestTestTokenEndpoint:
             assert decoded["user_id"] == "1"
             assert decoded["role"] == "parent"
 
+    def test_test_token_super_educator_role_in_staging(self):
+        """Test issuing a super_educator token in staging environment."""
+        with patch("app.api.auth.settings") as mock_settings:
+            mock_settings.environment = "staging"
+
+            response = client.post(
+                "/api/v1/auth/test-token", json={"role": "super_educator", "user_id": 789}
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+
+            # Verify response structure
+            assert "access_token" in data
+            assert data["token_type"] == "bearer"
+            assert data["user_id"] == 789
+            assert data["role"] == "super_educator"
+
+            # Verify token is valid and has correct claims
+            token = data["access_token"]
+            decoded = decode_access_token(token)
+            assert decoded["user_id"] == "789"
+            assert decoded["role"] == "super_educator"
+
     def test_test_token_invalid_role(self):
         """Test issuing a token with invalid role."""
         with patch("app.api.auth.settings") as mock_settings:
             mock_settings.environment = "staging"
 
             response = client.post(
-                "/api/v1/auth/test-token", json={"role": "invalid", "user_id": 123}
+                "/api/v1/auth/test-token", json={"role": "hacker", "user_id": 123}
             )
 
             assert response.status_code == 400
             data = response.json()
-            assert "Role must be 'parent' or 'educator'" in data["detail"]
+            assert "Invalid role. Allowed:" in data["detail"]
+            assert "parent" in data["detail"]
+            assert "educator" in data["detail"]
+            assert "super_educator" in data["detail"]
 
     def test_test_token_in_non_staging_environment(self):
         """Test that endpoint returns 404 in non-staging environment."""

@@ -19,7 +19,7 @@ class TestTokenRequest(BaseModel):
 @router.post("/switch-role")
 def switch_role(
     role: str = Query(
-        ..., description="Role to switch to", pattern="^(parent|educator)$"
+        ..., description="Role to switch to", pattern="^(parent|educator|super_educator)$"
     )
 ) -> Dict[str, Any]:
     """
@@ -62,17 +62,21 @@ def test_token(request: TestTokenRequest) -> Dict[str, Any]:
             detail="Endpoint not available in this environment",
         )
 
+    # Define allowed roles
+    ALLOWED_ROLES = {"parent", "educator", "super_educator"}
+    role = request.role.lower().strip()
+    
     # Validate role
-    if request.role not in ["parent", "educator"]:
+    if role not in ALLOWED_ROLES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Role must be 'parent' or 'educator'",
+            detail=f"Invalid role. Allowed: {sorted(ALLOWED_ROLES)}",
         )
 
     # Create token data
     token_data = {
         "user_id": str(request.user_id),
-        "role": request.role,
+        "role": role,
     }
 
     # Create access token
@@ -82,7 +86,7 @@ def test_token(request: TestTokenRequest) -> Dict[str, Any]:
         "access_token": access_token,
         "token_type": "bearer",
         "user_id": request.user_id,
-        "role": request.role,
+        "role": role,
     }
 
 
