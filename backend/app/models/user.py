@@ -1,6 +1,7 @@
 from enum import Enum
 
 from sqlalchemy import Column, DateTime, Integer, String, func
+from sqlalchemy import Enum as SQLEnum
 
 from app.core.database import Base
 
@@ -18,11 +19,13 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False)
-    role = Column(String(50), nullable=False)  # Will store the enum value as string
-    created_at = Column(DateTime, default=func.now(), nullable=False)
-    jwt_token = Column(String, nullable=True)  # Temporary for testing
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    role = Column(
+        SQLEnum("parent", "educator", "super_educator", name="userrole"), nullable=False
+    )
+    jwt_token = Column(String(512), nullable=True)
+    created_at = Column(DateTime, default=func.now())
 
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', role='{self.role}')>"

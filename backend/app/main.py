@@ -3,6 +3,8 @@ import os
 from fastapi import FastAPI
 
 from app.api import auth, events, health
+from app.core.database import SessionLocal
+from app.services.user_service import insert_dummy_users
 
 app = FastAPI(title="Kiddozz Backend API", version="1.0.0")
 
@@ -10,6 +12,16 @@ app = FastAPI(title="Kiddozz Backend API", version="1.0.0")
 app.include_router(health.router)
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(events.router, prefix="/api/v1/events")
+
+
+@app.on_event("startup")
+def startup_event():
+    """Insert dummy users on application startup."""
+    db = SessionLocal()
+    try:
+        insert_dummy_users(db)
+    finally:
+        db.close()
 
 
 @app.get("/")

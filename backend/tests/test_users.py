@@ -68,7 +68,8 @@ class TestUserModel:
             db_session.commit()
 
     def test_create_user_invalid_role(self, setup_database, db_session):
-        """Test error when role is not one of the allowed values."""
+        """Test that invalid role raises an error when loading from database."""
+        # Note: SQLite stores the invalid role, but SQLAlchemy validates on load
         user = User(
             name="Invalid User",
             role="invalid_role",
@@ -76,10 +77,12 @@ class TestUserModel:
         )
 
         db_session.add(user)
-        db_session.commit()  # This should succeed as we don't have enum constraint at DB level
+        db_session.commit()
 
-        # But we can test that the role is stored as-is
-        assert user.role == "invalid_role"
+        # The invalid role is stored in the database, but when we try to refresh
+        # (which loads from DB), SQLAlchemy validates the enum and raises an error
+        with pytest.raises(LookupError):
+            db_session.refresh(user)
 
     def test_create_user_invalid_jwt(self, setup_database, db_session):
         """Test error when jwt_token is malformed."""
