@@ -14,14 +14,7 @@ data class Guardian(
 
 @Parcelize
 data class Kid(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String,
     val name: String,
-    var attendanceStatus: String = "OUT",
-    val profileImageUrl: String? = null,
-    val allergies: List<String> = emptyList(),
-    val needToKnow: String = "",
-    val primaryGuardian: Guardian,
-    val secondaryGuardian: Guardian? = null,
-    val authorizedPickups: List<Guardian> = emptyList(),
-    val address: String = ""
+    val age: Int
 ) : Parcelable

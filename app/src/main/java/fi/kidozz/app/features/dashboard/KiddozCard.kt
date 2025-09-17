@@ -40,19 +40,13 @@ fun KiddozCard(kid: Kid, onClick: () -> Unit, modifier: Modifier = Modifier) {
                 Text(text = kid.name, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
             }
             Text(
-                text = kid.attendanceStatus.uppercase(),
+                text = "Age: ${kid.age}",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (kid.attendanceStatus == "SICK") Color.Black else Color.White,
+                color = Color.White,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        when (kid.attendanceStatus) {
-                            "IN" -> Color.Green.copy(alpha = 0.7f)
-                            "SICK" -> Color.Yellow
-                            else -> Color.Gray
-                        }
-                    )
+                    .background(Color.Blue.copy(alpha = 0.7f))
                     .padding(vertical = 4.dp)
             )
         }

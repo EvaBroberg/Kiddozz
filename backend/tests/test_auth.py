@@ -508,13 +508,13 @@ class TestDummyUsersEndpoint:
     def test_get_dummy_users_returns_three_users(self, client_fixture, setup_database):
         """Test that the endpoint returns exactly 3 users."""
         response = client_fixture.get("/api/v1/auth/dummy-users")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         assert "users" in data
         assert len(data["users"]) == 3
-        
+
         # Check that we have the expected users
         user_names = [user["name"] for user in data["users"]]
         assert "Jessica" in user_names
@@ -524,32 +524,34 @@ class TestDummyUsersEndpoint:
     def test_dummy_users_have_valid_jwt_tokens(self, client_fixture, setup_database):
         """Test that each user has a valid JWT token."""
         response = client_fixture.get("/api/v1/auth/dummy-users")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         for user in data["users"]:
             assert "token" in user
             assert user["token"] is not None
             assert len(user["token"]) > 0
-            
+
             # Verify token is a valid JWT format (has 3 parts separated by dots)
             token_parts = user["token"].split(".")
             assert len(token_parts) == 3
 
-    def test_dummy_users_jwt_tokens_decode_correctly(self, client_fixture, setup_database):
+    def test_dummy_users_jwt_tokens_decode_correctly(
+        self, client_fixture, setup_database
+    ):
         """Test that JWT tokens decode correctly and match database roles."""
         from app.core.security import decode_access_token
-        
+
         response = client_fixture.get("/api/v1/auth/dummy-users")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         for user in data["users"]:
             # Decode the JWT token
             decoded_token = decode_access_token(user["token"])
-            
+
             # Verify the decoded claims match the database values
             assert decoded_token["role"] == user["role"]
             assert decoded_token["sub"] == user["name"]  # 'sub' contains the name
@@ -559,13 +561,13 @@ class TestDummyUsersEndpoint:
     def test_dummy_users_have_correct_roles(self, client_fixture, setup_database):
         """Test that users have the correct roles."""
         response = client_fixture.get("/api/v1/auth/dummy-users")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # Find users by name and check their roles
         users_by_name = {user["name"]: user for user in data["users"]}
-        
+
         assert users_by_name["Jessica"]["role"] == "educator"
         assert users_by_name["Sara"]["role"] == "parent"
         assert users_by_name["Mervi"]["role"] == "super_educator"
@@ -573,10 +575,10 @@ class TestDummyUsersEndpoint:
     def test_dummy_users_have_valid_ids(self, client_fixture, setup_database):
         """Test that users have valid integer IDs."""
         response = client_fixture.get("/api/v1/auth/dummy-users")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         for user in data["users"]:
             assert "id" in user
             assert isinstance(user["id"], int)
@@ -585,14 +587,14 @@ class TestDummyUsersEndpoint:
     def test_dummy_users_response_structure(self, client_fixture, setup_database):
         """Test that the response has the correct structure."""
         response = client_fixture.get("/api/v1/auth/dummy-users")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # Check top-level structure
         assert "users" in data
         assert isinstance(data["users"], list)
-        
+
         # Check each user has required fields
         for user in data["users"]:
             required_fields = ["id", "name", "role", "token"]

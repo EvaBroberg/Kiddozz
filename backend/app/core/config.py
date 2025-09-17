@@ -11,7 +11,9 @@ load_dotenv()
 
 class Settings(BaseSettings):
     # Database Configuration
-    database_url: str = "postgresql://username:password@localhost:5432/kiddozz_demo"
+    database_url: str = os.getenv(
+        "DATABASE_URL", "postgresql://username:password@localhost:5432/kiddozz_demo"
+    )
     db_host: str = "localhost"
     db_port: int = 5432
     db_name: str = "kiddozz_demo"

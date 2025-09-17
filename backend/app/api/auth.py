@@ -1,8 +1,10 @@
+import logging
 from datetime import timedelta
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -10,6 +12,9 @@ from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.security import create_access_token
 from app.models.user import User
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -123,24 +128,64 @@ def get_dummy_users(db: Session = Depends(get_db)) -> DummyUsersResponse:
     """
     Get dummy users with JWT tokens from the database.
     Returns users: Jessica (educator), Sara (parent), Mervi (super_educator).
+    If users don't exist, creates them automatically.
     """
-    # Query users from database
-    users = db.query(User).filter(User.name.in_(["Jessica", "Sara", "Mervi"])).all()
-    
-    if not users:
+    logger.info("Dummy users endpoint called")
+
+    try:
+        # Query users from database with timeout handling
+        try:
+            users = (
+                db.query(User).filter(User.name.in_(["Jessica", "Sara", "Mervi"])).all()
+            )
+            logger.info(f"Found {len(users)} existing dummy users")
+        except SQLAlchemyError as db_error:
+            logger.error(f"Database query failed: {str(db_error)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="DB connection failed",
+            )
+
+        # If no users exist, create them
+        if not users:
+            logger.info("No dummy users found, creating them")
+            try:
+                from app.services.user_service import insert_dummy_users
+
+                insert_dummy_users(db)
+                # Query again after creation
+                users = (
+                    db.query(User)
+                    .filter(User.name.in_(["Jessica", "Sara", "Mervi"]))
+                    .all()
+                )
+                logger.info(f"Created {len(users)} dummy users")
+            except SQLAlchemyError as create_error:
+                logger.error(f"Failed to create dummy users: {str(create_error)}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="DB connection failed",
+                )
+
+        # Convert to response format
+        user_responses = []
+        for user in users:
+            user_responses.append(
+                DummyUserResponse(
+                    id=user.id, name=user.name, role=user.role, token=user.jwt_token
+                )
+            )
+
+        logger.info("Dummy users fetched successfully")
+        return DummyUsersResponse(users=user_responses)
+
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        # Log unexpected errors
+        logger.error(f"Unexpected error in get_dummy_users: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Dummy users not found in database"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch dummy users",
         )
-    
-    # Convert to response format
-    user_responses = []
-    for user in users:
-        user_responses.append(DummyUserResponse(
-            id=user.id,
-            name=user.name,
-            role=user.role,
-            token=user.jwt_token
-        ))
-    
-    return DummyUsersResponse(users=user_responses)

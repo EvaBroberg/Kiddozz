@@ -49,17 +49,7 @@ fun KiddozzAppHost(
             if (kid != null) {
                 KidDetailScreen(
                     kid = kid,
-                    onBackClick = { navController.popBackStack() },
-                    onAttendanceStatusChange = { newStatus ->
-                        val kidIndex = sampleKidsState.indexOfFirst { it.id == kid.id }
-                        if (kidIndex != -1) {
-                            sampleKidsState[kidIndex] = sampleKidsState[kidIndex].copy(attendanceStatus = newStatus)
-                        }
-                        navController.currentBackStackEntry?.savedStateHandle?.set(
-                            "selectedKid",
-                            kid.copy(attendanceStatus = newStatus)
-                        )
-                    }
+                    onBackClick = { navController.popBackStack() }
                 )
             }
         }

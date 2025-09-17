@@ -25,14 +25,9 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
     addAll(
         List(10) { index ->
             Kid(
+                id = "kid_${index + 1}",
                 name = "Kid ${index + 1}",
-                attendanceStatus = if (index % 3 == 0) "IN" else if (index % 3 == 1) "SICK" else "OUT",
-                allergies = if (index % 2 == 0) listOf("Peanuts", "Dairy") else emptyList(),
-                needToKnow = if (index % 4 == 0) "Needs afternoon nap at 1 PM" else "",
-                primaryGuardian = Guardian("Parent ${index + 1}A", "parent${index+1}a@example.com", "555-010${index}A", "Mother"),
-                secondaryGuardian = if (index % 3 == 0) Guardian("Parent ${index + 1}B", "parent${index+1}b@example.com", "555-010${index}B", "Father") else null,
-                authorizedPickups = if (index % 2 != 0) listOf(Guardian("Grandma ${index+1}", "grandma${index+1}@example.com", "555-020${index}", "Grandmother")) else emptyList(),
-                address = "${index + 1} Sample Street, Kidtown"
+                age = 3 + (index % 5) // Ages 3-7
             )
         }
     )

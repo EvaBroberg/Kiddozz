@@ -37,7 +37,7 @@ android {
     productFlavors {
         create("staging") {
             dimension = "environment"
-            buildConfigField("String", "BASE_URL", "\"https://staging-api.kiddozz.com\"")
+            buildConfigField("String", "BASE_URL", "\"https://kiddozz-production.up.railway.app\"")
         }
         create("prod") {
             dimension = "environment"

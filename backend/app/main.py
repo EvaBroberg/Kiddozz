@@ -10,18 +10,51 @@ app = FastAPI(title="Kiddozz Backend API", version="1.0.0")
 
 # Register routers
 app.include_router(health.router)
-app.include_router(auth.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")  # Keep existing API v1 routes
+app.include_router(
+    auth.router
+)  # Add auth routes without prefix for Android compatibility
 app.include_router(events.router, prefix="/api/v1/events")
 
 
 @app.on_event("startup")
 def startup_event():
-    """Insert dummy users on application startup."""
-    db = SessionLocal()
+    """Run database migrations and insert dummy users on application startup."""
+    import os
+    import subprocess
+    import sys
+
+    # Run database migrations first
     try:
-        insert_dummy_users(db)
-    finally:
-        db.close()
+        print("🔄 Running database migrations...")
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            capture_output=True,
+            text=True,
+            cwd=os.getcwd(),
+        )
+
+        if result.returncode == 0:
+            print("✅ Database migrations completed successfully")
+        else:
+            print(f"❌ Database migration failed: {result.stderr}")
+            # Don't exit here, let the app start and handle DB errors gracefully
+    except Exception as e:
+        print(f"⚠️  Could not run migrations: {e}")
+        # Don't exit here, let the app start and handle DB errors gracefully
+
+    # Insert dummy users
+    try:
+        print("👥 Inserting dummy users...")
+        db = SessionLocal()
+        try:
+            insert_dummy_users(db)
+            print("✅ Dummy users inserted successfully")
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"⚠️  Could not insert dummy users: {e}")
+        # Don't exit here, let the app start and handle DB errors gracefully
 
 
 @app.get("/")
