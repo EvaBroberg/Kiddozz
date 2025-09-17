@@ -1,43 +1,13 @@
 import pytest
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from app.core.database import Base, get_db
 from app.main import app
-
-# Test database URL (using SQLite for testing)
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
 
-@pytest.fixture(scope="module")
-def setup_database():
-    """Create test database tables"""
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
-
-
-def test_create_event(setup_database):
+def test_create_event():
     """Test creating a new event"""
     event_data = {
         "title": "Test Event",
@@ -63,7 +33,7 @@ def test_create_event(setup_database):
     assert "id" in data
 
 
-def test_get_events(setup_database):
+def test_get_events():
     """Test retrieving all events"""
     response = client.get("/api/v1/events/")
     assert response.status_code == 200
@@ -72,7 +42,7 @@ def test_get_events(setup_database):
     assert isinstance(data, list)
 
 
-def test_get_event_by_id(setup_database):
+def test_get_event_by_id():
     """Test retrieving a specific event by ID"""
     # First create an event
     event_data = {
@@ -95,7 +65,7 @@ def test_get_event_by_id(setup_database):
     assert data["id"] == event_id
 
 
-def test_update_event(setup_database):
+def test_update_event():
     """Test updating an event"""
     # First create an event
     event_data = {
@@ -125,7 +95,7 @@ def test_update_event(setup_database):
     assert data["location"] == "Updated Location"
 
 
-def test_delete_event(setup_database):
+def test_delete_event():
     """Test deleting an event"""
     # First create an event
     event_data = {
@@ -148,7 +118,7 @@ def test_delete_event(setup_database):
     assert get_response.status_code == 404
 
 
-def test_get_upload_url(setup_database):
+def test_get_upload_url():
     """Test getting upload URL for event image"""
     # First create an event
     event_data = {
@@ -172,7 +142,7 @@ def test_get_upload_url(setup_database):
     assert data["upload_url"].startswith("https://")
 
 
-def test_get_upload_url_nonexistent_event(setup_database):
+def test_get_upload_url_nonexistent_event():
     """Test getting upload URL for non-existent event"""
     response = client.post("/api/v1/events/999/images?filename=test_image.jpg")
     assert response.status_code == 200
@@ -184,7 +154,7 @@ def test_get_upload_url_nonexistent_event(setup_database):
 
 
 @pytest.mark.asyncio
-async def test_healthcheck(setup_database):
+async def test_healthcheck():
     """Basic test to ensure the app starts and responds."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -193,7 +163,7 @@ async def test_healthcheck(setup_database):
 
 
 @pytest.mark.asyncio
-async def test_create_event_async(setup_database):
+async def test_create_event_async():
     """Test event creation without images (baseline)."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:

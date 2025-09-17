@@ -5,32 +5,10 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 from jose import jwt
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from app.core.database import Base, get_db
 from app.core.security import create_access_token, decode_access_token
 from app.main import app
 from app.services.user_service import insert_dummy_users
-
-# Test database URL (using SQLite for testing)
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
@@ -41,18 +19,6 @@ def client_fixture():
     return client
 
 
-@pytest.fixture(scope="module")
-def setup_database():
-    """Create test database tables and clean up after tests."""
-    Base.metadata.create_all(bind=engine)
-    # Insert dummy users for testing
-    db = TestingSessionLocal()
-    try:
-        insert_dummy_users(db)
-    finally:
-        db.close()
-    yield
-    Base.metadata.drop_all(bind=engine)
 
 
 class TestJWTSecurity:
@@ -505,7 +471,7 @@ class TestTestTokenEndpoint:
 class TestDummyUsersEndpoint:
     """Test the /auth/dummy-users endpoint."""
 
-    def test_get_dummy_users_returns_three_users(self, client_fixture, setup_database):
+    def test_get_dummy_users_returns_three_users(self, client_fixture):
         """Test that the endpoint returns exactly 3 users."""
         response = client_fixture.get("/api/v1/auth/dummy-users")
 
@@ -521,7 +487,7 @@ class TestDummyUsersEndpoint:
         assert "Sara" in user_names
         assert "Mervi" in user_names
 
-    def test_dummy_users_have_valid_jwt_tokens(self, client_fixture, setup_database):
+    def test_dummy_users_have_valid_jwt_tokens(self, client_fixture):
         """Test that each user has a valid JWT token."""
         response = client_fixture.get("/api/v1/auth/dummy-users")
 
@@ -538,7 +504,7 @@ class TestDummyUsersEndpoint:
             assert len(token_parts) == 3
 
     def test_dummy_users_jwt_tokens_decode_correctly(
-        self, client_fixture, setup_database
+        self, client_fixture
     ):
         """Test that JWT tokens decode correctly and match database roles."""
         from app.core.security import decode_access_token
@@ -558,7 +524,7 @@ class TestDummyUsersEndpoint:
             assert decoded_token["user_id"] == user["id"]
             assert "exp" in decoded_token  # Should have expiration
 
-    def test_dummy_users_have_correct_roles(self, client_fixture, setup_database):
+    def test_dummy_users_have_correct_roles(self, client_fixture):
         """Test that users have the correct roles."""
         response = client_fixture.get("/api/v1/auth/dummy-users")
 
@@ -572,7 +538,7 @@ class TestDummyUsersEndpoint:
         assert users_by_name["Sara"]["role"] == "parent"
         assert users_by_name["Mervi"]["role"] == "super_educator"
 
-    def test_dummy_users_have_valid_ids(self, client_fixture, setup_database):
+    def test_dummy_users_have_valid_ids(self, client_fixture):
         """Test that users have valid integer IDs."""
         response = client_fixture.get("/api/v1/auth/dummy-users")
 
@@ -584,7 +550,7 @@ class TestDummyUsersEndpoint:
             assert isinstance(user["id"], int)
             assert user["id"] > 0
 
-    def test_dummy_users_response_structure(self, client_fixture, setup_database):
+    def test_dummy_users_response_structure(self, client_fixture):
         """Test that the response has the correct structure."""
         response = client_fixture.get("/api/v1/auth/dummy-users")
 

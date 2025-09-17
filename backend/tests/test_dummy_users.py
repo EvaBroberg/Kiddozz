@@ -9,14 +9,14 @@ from app.core.database import Base, get_db
 from app.main import app
 from app.models.user import User
 
-# Create test database
+# Create test database for this specific test file
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_dummy_users.db"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
+# Override the get_db dependency for this test file
 def override_get_db():
     try:
         db = TestingSessionLocal()
@@ -24,22 +24,20 @@ def override_get_db():
     finally:
         db.close()
 
-
 app.dependency_overrides[get_db] = override_get_db
-
 client = TestClient(app)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function", autouse=True)
 def clean_db():
-    """Clean database before each test"""
+    """Clean database before each test - automatically used by all tests"""
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
 
 
-def test_get_dummy_users_success_api_v1(clean_db):
+def test_get_dummy_users_success_api_v1():
     """Test that /api/v1/auth/dummy-users returns 200 and includes the 3 users"""
     response = client.get("/api/v1/auth/dummy-users")
 
@@ -69,7 +67,7 @@ def test_get_dummy_users_success_api_v1(clean_db):
         assert len(user["token"]) > 0
 
 
-def test_get_dummy_users_success_no_prefix(clean_db):
+def test_get_dummy_users_success_no_prefix():
     """Test that /auth/dummy-users returns 200 and includes the 3 users (Android compatibility)"""
     response = client.get("/auth/dummy-users")
 
@@ -99,7 +97,7 @@ def test_get_dummy_users_success_no_prefix(clean_db):
         assert len(user["token"]) > 0
 
 
-def test_both_routes_return_same_data(clean_db):
+def test_both_routes_return_same_data():
     """Test that both /auth/dummy-users and /api/v1/auth/dummy-users return identical data"""
     response_no_prefix = client.get("/auth/dummy-users")
     response_with_prefix = client.get("/api/v1/auth/dummy-users")
@@ -125,7 +123,7 @@ def test_both_routes_return_same_data(clean_db):
         # IDs might be different due to database state, but names and roles should match
 
 
-def test_get_dummy_users_no_duplicates(clean_db):
+def test_get_dummy_users_no_duplicates():
     """Test that calling twice does not duplicate users"""
     # First call
     response1 = client.get("/api/v1/auth/dummy-users")
@@ -146,7 +144,7 @@ def test_get_dummy_users_no_duplicates(clean_db):
     assert sorted(user_ids_1) == sorted(user_ids_2)
 
 
-def test_get_dummy_users_creates_users_when_empty(clean_db):
+def test_get_dummy_users_creates_users_when_empty():
     """Test that users are created when database is empty"""
     # Ensure database is empty
     db = TestingSessionLocal()
@@ -170,34 +168,50 @@ def test_get_dummy_users_creates_users_when_empty(clean_db):
 
 def test_get_dummy_users_database_error():
     """Test error handling when DB is unavailable"""
-    with patch("app.api.auth.get_db") as mock_get_db:
-        # Mock database error
+    # Temporarily override the get_db dependency to simulate database error
+    def mock_get_db_error():
         mock_db = MagicMock()
         mock_db.query.side_effect = Exception("Database connection failed")
-        mock_get_db.return_value = mock_db
+        try:
+            yield mock_db
+        finally:
+            pass
 
+    app.dependency_overrides[get_db] = mock_get_db_error
+
+    try:
         response = client.get("/api/v1/auth/dummy-users")
-
         assert response.status_code == 500
         data = response.json()
-        assert data["detail"] == "DB connection failed"
+        assert data["detail"] == "Failed to fetch dummy users"
+    finally:
+        # Restore original dependency
+        app.dependency_overrides[get_db] = override_get_db
 
 
 def test_get_dummy_users_db_connection_failed():
     """Test specific DB connection error handling"""
-    with patch("app.api.auth.get_db") as mock_get_db:
-        from sqlalchemy.exc import SQLAlchemyError
+    from sqlalchemy.exc import SQLAlchemyError
 
-        # Mock SQLAlchemy database error
+    # Temporarily override the get_db dependency to simulate SQLAlchemy error
+    def mock_get_db_sqlalchemy_error():
         mock_db = MagicMock()
         mock_db.query.side_effect = SQLAlchemyError("Connection timeout")
-        mock_get_db.return_value = mock_db
+        try:
+            yield mock_db
+        finally:
+            pass
 
+    app.dependency_overrides[get_db] = mock_get_db_sqlalchemy_error
+
+    try:
         response = client.get("/auth/dummy-users")
-
         assert response.status_code == 500
         data = response.json()
         assert data["detail"] == "DB connection failed"
+    finally:
+        # Restore original dependency
+        app.dependency_overrides[get_db] = override_get_db
 
 
 def test_get_dummy_users_user_creation_error():
@@ -219,7 +233,7 @@ def test_get_dummy_users_user_creation_error():
             assert data["detail"] == "DB connection failed"
 
 
-def test_dummy_users_response_structure(clean_db):
+def test_dummy_users_response_structure():
     """Test that response matches expected Pydantic model structure"""
     response = client.get("/api/v1/auth/dummy-users")
 
@@ -244,7 +258,7 @@ def test_dummy_users_response_structure(clean_db):
         assert isinstance(user["token"], str)
 
 
-def test_dummy_users_roles_correct(clean_db):
+def test_dummy_users_roles_correct():
     """Test that users have the correct roles"""
     response = client.get("/api/v1/auth/dummy-users")
 
@@ -259,7 +273,7 @@ def test_dummy_users_roles_correct(clean_db):
     assert users_by_name["Mervi"]["role"] == "super_educator"
 
 
-def test_dummy_users_jwt_tokens_valid(clean_db):
+def test_dummy_users_jwt_tokens_valid():
     """Test that JWT tokens are properly generated and not empty"""
     response = client.get("/api/v1/auth/dummy-users")
 
