@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # Environment Configuration
     app_env: str = os.getenv("APP_ENV", "local")
     environment: str = os.getenv("ENVIRONMENT", "development")
-    
+
     # Database Configuration
     database_url: str = os.getenv(
         "DATABASE_URL", "postgresql://username:password@localhost:5432/kiddozz_demo"
@@ -40,7 +40,9 @@ class Settings(BaseSettings):
     s3_bucket_name: str = "kiddozz-images"
 
     # JWT Configuration
-    secret_key: str = os.getenv("SECRET_KEY", "your-secret-key-here-change-in-production")
+    secret_key: str = os.getenv(
+        "SECRET_KEY", "your-secret-key-here-change-in-production"
+    )
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 

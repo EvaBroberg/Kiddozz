@@ -93,9 +93,7 @@ class TestDummyUsersDB:
             expected_user_id = {"Jessica": 1, "Sara": 2, "Mervi": 3}[user.name]
             assert decoded_payload["user_id"] == expected_user_id
 
-    def test_duplicate_insertion_does_not_create_extra_rows(
-        self, db_session
-    ):
+    def test_duplicate_insertion_does_not_create_extra_rows(self, db_session):
         """Test that calling insert_dummy_users twice doesn't create duplicates."""
         # Insert dummy users first time
         insert_dummy_users(db_session)

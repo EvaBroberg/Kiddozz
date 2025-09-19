@@ -1,13 +1,10 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
-from fastapi.testclient import TestClient
-
+from app.core.database import get_db
 from app.models.user import User
 
 # Use the global test client and database from conftest.py
-from tests.conftest import client, TestingSessionLocal, app, override_get_db
-from app.core.database import get_db
+from tests.conftest import TestingSessionLocal, app, client, override_get_db
 
 
 def test_get_dummy_users_success_api_v1():
@@ -141,6 +138,7 @@ def test_get_dummy_users_creates_users_when_empty():
 
 def test_get_dummy_users_database_error():
     """Test error handling when DB is unavailable"""
+
     # Temporarily override the get_db dependency to simulate database error
     def mock_get_db_error():
         mock_db = MagicMock()

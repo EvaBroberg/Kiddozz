@@ -8,7 +8,6 @@ from jose import jwt
 
 from app.core.security import create_access_token, decode_access_token
 from app.main import app
-from app.services.user_service import insert_dummy_users
 
 client = TestClient(app)
 
@@ -17,8 +16,6 @@ client = TestClient(app)
 def client_fixture():
     """Test client fixture."""
     return client
-
-
 
 
 class TestJWTSecurity:
@@ -503,9 +500,7 @@ class TestDummyUsersEndpoint:
             token_parts = user["token"].split(".")
             assert len(token_parts) == 3
 
-    def test_dummy_users_jwt_tokens_decode_correctly(
-        self, client_fixture
-    ):
+    def test_dummy_users_jwt_tokens_decode_correctly(self, client_fixture):
         """Test that JWT tokens decode correctly and match database roles."""
         from app.core.security import decode_access_token
 

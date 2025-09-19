@@ -1,4 +1,5 @@
 import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
@@ -49,9 +50,13 @@ def clean_db():
     # Clear all data but keep schema
     with engine.connect() as conn:
         # Get all table names
-        result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'alembic_%'"))
+        result = conn.execute(
+            text(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'alembic_%'"
+            )
+        )
         tables = [row[0] for row in result]
-        
+
         # Clear all tables
         for table in tables:
             conn.execute(text(f"DELETE FROM {table}"))
