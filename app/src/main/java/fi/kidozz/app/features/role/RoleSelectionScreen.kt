@@ -1,5 +1,7 @@
 package fi.kidozz.app.features.role
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -57,6 +59,16 @@ fun RoleSelectionScreen(
                     onSuccess = { users ->
                         val user = users.find { it.role == role }
                         if (user != null) {
+                            // Log the fetched user information
+                            Log.d("Kiddozz", "Fetched user ${user.name} for role $role")
+                            
+                            // Show Toast with user's name
+                            Toast.makeText(
+                                context,
+                                "Hello, ${user.name}!",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            
                             authRepository.loginWithToken(user.token)
                             when (role) {
                                 "educator" -> onEducatorViewClick()
