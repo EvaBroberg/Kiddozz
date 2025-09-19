@@ -35,6 +35,10 @@ android {
     flavorDimensions += "environment"
 
     productFlavors {
+        create("local") {
+            dimension = "environment"
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8000\"")
+        }
         create("staging") {
             dimension = "environment"
             buildConfigField("String", "BASE_URL", "\"https://kiddozz-production.up.railway.app\"")

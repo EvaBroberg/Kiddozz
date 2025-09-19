@@ -5,11 +5,23 @@ from dotenv import load_dotenv
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
-# Load environment variables from .env file
-load_dotenv()
+# Determine environment (default: local)
+APP_ENV = os.getenv("APP_ENV", "local")
+
+# Load corresponding .env file
+dotenv_file = f".env.{APP_ENV}"
+if os.path.exists(dotenv_file):
+    load_dotenv(dotenv_file)
+else:
+    # Fallback to default .env file if environment-specific file doesn't exist
+    load_dotenv()
 
 
 class Settings(BaseSettings):
+    # Environment Configuration
+    app_env: str = os.getenv("APP_ENV", "local")
+    environment: str = os.getenv("ENVIRONMENT", "development")
+    
     # Database Configuration
     database_url: str = os.getenv(
         "DATABASE_URL", "postgresql://username:password@localhost:5432/kiddozz_demo"
@@ -28,12 +40,9 @@ class Settings(BaseSettings):
     s3_bucket_name: str = "kiddozz-images"
 
     # JWT Configuration
-    secret_key: str = "your-secret-key-here-change-in-production"
+    secret_key: str = os.getenv("SECRET_KEY", "your-secret-key-here-change-in-production")
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
-
-    # Environment Configuration
-    environment: str = os.getenv("ENVIRONMENT", "development")
 
     # CORS Configuration
     allowed_origins: Union[List[str], str] = [
