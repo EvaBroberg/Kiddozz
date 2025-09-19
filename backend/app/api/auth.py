@@ -29,6 +29,7 @@ class DummyUserResponse(BaseModel):
     name: str
     role: str
     token: str
+    classes: List[str]
 
 
 class DummyUsersResponse(BaseModel):
@@ -172,7 +173,11 @@ def get_dummy_users(db: Session = Depends(get_db)) -> DummyUsersResponse:
         for user in users:
             user_responses.append(
                 DummyUserResponse(
-                    id=user.id, name=user.name, role=user.role, token=user.jwt_token
+                    id=user.id, 
+                    name=user.name, 
+                    role=user.role, 
+                    token=user.jwt_token,
+                    classes=user.classes
                 )
             )
 

@@ -257,3 +257,90 @@ def test_dummy_users_jwt_tokens_valid():
         assert len(token) > 0
         # JWT tokens typically have 3 parts separated by dots
         assert len(token.split(".")) == 3
+
+
+def test_dummy_users_classes_field():
+    """Test that dummy users have correct classes field"""
+    response = client.get("/api/v1/auth/dummy-users")
+
+    assert response.status_code == 200
+    data = response.json()
+
+    # Check that all users have classes field
+    for user in data["users"]:
+        assert "classes" in user
+        assert isinstance(user["classes"], list)
+        assert len(user["classes"]) > 0
+
+    # Check specific class assignments
+    user_data = {user["name"]: user for user in data["users"]}
+    
+    # Jessica (educator) should have Class A
+    assert user_data["Jessica"]["classes"] == ["Class A"]
+    
+    # Sara (parent) should have Class A
+    assert user_data["Sara"]["classes"] == ["Class A"]
+    
+    # Mervi (super_educator) should have * (all classes)
+    assert user_data["Mervi"]["classes"] == ["*"]
+
+
+def test_dummy_users_jwt_includes_classes():
+    """Test that JWT tokens include classes in the payload"""
+    from app.core.security import decode_access_token
+    
+    response = client.get("/api/v1/auth/dummy-users")
+    assert response.status_code == 200
+    data = response.json()
+
+    for user in data["users"]:
+        # Decode the JWT token
+        payload = decode_access_token(user["token"])
+        
+        # Check that classes are included in JWT payload
+        assert "classes" in payload
+        assert isinstance(payload["classes"], list)
+        assert payload["classes"] == user["classes"]
+
+
+def test_dummy_users_multiple_classes():
+    """Test edge case for user with multiple classes"""
+    from app.core.security import create_access_token, decode_access_token
+    from app.models.user import User
+    
+    # Create a test user with multiple classes
+    db = TestingSessionLocal()
+    try:
+        # Create user with multiple classes
+        jwt_payload = {
+            "sub": "TestEducator",
+            "role": "educator", 
+            "user_id": 999,
+            "classes": ["Class A", "Class B"]
+        }
+        jwt_token = create_access_token(jwt_payload)
+        
+        user = User(
+            name="TestEducator",
+            role="educator",
+            jwt_token=jwt_token,
+            classes=["Class A", "Class B"]
+        )
+        
+        db.add(user)
+        db.commit()
+        
+        # Verify the user was created with correct classes
+        created_user = db.query(User).filter(User.name == "TestEducator").first()
+        assert created_user is not None
+        assert created_user.classes == ["Class A", "Class B"]
+        
+        # Verify JWT includes classes
+        payload = decode_access_token(created_user.jwt_token)
+        assert payload["classes"] == ["Class A", "Class B"]
+        
+    finally:
+        # Clean up
+        db.query(User).filter(User.name == "TestEducator").delete()
+        db.commit()
+        db.close()

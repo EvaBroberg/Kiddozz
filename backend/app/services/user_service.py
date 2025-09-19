@@ -20,9 +20,9 @@ def create_dummy_users(db: Session) -> None:
 
     # Create dummy users
     dummy_users = [
-        {"name": "Jessica", "role": "educator", "user_id": 1},
-        {"name": "Sara", "role": "parent", "user_id": 2},
-        {"name": "Mervi", "role": "super_educator", "user_id": 3},
+        {"name": "Jessica", "role": "educator", "user_id": 1, "classes": ["Class A"]},
+        {"name": "Sara", "role": "parent", "user_id": 2, "classes": ["Class A"]},
+        {"name": "Mervi", "role": "super_educator", "user_id": 3, "classes": ["*"]},
     ]
 
     for user_data in dummy_users:
@@ -31,11 +31,17 @@ def create_dummy_users(db: Session) -> None:
             "sub": user_data["name"],
             "role": user_data["role"],
             "user_id": user_data["user_id"],
+            "classes": user_data["classes"],
         }
         jwt_token = create_access_token(jwt_payload)
 
-        # Create user with JWT token
-        user = User(name=user_data["name"], role=user_data["role"], jwt_token=jwt_token)
+        # Create user with JWT token and classes
+        user = User(
+            name=user_data["name"], 
+            role=user_data["role"], 
+            jwt_token=jwt_token,
+            classes=user_data["classes"]
+        )
 
         db.add(user)
 
@@ -58,9 +64,9 @@ def insert_dummy_users(db: Session) -> None:
 
     # Create dummy users
     dummy_users = [
-        {"name": "Jessica", "role": "educator", "user_id": 1},
-        {"name": "Sara", "role": "parent", "user_id": 2},
-        {"name": "Mervi", "role": "super_educator", "user_id": 3},
+        {"name": "Jessica", "role": "educator", "user_id": 1, "classes": ["Class A"]},
+        {"name": "Sara", "role": "parent", "user_id": 2, "classes": ["Class A"]},
+        {"name": "Mervi", "role": "super_educator", "user_id": 3, "classes": ["*"]},
     ]
 
     for user_data in dummy_users:
@@ -69,11 +75,17 @@ def insert_dummy_users(db: Session) -> None:
             "sub": user_data["name"],
             "role": user_data["role"],
             "user_id": user_data["user_id"],
+            "classes": user_data["classes"],
         }
         jwt_token = create_access_token(jwt_payload)
 
-        # Create user with JWT token
-        user = User(name=user_data["name"], role=user_data["role"], jwt_token=jwt_token)
+        # Create user with JWT token and classes
+        user = User(
+            name=user_data["name"], 
+            role=user_data["role"], 
+            jwt_token=jwt_token,
+            classes=user_data["classes"]
+        )
 
         db.add(user)
 
