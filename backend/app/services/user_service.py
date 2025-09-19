@@ -37,10 +37,10 @@ def create_dummy_users(db: Session) -> None:
 
         # Create user with JWT token and groups
         user = User(
-            name=user_data["name"], 
-            role=user_data["role"], 
+            name=user_data["name"],
+            role=user_data["role"],
             jwt_token=jwt_token,
-            groups=user_data["groups"]
+            groups=user_data["groups"],
         )
 
         db.add(user)
@@ -81,10 +81,10 @@ def insert_dummy_users(db: Session) -> None:
 
         # Create user with JWT token and groups
         user = User(
-            name=user_data["name"], 
-            role=user_data["role"], 
+            name=user_data["name"],
+            role=user_data["role"],
             jwt_token=jwt_token,
-            groups=user_data["groups"]
+            groups=user_data["groups"],
         )
 
         db.add(user)

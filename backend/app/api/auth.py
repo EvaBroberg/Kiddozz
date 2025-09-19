@@ -173,11 +173,11 @@ def get_dummy_users(db: Session = Depends(get_db)) -> DummyUsersResponse:
         for user in users:
             user_responses.append(
                 DummyUserResponse(
-                    id=user.id, 
-                    name=user.name, 
-                    role=user.role, 
+                    id=user.id,
+                    name=user.name,
+                    role=user.role,
                     token=user.jwt_token,
-                    groups=user.groups
+                    groups=user.groups,
                 )
             )
 

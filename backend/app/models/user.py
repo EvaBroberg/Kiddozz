@@ -28,7 +28,7 @@ class User(Base):
     )
     jwt_token = Column(String(512), nullable=True)
     created_at = Column(DateTime, default=func.now())
-    
+
     # Groups field - JSON type for both PostgreSQL and SQLite
     groups: Mapped[List[str]] = mapped_column(JSON, default=list, nullable=False)
 
