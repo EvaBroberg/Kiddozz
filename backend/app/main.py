@@ -24,6 +24,10 @@ def startup_event():
     import subprocess
     import sys
 
+    # Log the current environment
+    app_env = os.getenv("APP_ENV", "not set")
+    print(f"🌍 APP_ENV = {app_env}")
+
     # Run database migrations first
     try:
         print("🔄 Running database migrations...")
