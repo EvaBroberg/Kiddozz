@@ -259,34 +259,33 @@ def test_dummy_users_jwt_tokens_valid():
         assert len(token.split(".")) == 3
 
 
-def test_dummy_users_classes_field():
-    """Test that dummy users have correct classes field"""
+def test_dummy_users_groups_field():
+    """Test that dummy users have correct groups field"""
     response = client.get("/api/v1/auth/dummy-users")
 
     assert response.status_code == 200
     data = response.json()
 
-    # Check that all users have classes field
+    # Check that all users have groups field
     for user in data["users"]:
-        assert "classes" in user
-        assert isinstance(user["classes"], list)
-        assert len(user["classes"]) > 0
+        assert "groups" in user
+        assert isinstance(user["groups"], list)
 
-    # Check specific class assignments
+    # Check specific group assignments
     user_data = {user["name"]: user for user in data["users"]}
     
-    # Jessica (educator) should have Class A
-    assert user_data["Jessica"]["classes"] == ["Class A"]
+    # Jessica (educator) should have group A
+    assert user_data["Jessica"]["groups"] == ["A"]
     
-    # Sara (parent) should have Class A
-    assert user_data["Sara"]["classes"] == ["Class A"]
+    # Sara (parent) should have group A
+    assert user_data["Sara"]["groups"] == ["A"]
     
-    # Mervi (super_educator) should have * (all classes)
-    assert user_data["Mervi"]["classes"] == ["*"]
+    # Mervi (super_educator) should have empty groups (access to all)
+    assert user_data["Mervi"]["groups"] == []
 
 
-def test_dummy_users_jwt_includes_classes():
-    """Test that JWT tokens include classes in the payload"""
+def test_dummy_users_jwt_includes_groups():
+    """Test that JWT tokens include groups in the payload"""
     from app.core.security import decode_access_token
     
     response = client.get("/api/v1/auth/dummy-users")
@@ -297,26 +296,26 @@ def test_dummy_users_jwt_includes_classes():
         # Decode the JWT token
         payload = decode_access_token(user["token"])
         
-        # Check that classes are included in JWT payload
-        assert "classes" in payload
-        assert isinstance(payload["classes"], list)
-        assert payload["classes"] == user["classes"]
+        # Check that groups are included in JWT payload
+        assert "groups" in payload
+        assert isinstance(payload["groups"], list)
+        assert payload["groups"] == user["groups"]
 
 
-def test_dummy_users_multiple_classes():
-    """Test edge case for user with multiple classes"""
+def test_dummy_users_multiple_groups():
+    """Test edge case for user with multiple groups"""
     from app.core.security import create_access_token, decode_access_token
     from app.models.user import User
     
-    # Create a test user with multiple classes
+    # Create a test user with multiple groups
     db = TestingSessionLocal()
     try:
-        # Create user with multiple classes
+        # Create user with multiple groups
         jwt_payload = {
             "sub": "TestEducator",
             "role": "educator", 
             "user_id": 999,
-            "classes": ["Class A", "Class B"]
+            "groups": ["A", "B"]
         }
         jwt_token = create_access_token(jwt_payload)
         
@@ -324,20 +323,20 @@ def test_dummy_users_multiple_classes():
             name="TestEducator",
             role="educator",
             jwt_token=jwt_token,
-            classes=["Class A", "Class B"]
+            groups=["A", "B"]
         )
         
         db.add(user)
         db.commit()
         
-        # Verify the user was created with correct classes
+        # Verify the user was created with correct groups
         created_user = db.query(User).filter(User.name == "TestEducator").first()
         assert created_user is not None
-        assert created_user.classes == ["Class A", "Class B"]
+        assert created_user.groups == ["A", "B"]
         
-        # Verify JWT includes classes
+        # Verify JWT includes groups
         payload = decode_access_token(created_user.jwt_token)
-        assert payload["classes"] == ["Class A", "Class B"]
+        assert payload["groups"] == ["A", "B"]
         
     finally:
         # Clean up
