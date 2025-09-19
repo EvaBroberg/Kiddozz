@@ -3,12 +3,11 @@ package fi.kidozz.app.features.dashboard;
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +37,7 @@ fun EducatorDashboardScreen(
     
     // Filter state for class filtering
     var selectedClasses by remember { mutableStateOf(setOf("Class A")) } // Default to educator's class
+    var filterMenuExpanded by remember { mutableStateOf(false) }
     
     // Get all available classes from kidsList
     val availableClasses = remember(kidsList) {
@@ -61,6 +61,40 @@ fun EducatorDashboardScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    if (currentEducatorSection == EducatorSection.KidsOverview) {
+                        Box {
+                            IconButton(onClick = { filterMenuExpanded = true }) {
+                                Icon(Icons.Default.FilterList, contentDescription = "Filter by class")
+                            }
+                            DropdownMenu(
+                                expanded = filterMenuExpanded,
+                                onDismissRequest = { filterMenuExpanded = false }
+                            ) {
+                                availableClasses.forEach { className ->
+                                    DropdownMenuItem(
+                                        text = { Text(className) },
+                                        onClick = {
+                                            selectedClasses = if (className in selectedClasses) {
+                                                selectedClasses - className
+                                            } else {
+                                                selectedClasses + className
+                                            }
+                                        },
+                                        trailingIcon = {
+                                            if (className in selectedClasses) {
+                                                Checkbox(
+                                                    checked = true,
+                                                    onCheckedChange = null
+                                                )
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             )
         },
@@ -82,39 +116,11 @@ fun EducatorDashboardScreen(
         // TODO: Replace with actual content for each section
         // For now, using a simple placeholder or the KidsGrid for KidsOverview
         when (currentEducatorSection) {
-            EducatorSection.KidsOverview -> {
-                Column(
-                    modifier = Modifier.padding(innerPadding).fillMaxSize()
-                ) {
-                    // Filter chips row
-                    LazyRow(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(availableClasses) { className ->
-                            FilterChip(
-                                onClick = {
-                                    selectedClasses = if (className in selectedClasses) {
-                                        selectedClasses - className
-                                    } else {
-                                        selectedClasses + className
-                                    }
-                                },
-                                label = { Text(className) },
-                                selected = className in selectedClasses,
-                                modifier = Modifier.padding(vertical = 4.dp)
-                            )
-                        }
-                    }
-                    
-                    // Kids grid with filtered results
-                    KidsGrid(
-                        filteredKids = filteredKids,
-                        onKidClick = onKidClick,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
+            EducatorSection.KidsOverview -> KidsGrid(
+                filteredKids = filteredKids,
+                onKidClick = onKidClick,
+                modifier = Modifier.padding(innerPadding).fillMaxSize()
+            )
             EducatorSection.Calendar -> EducatorCalendarScreen(
                 navController = navController,
                 modifier = Modifier.padding(innerPadding).fillMaxSize()
