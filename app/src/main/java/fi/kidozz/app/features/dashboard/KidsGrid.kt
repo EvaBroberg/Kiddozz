@@ -14,7 +14,7 @@ import fi.kidozz.app.data.models.Kid
 
 @Composable
 fun KidsGrid(
-    kids: List<Kid>,
+    filteredKids: List<Kid>,
     onKidClick: (Kid) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -25,7 +25,7 @@ fun KidsGrid(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(8.dp)
     ) {
-        items(kids, key = { it.id }) { kid ->
+        items(filteredKids, key = { it.id }) { kid ->
             KiddozCard(kid = kid, onClick = { onKidClick(kid) })
         }
     }

@@ -16,5 +16,6 @@ data class Guardian(
 data class Kid(
     val id: String,
     val name: String,
-    val age: Int
+    val age: Int,
+    val className: String
 ) : Parcelable

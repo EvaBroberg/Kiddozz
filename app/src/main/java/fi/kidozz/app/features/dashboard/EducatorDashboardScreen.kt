@@ -3,6 +3,8 @@ package fi.kidozz.app.features.dashboard;
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandLess
@@ -33,6 +35,23 @@ fun EducatorDashboardScreen(
 ) {
     // Remember the currently selected section
     var currentEducatorSection by remember { mutableStateOf(EducatorSection.KidsOverview) }
+    
+    // Filter state for class filtering
+    var selectedClasses by remember { mutableStateOf(setOf("Class A")) } // Default to educator's class
+    
+    // Get all available classes from kidsList
+    val availableClasses = remember(kidsList) {
+        kidsList.map { it.className }.distinct().sorted()
+    }
+    
+    // Compute filtered kids based on selected classes
+    val filteredKids = remember(kidsList, selectedClasses) {
+        if (selectedClasses.isEmpty()) {
+            kidsList
+        } else {
+            kidsList.filter { kid -> kid.className in selectedClasses }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -63,11 +82,39 @@ fun EducatorDashboardScreen(
         // TODO: Replace with actual content for each section
         // For now, using a simple placeholder or the KidsGrid for KidsOverview
         when (currentEducatorSection) {
-            EducatorSection.KidsOverview -> KidsGrid(
-                kids = kidsList,
-                onKidClick = onKidClick,
-                modifier = Modifier.padding(innerPadding).fillMaxSize()
-            )
+            EducatorSection.KidsOverview -> {
+                Column(
+                    modifier = Modifier.padding(innerPadding).fillMaxSize()
+                ) {
+                    // Filter chips row
+                    LazyRow(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(availableClasses) { className ->
+                            FilterChip(
+                                onClick = {
+                                    selectedClasses = if (className in selectedClasses) {
+                                        selectedClasses - className
+                                    } else {
+                                        selectedClasses + className
+                                    }
+                                },
+                                label = { Text(className) },
+                                selected = className in selectedClasses,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                    }
+                    
+                    // Kids grid with filtered results
+                    KidsGrid(
+                        filteredKids = filteredKids,
+                        onKidClick = onKidClick,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
             EducatorSection.Calendar -> EducatorCalendarScreen(
                 navController = navController,
                 modifier = Modifier.padding(innerPadding).fillMaxSize()

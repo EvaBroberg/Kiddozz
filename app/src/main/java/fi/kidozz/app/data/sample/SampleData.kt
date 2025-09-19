@@ -24,10 +24,12 @@ fun parseDateTime(dateStr: String, timeStr: String?): LocalDateTime {
 val sampleKidsState = mutableStateListOf<Kid>().apply {
     addAll(
         List(10) { index ->
+            val classes = listOf("Class A", "Class B", "Class C")
             Kid(
                 id = "kid_${index + 1}",
                 name = "Kid ${index + 1}",
-                age = 3 + (index % 5) // Ages 3-7
+                age = 3 + (index % 5), // Ages 3-7
+                className = classes[index % classes.size] // Distribute across classes
             )
         }
     )
