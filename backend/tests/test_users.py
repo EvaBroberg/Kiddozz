@@ -3,7 +3,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from app.core.database import Base
 from app.models.user import User, UserRole
 
 # Use the same test database as other tests
@@ -12,14 +11,6 @@ engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-@pytest.fixture(scope="module")
-def setup_database():
-    """Create test database tables"""
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture
@@ -36,7 +27,7 @@ def db_session():
 class TestUserModel:
     """Test User model functionality."""
 
-    def test_create_user_success(self, setup_database, db_session):
+    def test_create_user_success(self, db_session):
         """Test creating a valid user with role and jwt_token."""
         user = User(
             name="John Doe",
@@ -55,7 +46,7 @@ class TestUserModel:
         assert user.jwt_token is not None
         assert user.created_at is not None
 
-    def test_create_user_missing_role(self, setup_database, db_session):
+    def test_create_user_missing_role(self, db_session):
         """Test error when no role is provided."""
         user = User(
             name="Jane Doe",
@@ -67,7 +58,7 @@ class TestUserModel:
         with pytest.raises(IntegrityError):
             db_session.commit()
 
-    def test_create_user_invalid_role(self, setup_database, db_session):
+    def test_create_user_invalid_role(self, db_session):
         """Test that invalid role raises an error when loading from database."""
         # Note: SQLite stores the invalid role, but SQLAlchemy validates on load
         user = User(
@@ -84,7 +75,7 @@ class TestUserModel:
         with pytest.raises(LookupError):
             db_session.refresh(user)
 
-    def test_create_user_invalid_jwt(self, setup_database, db_session):
+    def test_create_user_invalid_jwt(self, db_session):
         """Test error when jwt_token is malformed."""
         # Test with completely invalid JWT
         user = User(
@@ -98,7 +89,7 @@ class TestUserModel:
         # Should still be created (we don't validate JWT format at DB level)
         assert user.jwt_token == "not.a.valid.jwt"
 
-    def test_user_data_mismatch(self, setup_database, db_session):
+    def test_user_data_mismatch(self, db_session):
         """Test user with mismatched role in JWT vs role column."""
         # Create user with educator role but parent JWT
         user = User(
@@ -117,7 +108,7 @@ class TestUserModel:
         # Note: In a real application, you might want to add validation
         # to ensure JWT role matches database role
 
-    def test_create_user_with_super_educator_role(self, setup_database, db_session):
+    def test_create_user_with_super_educator_role(self, db_session):
         """Test creating a user with super_educator role."""
         user = User(
             name="Super Educator",
@@ -132,7 +123,7 @@ class TestUserModel:
         assert user.role == UserRole.SUPER_EDUCATOR.value
         assert user.name == "Super Educator"
 
-    def test_create_user_without_jwt_token(self, setup_database, db_session):
+    def test_create_user_without_jwt_token(self, db_session):
         """Test creating a user without jwt_token (nullable field)."""
         user = User(name="No JWT User", role=UserRole.PARENT.value)
 
@@ -143,7 +134,7 @@ class TestUserModel:
         assert user.jwt_token is None
         assert user.role == UserRole.PARENT.value
 
-    def test_user_repr(self, setup_database, db_session):
+    def test_user_repr(self, db_session):
         """Test User __repr__ method."""
         user = User(name="Test User", role=UserRole.EDUCATOR.value)
 
@@ -162,7 +153,7 @@ class TestUserModel:
         assert UserRole.EDUCATOR.value == "educator"
         assert UserRole.SUPER_EDUCATOR.value == "super_educator"
 
-    def test_multiple_users_different_roles(self, setup_database, db_session):
+    def test_multiple_users_different_roles(self, db_session):
         """Test creating multiple users with different roles."""
         users = [
             User(name="Parent User", role=UserRole.PARENT.value),

@@ -2,7 +2,6 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.core.database import Base
 from app.core.security import decode_access_token
 from app.models.user import User, UserRole
 from app.services.user_service import insert_dummy_users
@@ -13,14 +12,6 @@ engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-@pytest.fixture(scope="module")
-def setup_database():
-    """Create test database tables"""
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture
@@ -37,7 +28,7 @@ def db_session():
 class TestDummyUsersDB:
     """Test dummy users database functionality."""
 
-    def test_insert_dummy_users_creates_three_users(self, setup_database, db_session):
+    def test_insert_dummy_users_creates_three_users(self, db_session):
         """Test that insert_dummy_users creates exactly 3 users."""
         # Insert dummy users
         insert_dummy_users(db_session)
@@ -57,7 +48,7 @@ class TestDummyUsersDB:
         assert sara is not None
         assert mervi is not None
 
-    def test_dummy_users_have_correct_roles(self, setup_database, db_session):
+    def test_dummy_users_have_correct_roles(self, db_session):
         """Test that dummy users have the correct roles."""
         # Insert dummy users
         insert_dummy_users(db_session)
@@ -74,7 +65,7 @@ class TestDummyUsersDB:
         mervi = db_session.query(User).filter(User.name == "Mervi").first()
         assert mervi.role == UserRole.SUPER_EDUCATOR.value
 
-    def test_dummy_users_jwt_tokens_decode_correctly(self, setup_database, db_session):
+    def test_dummy_users_jwt_tokens_decode_correctly(self, db_session):
         """Test that JWT tokens decode correctly with expected claims."""
         # Insert dummy users
         insert_dummy_users(db_session)
@@ -103,7 +94,7 @@ class TestDummyUsersDB:
             assert decoded_payload["user_id"] == expected_user_id
 
     def test_duplicate_insertion_does_not_create_extra_rows(
-        self, setup_database, db_session
+        self, db_session
     ):
         """Test that calling insert_dummy_users twice doesn't create duplicates."""
         # Insert dummy users first time
@@ -132,7 +123,7 @@ class TestDummyUsersDB:
         assert sara is not None
         assert mervi is not None
 
-    def test_dummy_users_created_on_startup(self, setup_database, db_session):
+    def test_dummy_users_created_on_startup(self, db_session):
         """Test that dummy users are created when the startup event is triggered."""
         # Simulate startup by calling insert_dummy_users
         insert_dummy_users(db_session)

@@ -58,6 +58,10 @@ jobs:
           poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-root
 
+      - name: Run database migrations
+        working-directory: backend
+        run: poetry run alembic upgrade head
+
       - name: Run tests
         working-directory: backend
         run: poetry run make test
