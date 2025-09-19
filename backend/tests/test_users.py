@@ -181,3 +181,46 @@ class TestUserModel:
         assert "parent" in roles
         assert "educator" in roles
         assert "super_educator" in roles
+
+    @pytest.mark.parametrize("role", ["educator", "parent"])
+    def test_educator_and_parent_must_have_groups(self, db_session, role):
+        """Test that educators and parents must have at least one group assigned."""
+        # Create a user with the role and a non-empty groups list
+        user = User(
+            name=f"Test {role.title()}",
+            role=role,
+            jwt_token="test_token",
+            groups=["A", "B"]  # Non-empty groups list
+        )
+
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+
+        # Verify the user was created successfully
+        assert user.id is not None
+        assert user.role == role
+        assert user.groups is not None, f"{role} should have groups field"
+        assert isinstance(user.groups, list), f"{role} groups should be a list"
+        assert len(user.groups) > 0, f"{role} must have at least one group assigned"
+
+    def test_super_educator_can_have_empty_groups(self, db_session):
+        """Test that super educators are allowed to have empty groups list."""
+        # Create a super_educator with an empty groups list
+        user = User(
+            name="Test Super Educator",
+            role="super_educator",
+            jwt_token="test_token",
+            groups=[]  # Empty groups list
+        )
+
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+
+        # Verify the user was created successfully
+        assert user.id is not None
+        assert user.role == "super_educator"
+        assert user.groups is not None, "Super educator should have groups field"
+        assert isinstance(user.groups, list), "Super educator groups should be a list"
+        assert len(user.groups) == 0, "Super educator can have empty groups list"
