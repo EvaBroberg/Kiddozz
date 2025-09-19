@@ -95,13 +95,19 @@ CREATE DATABASE kiddozz_demo;
 
 ### 4. Environment Configuration
 
-```bash
-# Copy environment template
-cp env.example .env
+The project supports multiple environments with separate configuration files:
 
-# Edit .env with your configuration
-nano .env
+```bash
+# Environment-specific configuration files
+.env.local      # Local development
+.env.staging    # Staging environment  
+.env.prod       # Production environment
+
+# Copy environment template for reference
+cp env.example .env
 ```
+
+Each environment file should contain the appropriate settings for that environment. The startup scripts will automatically load the correct configuration based on the `APP_ENV` variable.
 
 Required environment variables:
 ```env
@@ -142,6 +148,58 @@ alembic upgrade head
 ```
 
 ### 6. Run the Application
+
+#### Quick Start with Environment Scripts
+
+The easiest way to run the backend is using the provided startup scripts:
+
+```bash
+# Local development (with auto-reload)
+./start_local.sh
+
+# Staging environment
+./start_staging.sh
+
+# Production environment
+./start_prod.sh
+```
+
+Each script will:
+- Set the appropriate `APP_ENV` environment variable
+- Run database migrations automatically
+- Display the environment and DATABASE_URL being used
+- Start the FastAPI server with the correct configuration
+
+#### Quick Command (Recommended)
+
+For even faster startup, you can use the `run` command after setting it up:
+
+```bash
+# First time setup (add to your ~/.zshrc)
+echo 'run() {
+  if [ "$1" = "local" ]; then
+    ./start_local.sh
+  elif [ "$1" = "staging" ]; then
+    ./start_staging.sh
+  elif [ "$1" = "prod" ]; then
+    ./start_prod.sh
+  else
+    echo "Usage: run {local|staging|prod}"
+  fi
+}' >> ~/.zshrc
+
+# Reload your shell configuration
+source ~/.zshrc
+
+# Now you can simply run:
+run local      # Start local development server
+run staging    # Start staging server
+run prod       # Start production server
+```
+
+**Note**: After adding the function to `~/.zshrc`, restart your terminal or run `source ~/.zshrc` to make the `run` command available.
+
+#### Manual Startup
 
 ```bash
 # Development server
