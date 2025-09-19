@@ -274,11 +274,11 @@ def test_dummy_users_groups_field():
     # Check specific group assignments
     user_data = {user["name"]: user for user in data["users"]}
     
-    # Jessica (educator) should have group A
-    assert user_data["Jessica"]["groups"] == ["A"]
+    # Jessica (educator) should have ClassA
+    assert user_data["Jessica"]["groups"] == ["ClassA"]
     
-    # Sara (parent) should have group A
-    assert user_data["Sara"]["groups"] == ["A"]
+    # Sara (parent) should have ClassA
+    assert user_data["Sara"]["groups"] == ["ClassA"]
     
     # Mervi (super_educator) should have empty groups (access to all)
     assert user_data["Mervi"]["groups"] == []
@@ -315,7 +315,7 @@ def test_dummy_users_multiple_groups():
             "sub": "TestEducator",
             "role": "educator", 
             "user_id": 999,
-            "groups": ["A", "B"]
+            "groups": ["ClassA", "ClassB"]
         }
         jwt_token = create_access_token(jwt_payload)
         
@@ -323,7 +323,7 @@ def test_dummy_users_multiple_groups():
             name="TestEducator",
             role="educator",
             jwt_token=jwt_token,
-            groups=["A", "B"]
+            groups=["ClassA", "ClassB"]
         )
         
         db.add(user)
@@ -332,11 +332,11 @@ def test_dummy_users_multiple_groups():
         # Verify the user was created with correct groups
         created_user = db.query(User).filter(User.name == "TestEducator").first()
         assert created_user is not None
-        assert created_user.groups == ["A", "B"]
+        assert created_user.groups == ["ClassA", "ClassB"]
         
         # Verify JWT includes groups
         payload = decode_access_token(created_user.jwt_token)
-        assert payload["groups"] == ["A", "B"]
+        assert payload["groups"] == ["ClassA", "ClassB"]
         
     finally:
         # Clean up

@@ -20,8 +20,8 @@ def create_dummy_users(db: Session) -> None:
 
     # Create dummy users
     dummy_users = [
-        {"name": "Jessica", "role": "educator", "user_id": 1, "groups": ["A"]},
-        {"name": "Sara", "role": "parent", "user_id": 2, "groups": ["A"]},
+        {"name": "Jessica", "role": "educator", "user_id": 1, "groups": ["ClassA"]},
+        {"name": "Sara", "role": "parent", "user_id": 2, "groups": ["ClassA"]},
         {"name": "Mervi", "role": "super_educator", "user_id": 3, "groups": []},
     ]
 
@@ -64,8 +64,8 @@ def insert_dummy_users(db: Session) -> None:
 
     # Create dummy users
     dummy_users = [
-        {"name": "Jessica", "role": "educator", "user_id": 1, "groups": ["A"]},
-        {"name": "Sara", "role": "parent", "user_id": 2, "groups": ["A"]},
+        {"name": "Jessica", "role": "educator", "user_id": 1, "groups": ["ClassA"]},
+        {"name": "Sara", "role": "parent", "user_id": 2, "groups": ["ClassA"]},
         {"name": "Mervi", "role": "super_educator", "user_id": 3, "groups": []},
     ]
 

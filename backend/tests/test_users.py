@@ -190,7 +190,7 @@ class TestUserModel:
             name=f"Test {role.title()}",
             role=role,
             jwt_token="test_token",
-            groups=["A", "B"]  # Non-empty groups list
+            groups=["ClassA", "ClassB"]  # Non-empty groups list
         )
 
         db_session.add(user)
