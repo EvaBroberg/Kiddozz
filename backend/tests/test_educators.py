@@ -46,7 +46,7 @@ class TestEducatorModel:
             role=EducatorRole.EDUCATOR.value,
             email="john.doe@example.com",
             phone_num="+1234567890",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
 
         db_session.add(educator)
@@ -71,7 +71,7 @@ class TestEducatorModel:
             full_name="Jane Smith",
             role=EducatorRole.SUPER_EDUCATOR.value,
             email="jane.smith@example.com",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
 
         db_session.add(educator)
@@ -98,7 +98,7 @@ class TestEducatorModel:
             full_name="First Educator",
             role=EducatorRole.EDUCATOR.value,
             email="duplicate@example.com",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(educator1)
         db_session.commit()
@@ -108,7 +108,7 @@ class TestEducatorModel:
             full_name="Second Educator",
             role=EducatorRole.EDUCATOR.value,
             email="duplicate@example.com",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(educator2)
 
@@ -124,7 +124,7 @@ class TestEducatorModel:
             educator = Educator(
                 role=EducatorRole.EDUCATOR.value,
                 email="test@example.com",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db_session.add(educator)
             db_session.commit()
@@ -137,7 +137,7 @@ class TestEducatorModel:
             educator = Educator(
                 full_name="Test Educator",
                 role=EducatorRole.EDUCATOR.value,
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db_session.add(educator)
             db_session.commit()
@@ -150,7 +150,7 @@ class TestEducatorModel:
             educator = Educator(
                 full_name="Test Educator",
                 email="test@example.com",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db_session.add(educator)
             db_session.commit()
@@ -163,7 +163,7 @@ class TestEducatorModel:
             full_name="Timestamp Test",
             role=EducatorRole.EDUCATOR.value,
             email="timestamp@example.com",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
 
         # Before adding to database, timestamps should be None
@@ -187,7 +187,7 @@ class TestEducatorModel:
             full_name="Update Test",
             role=EducatorRole.EDUCATOR.value,
             email="update@example.com",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
 
         db_session.add(educator)
@@ -198,6 +198,7 @@ class TestEducatorModel:
 
         # Manually update the timestamp to test the field works
         from datetime import datetime
+
         educator.updated_at = datetime.now()
         db_session.commit()
         db_session.refresh(educator)
@@ -213,13 +214,13 @@ class TestEducatorModel:
             full_name="Regular Educator",
             role=EducatorRole.EDUCATOR.value,
             email="regular@example.com",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         educator2 = Educator(
             full_name="Super Educator",
             role=EducatorRole.SUPER_EDUCATOR.value,
             email="super@example.com",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
 
         db_session.add_all([educator1, educator2])
@@ -234,10 +235,7 @@ class TestEducatorModel:
             == EducatorRole.EDUCATOR.value
         )
         assert (
-            db_session.query(Educator)
-            .filter_by(email="super@example.com")
-            .first()
-            .role
+            db_session.query(Educator).filter_by(email="super@example.com").first().role
             == EducatorRole.SUPER_EDUCATOR.value
         )
 
@@ -249,7 +247,7 @@ class TestEducatorModel:
             full_name="Repr Test",
             role=EducatorRole.EDUCATOR.value,
             email="repr@example.com",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(educator)
         db_session.commit()
@@ -267,7 +265,7 @@ class TestEducatorModel:
             role=EducatorRole.EDUCATOR.value,
             email="jwt@example.com",
             jwt_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
 
         db_session.add(educator)
@@ -285,20 +283,20 @@ class TestEducatorModel:
                 full_name="Educator 1",
                 role=EducatorRole.EDUCATOR.value,
                 email="educator1@example.com",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             ),
             Educator(
                 full_name="Educator 2",
                 role=EducatorRole.SUPER_EDUCATOR.value,
                 email="educator2@example.com",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             ),
             Educator(
                 full_name="Educator 3",
                 role=EducatorRole.EDUCATOR.value,
                 email="educator3@example.com",
-                daycare_id=daycare.id
-            )
+                daycare_id=daycare.id,
+            ),
         ]
 
         db_session.add_all(educators)
@@ -307,11 +305,13 @@ class TestEducatorModel:
         created_educators = (
             db_session.query(Educator)
             .filter(
-                Educator.email.in_([
-                    "educator1@example.com",
-                    "educator2@example.com",
-                    "educator3@example.com"
-                ])
+                Educator.email.in_(
+                    [
+                        "educator1@example.com",
+                        "educator2@example.com",
+                        "educator3@example.com",
+                    ]
+                )
             )
             .all()
         )

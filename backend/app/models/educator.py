@@ -36,9 +36,13 @@ class Educator(Base):
     phone_num: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     jwt_token: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     daycare_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), ForeignKey("daycares.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=False),
+        ForeignKey("daycares.id", ondelete="CASCADE"),
+        nullable=False,
     )
-    created_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now(), nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(
+        DateTime, default=func.now(), nullable=False
+    )
     updated_at: Mapped[DateTime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now(), nullable=False
     )

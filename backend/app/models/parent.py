@@ -24,7 +24,9 @@ class Parent(Base):
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     phone_num: Mapped[str] = mapped_column(String(20), nullable=False)
     daycare_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), ForeignKey("daycares.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=False),
+        ForeignKey("daycares.id", ondelete="CASCADE"),
+        nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), nullable=False

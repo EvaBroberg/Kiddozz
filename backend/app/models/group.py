@@ -23,7 +23,9 @@ class Group(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     daycare_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), ForeignKey("daycares.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=False),
+        ForeignKey("daycares.id", ondelete="CASCADE"),
+        nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), nullable=False
@@ -40,4 +42,6 @@ class Group(Base):
     kids: Mapped[List[Kid]] = relationship("Kid", back_populates="group")
 
     def __repr__(self):
-        return f"<Group(id={self.id}, name='{self.name}', daycare_id='{self.daycare_id}')>"
+        return (
+            f"<Group(id={self.id}, name='{self.name}', daycare_id='{self.daycare_id}')>"
+        )

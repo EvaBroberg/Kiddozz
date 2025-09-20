@@ -32,12 +32,12 @@ def seeded_data(db_session):
     """Seed the database with test data and clean up after."""
     # Clear any existing data
     clear_daycare_data(db_session)
-    
+
     # Seed new data
     seed_daycare_data(db_session)
-    
+
     yield db_session
-    
+
     # Clean up after test
     clear_daycare_data(db_session)
 
@@ -90,7 +90,7 @@ class TestDaycareSchema:
             email="test@example.com",
             phone_num="+1234567890",
             role=EducatorRole.EDUCATOR.value,
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(educator)
         db_session.commit()
@@ -114,7 +114,7 @@ class TestDaycareSchema:
             full_name="Test Parent",
             email="parent@example.com",
             phone_num="+1234567890",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(parent)
         db_session.commit()
@@ -141,6 +141,7 @@ class TestDaycareSchema:
 
         # Create kid
         from datetime import date
+
         kid = Kid(
             full_name="Test Kid",
             dob=date(2020, 1, 1),
@@ -151,9 +152,9 @@ class TestDaycareSchema:
                     "name": "Trusted Adult",
                     "email": "trusted@example.com",
                     "phone": "+1234567890",
-                    "address": "123 Test St"
+                    "address": "123 Test St",
                 }
-            ]
+            ],
         )
         db_session.add(kid)
         db_session.commit()
@@ -188,7 +189,7 @@ class TestDaycareSchema:
             email="test@example.com",
             phone_num="+1234567890",
             role=EducatorRole.EDUCATOR.value,
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(educator)
         db_session.commit()
@@ -225,7 +226,7 @@ class TestDaycareSchema:
             full_name="Test Parent",
             email="parent@example.com",
             phone_num="+1234567890",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(parent)
         db_session.commit()
@@ -233,17 +234,18 @@ class TestDaycareSchema:
 
         # Create kids
         from datetime import date
+
         kid1 = Kid(
             full_name="Kid 1",
             dob=date(2020, 1, 1),
             daycare_id=daycare.id,
-            group_id=group.id
+            group_id=group.id,
         )
         kid2 = Kid(
-            full_name="Kid 2", 
+            full_name="Kid 2",
             dob=date(2020, 2, 1),
             daycare_id=daycare.id,
-            group_id=group.id
+            group_id=group.id,
         )
         db_session.add_all([kid1, kid2])
         db_session.commit()
@@ -280,7 +282,7 @@ class TestDaycareSchema:
             email="test@example.com",
             phone_num="+1234567890",
             role=EducatorRole.EDUCATOR.value,
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(educator)
         db_session.commit()
@@ -291,7 +293,7 @@ class TestDaycareSchema:
             full_name="Test Parent",
             email="parent@example.com",
             phone_num="+1234567890",
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(parent)
         db_session.commit()
@@ -299,11 +301,12 @@ class TestDaycareSchema:
 
         # Create kid
         from datetime import date
+
         kid = Kid(
             full_name="Test Kid",
             dob=date(2020, 1, 1),
             daycare_id=daycare.id,
-            group_id=group.id
+            group_id=group.id,
         )
         db_session.add(kid)
         db_session.commit()
@@ -321,7 +324,9 @@ class TestDaycareSchema:
         # Verify all related records are deleted
         assert db_session.query(Daycare).filter_by(id=daycare.id).first() is None
         assert db_session.query(Group).filter_by(daycare_id=daycare.id).first() is None
-        assert db_session.query(Educator).filter_by(daycare_id=daycare.id).first() is None
+        assert (
+            db_session.query(Educator).filter_by(daycare_id=daycare.id).first() is None
+        )
         assert db_session.query(Parent).filter_by(daycare_id=daycare.id).first() is None
         assert db_session.query(Kid).filter_by(daycare_id=daycare.id).first() is None
 
@@ -401,28 +406,34 @@ class TestDaycareSchema:
         """Test that queries can be filtered by daycare_id for security."""
         # Get the daycare
         daycare = seeded_data.query(Daycare).first()
-        
+
         # Test filtering kids by daycare
         kids_in_daycare = seeded_data.query(Kid).filter_by(daycare_id=daycare.id).all()
         assert len(kids_in_daycare) == 9
 
         # Test filtering educators by daycare
-        educators_in_daycare = seeded_data.query(Educator).filter_by(daycare_id=daycare.id).all()
+        educators_in_daycare = (
+            seeded_data.query(Educator).filter_by(daycare_id=daycare.id).all()
+        )
         assert len(educators_in_daycare) == 4
 
         # Test filtering parents by daycare
-        parents_in_daycare = seeded_data.query(Parent).filter_by(daycare_id=daycare.id).all()
+        parents_in_daycare = (
+            seeded_data.query(Parent).filter_by(daycare_id=daycare.id).all()
+        )
         assert len(parents_in_daycare) == 3
 
         # Test filtering groups by daycare
-        groups_in_daycare = seeded_data.query(Group).filter_by(daycare_id=daycare.id).all()
+        groups_in_daycare = (
+            seeded_data.query(Group).filter_by(daycare_id=daycare.id).all()
+        )
         assert len(groups_in_daycare) == 3
 
     def test_trusted_adults_json_storage(self, seeded_data):
         """Test that trusted_adults JSON data is stored and retrieved correctly."""
-        kids_with_trusted_adults = seeded_data.query(Kid).filter(
-            Kid.trusted_adults.isnot(None)
-        ).all()
+        kids_with_trusted_adults = (
+            seeded_data.query(Kid).filter(Kid.trusted_adults.isnot(None)).all()
+        )
 
         assert len(kids_with_trusted_adults) > 0
 
@@ -450,7 +461,7 @@ class TestDaycareSchema:
             email="duplicate@example.com",
             phone_num="+1234567890",
             role=EducatorRole.EDUCATOR.value,
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(educator1)
         db_session.commit()
@@ -461,7 +472,7 @@ class TestDaycareSchema:
             email="duplicate@example.com",  # Same email
             phone_num="+1234567891",
             role=EducatorRole.EDUCATOR.value,
-            daycare_id=daycare.id
+            daycare_id=daycare.id,
         )
         db_session.add(educator2)
 
@@ -472,7 +483,7 @@ class TestDaycareSchema:
         """Test that foreign key constraints work properly."""
         # Enable foreign key constraints for SQLite
         db_session.execute(text("PRAGMA foreign_keys=ON"))
-        
+
         # Try to create group without valid daycare_id
         group = Group(name="Orphan Group", daycare_id="invalid-uuid")
         db_session.add(group)

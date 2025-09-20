@@ -24,7 +24,9 @@ class Kid(Base):
     full_name: Mapped[str] = mapped_column(String(100), nullable=False)
     dob: Mapped[date] = mapped_column(Date, nullable=False)
     daycare_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), ForeignKey("daycares.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=False),
+        ForeignKey("daycares.id", ondelete="CASCADE"),
+        nullable=False,
     )
     group_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False
