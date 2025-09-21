@@ -190,7 +190,7 @@ def test_parents_response_structure(client_fixture, seeded_daycare_id):
 
 
 def test_local_dev_default_daycare_id_mapping(client_fixture, seeded_daycare_id):
-    """Test that in local environment, 'default-daycare-id' maps to the seeded daycare."""
+    """Test that in local and test environment, 'default-daycare-id' maps to the seeded daycare."""
     # This test simulates the Android emulator sending 'default-daycare-id'
     res = client_fixture.get("/api/v1/educators?daycare_id=default-daycare-id")
     assert res.status_code == 200
