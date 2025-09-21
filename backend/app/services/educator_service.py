@@ -14,13 +14,7 @@ def insert_dummy_educators(db: Session) -> None:
     """
     # Check if educators already exist
     existing_educators = (
-        db.query(Educator)
-        .filter(
-            Educator.full_name.in_(
-                ["Anna Johnson", "Mark Smith", "Sarah Davis", "Lisa Wilson"]
-            )
-        )
-        .count()
+        db.query(Educator).filter(Educator.full_name.in_(["Jessica", "Mervi"])).count()
     )
 
     if existing_educators > 0:
@@ -51,30 +45,16 @@ def insert_dummy_educators(db: Session) -> None:
     # Create dummy educators
     dummy_educators = [
         {
-            "full_name": "Anna Johnson",
-            "email": "anna.johnson@daycare.com",
+            "full_name": "Jessica",
+            "email": "jessica@daycare.com",
             "phone_num": "+1234567890",
             "role": EducatorRole.EDUCATOR.value,
             "group_names": ["Group A"],
         },
         {
-            "full_name": "Mark Smith",
-            "email": "mark.smith@daycare.com",
+            "full_name": "Mervi",
+            "email": "mervi@daycare.com",
             "phone_num": "+1234567891",
-            "role": EducatorRole.EDUCATOR.value,
-            "group_names": ["Group B"],
-        },
-        {
-            "full_name": "Sarah Davis",
-            "email": "sarah.davis@daycare.com",
-            "phone_num": "+1234567892",
-            "role": EducatorRole.EDUCATOR.value,
-            "group_names": ["Group C"],
-        },
-        {
-            "full_name": "Lisa Wilson",
-            "email": "lisa.wilson@daycare.com",
-            "phone_num": "+1234567893",
             "role": EducatorRole.SUPER_EDUCATOR.value,
             "group_names": ["Group A", "Group B", "Group C"],
         },

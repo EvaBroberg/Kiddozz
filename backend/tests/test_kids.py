@@ -351,8 +351,8 @@ class TestKidSeeding:
             kids = insert_dummy_kids(db, daycare.id, groups, parents)
 
             expected_kid_names = [
-                "Emma Johnson",
-                "Liam Johnson",
+                "Emma Sara",
+                "Liam Sara",
                 "Sophia Smith",
                 "Noah Davis",
                 "Olivia Wilson",

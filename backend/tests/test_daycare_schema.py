@@ -347,7 +347,7 @@ class TestDaycareSchema:
         # Verify counts
         assert daycare is not None
         assert len(groups) == 3
-        assert len(educators) == 4  # 3 regular + 1 super-educator
+        assert len(educators) == 2  # 1 regular + 1 super-educator
         assert len(parents) == 6  # Updated to 6 parents
         assert len(kids) == 9
 
@@ -362,28 +362,22 @@ class TestDaycareSchema:
 
         # Verify educators
         educator_names = [educator.full_name for educator in educators]
-        assert "Anna Johnson" in educator_names
-        assert "Mark Smith" in educator_names
-        assert "Sarah Davis" in educator_names
-        assert "Lisa Wilson" in educator_names
+        assert "Jessica" in educator_names
+        assert "Mervi" in educator_names
 
-        # Verify Lisa Wilson is super-educator
-        lisa = next(e for e in educators if e.full_name == "Lisa Wilson")
-        assert lisa.role == EducatorRole.SUPER_EDUCATOR.value
-        assert len(lisa.groups) == 3  # Assigned to all groups
+        # Verify Mervi is super-educator
+        mervi = next(e for e in educators if e.full_name == "Mervi")
+        assert mervi.role == EducatorRole.SUPER_EDUCATOR.value
+        assert len(mervi.groups) == 3  # Assigned to all groups
 
         # Verify other educators are assigned to groups
-        anna = next(e for e in educators if e.full_name == "Anna Johnson")
-        mark = next(e for e in educators if e.full_name == "Mark Smith")
-        sarah = next(e for e in educators if e.full_name == "Sarah Davis")
+        jessica = next(e for e in educators if e.full_name == "Jessica")
 
-        assert len(anna.groups) == 1
-        assert len(mark.groups) == 1
-        assert len(sarah.groups) == 1
+        assert len(jessica.groups) == 1
 
         # Verify parents
         parent_names = [parent.full_name for parent in parents]
-        assert "Sara Johnson" in parent_names
+        assert "Sara" in parent_names
         assert "Laura Smith" in parent_names
         assert "Angela Davis" in parent_names
         assert "Michael Wilson" in parent_names
@@ -423,7 +417,7 @@ class TestDaycareSchema:
         educators_in_daycare = (
             seeded_data.query(Educator).filter_by(daycare_id=daycare.id).all()
         )
-        assert len(educators_in_daycare) == 4
+        assert len(educators_in_daycare) == 2
 
         # Test filtering parents by daycare
         parents_in_daycare = (

@@ -59,7 +59,7 @@ class TestParentSeeding:
 
             # Check that all parents have last names
             expected_last_names = [
-                "Johnson",
+                "Sara",  # Sara (no last name)
                 "Smith",
                 "Davis",
                 "Wilson",
@@ -181,7 +181,7 @@ class TestParentSeeding:
             parents = insert_dummy_parents(db, daycare.id)
 
             expected_names = [
-                "Sara Johnson",
+                "Sara",
                 "Laura Smith",
                 "Angela Davis",
                 "Michael Wilson",

@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI
 
-from app.api import auth, events, health
+from app.api import auth, educators, events, health, parents
 from app.core.database import SessionLocal
 from app.services.educator_service import insert_dummy_educators
 from app.services.user_service import insert_dummy_users
@@ -16,6 +16,8 @@ app.include_router(
     auth.router
 )  # Add auth routes without prefix for Android compatibility
 app.include_router(events.router, prefix="/api/v1/events")
+app.include_router(educators.router, prefix="/api/v1", tags=["educators"])
+app.include_router(parents.router, prefix="/api/v1", tags=["parents"])
 
 
 @app.on_event("startup")

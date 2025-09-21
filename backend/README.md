@@ -233,6 +233,29 @@ The API will be available at:
 - `POST /api/v1/events/{event_id}/images/confirm` - Confirm upload
 - `DELETE /api/v1/events/images/{image_id}` - Delete image
 
+### Identity Management
+
+- `GET /api/v1/educators` - List educators (requires `daycare_id` in production)
+- `GET /api/v1/parents` - List parents (requires `daycare_id` in production)
+- `POST /api/v1/auth/dev-login` - Development login endpoint (disabled in production)
+
+#### Query Parameters
+
+**Educators endpoint:**
+- `daycare_id` (required in production) - Filter by daycare
+- `group` (optional) - Filter by group name
+- `search` (optional) - Search by educator name
+
+**Parents endpoint:**
+- `daycare_id` (required in production) - Filter by daycare
+- `search` (optional) - Search by parent name or email
+
+**Dev-login endpoint:**
+- `educator_id` (optional) - Login as educator
+- `parent_id` (optional) - Login as parent
+
+**Note:** The dev-login endpoint is only available in development and staging environments. It is disabled in production for security reasons.
+
 ## Usage Examples
 
 ### Create an Event
@@ -282,6 +305,43 @@ curl -X POST "http://localhost:8000/api/v1/events/1/images/confirm" \
     "file_size": 1024000,
     "mime_type": "image/jpeg"
   }'
+```
+
+### List Educators
+
+```bash
+# Get all educators for a daycare
+curl "http://localhost:8000/api/v1/educators?daycare_id=your-daycare-id"
+
+# Search for educators by name
+curl "http://localhost:8000/api/v1/educators?daycare_id=your-daycare-id&search=jessica"
+
+# Filter by group
+curl "http://localhost:8000/api/v1/educators?daycare_id=your-daycare-id&group=Group%20A"
+```
+
+### List Parents
+
+```bash
+# Get all parents for a daycare
+curl "http://localhost:8000/api/v1/parents?daycare_id=your-daycare-id"
+
+# Search for parents by name or email
+curl "http://localhost:8000/api/v1/parents?daycare_id=your-daycare-id&search=sara"
+```
+
+### Development Login
+
+```bash
+# Login as educator
+curl -X POST "http://localhost:8000/api/v1/auth/dev-login" \
+  -H "Content-Type: application/json" \
+  -d '{"educator_id": "27"}'
+
+# Login as parent
+curl -X POST "http://localhost:8000/api/v1/auth/dev-login" \
+  -H "Content-Type: application/json" \
+  -d '{"parent_id": "10"}'
 ```
 
 ## Development

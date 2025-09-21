@@ -64,7 +64,7 @@ def insert_dummy_parents(db: Session, daycare_id: str) -> list[Parent]:
         .filter(
             Parent.email.in_(
                 [
-                    "sara.johnson@example.com",
+                    "sara@example.com",
                     "laura.smith@example.com",
                     "angela.davis@example.com",
                     "michael.wilson@example.com",
@@ -82,8 +82,8 @@ def insert_dummy_parents(db: Session, daycare_id: str) -> list[Parent]:
 
     parents_data = [
         {
-            "full_name": "Sara Johnson",
-            "email": "sara.johnson@example.com",
+            "full_name": "Sara",
+            "email": "sara@example.com",
             "phone_num": "+1987654321",
         },
         {
@@ -152,7 +152,7 @@ def insert_dummy_kids(
         .filter(
             Kid.full_name.in_(
                 [
-                    "Emma Johnson",
+                    "Emma Sara",
                     "Liam Johnson",
                     "Sophia Smith",
                     "Noah Davis",
@@ -174,13 +174,13 @@ def insert_dummy_kids(
     kids_data = [
         # Group A kids (3 kids, 2 parents)
         {
-            "full_name": "Emma Johnson",
+            "full_name": "Emma Sara",
             "dob": date(2020, 3, 15),
             "group_index": 0,
-            "parent_index": 0,  # Sara Johnson
+            "parent_index": 0,  # Sara
             "trusted_adults": [
                 {
-                    "name": "Grandma Johnson",
+                    "name": "Grandma Sara",
                     "email": "grandma@example.com",
                     "phone": "+1555000001",
                     "address": "123 Main St, City",
@@ -188,10 +188,10 @@ def insert_dummy_kids(
             ],
         },
         {
-            "full_name": "Liam Johnson",
+            "full_name": "Liam Sara",
             "dob": date(2020, 7, 22),
             "group_index": 0,
-            "parent_index": 0,  # Sara Johnson
+            "parent_index": 0,  # Sara
             "trusted_adults": [
                 {
                     "name": "Uncle Mike",

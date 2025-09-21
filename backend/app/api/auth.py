@@ -1,20 +1,18 @@
-import logging
 from datetime import timedelta
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.security import create_access_token
-from app.models.user import User
-
-# Set up logging
-logger = logging.getLogger(__name__)
+from app.models.educator import Educator
+from app.models.parent import Parent
+from app.schemas.auth import DevLoginRequest, TokenResponse
+from app.utils.daycare_resolver import resolve_daycare_id
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -22,18 +20,6 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 class TestTokenRequest(BaseModel):
     role: str
     user_id: int = 1
-
-
-class DummyUserResponse(BaseModel):
-    id: int
-    name: str
-    role: str
-    token: str
-    groups: List[str]
-
-
-class DummyUsersResponse(BaseModel):
-    users: List[DummyUserResponse]
 
 
 @router.post("/switch-role")
@@ -112,6 +98,51 @@ def test_token(request: TestTokenRequest) -> Dict[str, Any]:
     }
 
 
+@router.post("/dev-login", response_model=TokenResponse)
+def dev_login(payload: DevLoginRequest, db: Session = Depends(get_db)):
+    # Disabled in production
+    if settings.environment == "production":
+        raise HTTPException(
+            status_code=403, detail="Dev login is disabled in production"
+        )
+
+    if (payload.educator_id and payload.parent_id) or (
+        not payload.educator_id and not payload.parent_id
+    ):
+        raise HTTPException(
+            status_code=400, detail="Provide exactly one of educator_id or parent_id"
+        )
+
+    role = None
+    sub = None
+    daycare_id = None
+    groups = []
+
+    if payload.educator_id:
+        edu = db.query(Educator).get(payload.educator_id)
+        if not edu:
+            raise HTTPException(status_code=404, detail="Educator not found")
+        role = "educator" if edu.role == "educator" else "super_educator"
+        sub = str(edu.id)
+        daycare_id = resolve_daycare_id(db, str(edu.daycare_id))
+        groups = [g.name for g in edu.groups]
+
+    if payload.parent_id:
+        par = db.query(Parent).get(payload.parent_id)
+        if not par:
+            raise HTTPException(status_code=404, detail="Parent not found")
+        role = "parent"
+        sub = str(par.id)
+        daycare_id = resolve_daycare_id(db, str(par.daycare_id))
+        # parents don't have groups directly, but you can derive via their kids if you wish; leave empty for now or compute later
+        groups = []
+
+    token = create_access_token(
+        data={"sub": sub, "role": role, "daycare_id": daycare_id, "groups": groups}
+    )
+    return {"access_token": token, "token_type": "bearer"}
+
+
 @router.get("/me")
 def get_current_user_info(
     current_user: Dict[str, Any] = Depends(get_current_user),
@@ -122,75 +153,3 @@ def get_current_user_info(
         "role": current_user.get("role"),
         "exp": current_user.get("exp"),
     }
-
-
-@router.get("/dummy-users", response_model=DummyUsersResponse)
-def get_dummy_users(db: Session = Depends(get_db)) -> DummyUsersResponse:
-    """
-    Get dummy users with JWT tokens from the database.
-    Returns users: Jessica (educator), Sara (parent), Mervi (super_educator).
-    If users don't exist, creates them automatically.
-    """
-    logger.info("Dummy users endpoint called")
-
-    try:
-        # Query users from database with timeout handling
-        try:
-            users = (
-                db.query(User).filter(User.name.in_(["Jessica", "Sara", "Mervi"])).all()
-            )
-            logger.info(f"Found {len(users)} existing dummy users")
-        except SQLAlchemyError as db_error:
-            logger.error(f"Database query failed: {str(db_error)}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="DB connection failed",
-            )
-
-        # If no users exist, create them
-        if not users:
-            logger.info("No dummy users found, creating them")
-            try:
-                from app.services.user_service import insert_dummy_users
-
-                insert_dummy_users(db)
-                # Query again after creation
-                users = (
-                    db.query(User)
-                    .filter(User.name.in_(["Jessica", "Sara", "Mervi"]))
-                    .all()
-                )
-                logger.info(f"Created {len(users)} dummy users")
-            except SQLAlchemyError as create_error:
-                logger.error(f"Failed to create dummy users: {str(create_error)}")
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="DB connection failed",
-                )
-
-        # Convert to response format
-        user_responses = []
-        for user in users:
-            user_responses.append(
-                DummyUserResponse(
-                    id=user.id,
-                    name=user.name,
-                    role=user.role,
-                    token=user.jwt_token,
-                    groups=user.groups,
-                )
-            )
-
-        logger.info("Dummy users fetched successfully")
-        return DummyUsersResponse(users=user_responses)
-
-    except HTTPException:
-        # Re-raise HTTP exceptions as-is
-        raise
-    except Exception as e:
-        # Log unexpected errors
-        logger.error(f"Unexpected error in get_dummy_users: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch dummy users",
-        )

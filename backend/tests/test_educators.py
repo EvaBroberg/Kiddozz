@@ -13,8 +13,8 @@ client = TestClient(app)
 class TestEducatorSeeding:
     """Test educator seeding functionality."""
 
-    def test_insert_dummy_educators_creates_four_educators(self):
-        """Test that insert_dummy_educators creates exactly 4 educators."""
+    def test_insert_dummy_educators_creates_two_educators(self):
+        """Test that insert_dummy_educators creates exactly 2 educators."""
         db = TestingSessionLocal()
         try:
             # Clear any existing educators first
@@ -24,18 +24,13 @@ class TestEducatorSeeding:
             # Insert dummy educators
             insert_dummy_educators(db)
 
-            # Verify 4 educators were created
+            # Verify 2 educators were created
             educators = db.query(Educator).all()
-            assert len(educators) == 4
+            assert len(educators) == 2
 
             # Verify the expected names exist
             educator_names = [e.full_name for e in educators]
-            expected_names = [
-                "Anna Johnson",
-                "Mark Smith",
-                "Sarah Davis",
-                "Lisa Wilson",
-            ]
+            expected_names = ["Jessica", "Mervi"]
             for name in expected_names:
                 assert name in educator_names
         finally:
@@ -61,7 +56,7 @@ class TestEducatorSeeding:
                 .first()
             )
             assert super_educator is not None
-            assert super_educator.full_name == "Lisa Wilson"
+            assert super_educator.full_name == "Mervi"
 
             # Verify super educator has all groups
             group_names = [group.name for group in super_educator.groups]
@@ -200,7 +195,7 @@ class TestEducatorSeeding:
 
             # Verify no duplicates were created
             assert first_count == second_count
-            assert first_count == 4
+            assert first_count == 2
         finally:
             db.close()
 
@@ -230,7 +225,7 @@ class TestEducatorSeeding:
             )
 
             # Verify role distribution
-            assert len(regular_educators) == 3
+            assert len(regular_educators) == 1
             assert len(super_educators) == 1
 
             # Verify specific educators have correct roles
@@ -239,13 +234,8 @@ class TestEducatorSeeding:
                 for educator in db.query(Educator).all()
             }
 
-            assert educator_names_by_role["Anna Johnson"] == EducatorRole.EDUCATOR.value
-            assert educator_names_by_role["Mark Smith"] == EducatorRole.EDUCATOR.value
-            assert educator_names_by_role["Sarah Davis"] == EducatorRole.EDUCATOR.value
-            assert (
-                educator_names_by_role["Lisa Wilson"]
-                == EducatorRole.SUPER_EDUCATOR.value
-            )
+            assert educator_names_by_role["Jessica"] == EducatorRole.EDUCATOR.value
+            assert educator_names_by_role["Mervi"] == EducatorRole.SUPER_EDUCATOR.value
         finally:
             db.close()
 
@@ -300,18 +290,15 @@ class TestEducatorSeeding:
             }
 
             # Verify specific group assignments
-            assert "Group A" in educator_groups["Anna Johnson"]
-            assert "Group B" in educator_groups["Mark Smith"]
-            assert "Group C" in educator_groups["Sarah Davis"]
-            assert "Group A" in educator_groups["Lisa Wilson"]
-            assert "Group B" in educator_groups["Lisa Wilson"]
-            assert "Group C" in educator_groups["Lisa Wilson"]
+            assert "Group A" in educator_groups["Jessica"]
+            assert "Group A" in educator_groups["Mervi"]
+            assert "Group B" in educator_groups["Mervi"]
+            assert "Group C" in educator_groups["Mervi"]
 
             # Verify each regular educator has only one group
-            for name in ["Anna Johnson", "Mark Smith", "Sarah Davis"]:
-                assert len(educator_groups[name]) == 1
+            assert len(educator_groups["Jessica"]) == 1
 
             # Verify super educator has all groups
-            assert len(educator_groups["Lisa Wilson"]) == 3
+            assert len(educator_groups["Mervi"]) == 3
         finally:
             db.close()

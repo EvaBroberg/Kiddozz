@@ -62,3 +62,23 @@ def clean_db():
             conn.execute(text(f"DELETE FROM {table}"))
         conn.commit()
     yield
+
+
+@pytest.fixture
+def seeded_daycare_id():
+    """Fixture that seeds the database and returns the daycare ID."""
+    from app.models.daycare import Daycare
+    from app.services.educator_service import insert_dummy_educators
+    from app.services.seeder import seed_daycare_data
+
+    db = TestingSessionLocal()
+    try:
+        # Seed the database
+        seed_daycare_data(db)
+        insert_dummy_educators(db)
+
+        # Get the daycare ID
+        daycare = db.query(Daycare).first()
+        return str(daycare.id)
+    finally:
+        db.close()
