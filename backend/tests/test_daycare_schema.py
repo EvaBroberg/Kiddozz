@@ -348,7 +348,7 @@ class TestDaycareSchema:
         assert daycare is not None
         assert len(groups) == 3
         assert len(educators) == 4  # 3 regular + 1 super-educator
-        assert len(parents) == 3
+        assert len(parents) == 6  # Updated to 6 parents
         assert len(kids) == 9
 
         # Verify daycare
@@ -383,9 +383,12 @@ class TestDaycareSchema:
 
         # Verify parents
         parent_names = [parent.full_name for parent in parents]
-        assert "Sara" in parent_names
-        assert "Laura" in parent_names
-        assert "Angela" in parent_names
+        assert "Sara Johnson" in parent_names
+        assert "Laura Smith" in parent_names
+        assert "Angela Davis" in parent_names
+        assert "Michael Wilson" in parent_names
+        assert "Emma Garcia" in parent_names
+        assert "David Miller" in parent_names
 
         # Verify kids are distributed across groups
         kids_by_group = {}
@@ -426,7 +429,7 @@ class TestDaycareSchema:
         parents_in_daycare = (
             seeded_data.query(Parent).filter_by(daycare_id=daycare.id).all()
         )
-        assert len(parents_in_daycare) == 3
+        assert len(parents_in_daycare) == 6  # Updated to 6 parents
 
         # Test filtering groups by daycare
         groups_in_daycare = (
