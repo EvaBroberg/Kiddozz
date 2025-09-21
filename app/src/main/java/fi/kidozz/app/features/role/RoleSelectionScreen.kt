@@ -12,7 +12,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.BuildConfig
 import fi.kidozz.app.data.auth.TokenManager
-import fi.kidozz.app.data.models.DummyUser
+import fi.kidozz.app.data.models.Educator
+import fi.kidozz.app.data.models.Parent
 import fi.kidozz.app.data.network.NetworkModule
 import fi.kidozz.app.data.repository.AuthRepository
 import fi.kidozz.app.ui.theme.KiddozzTheme
@@ -54,35 +55,105 @@ fun RoleSelectionScreen(
             errorMessage = null
             
             try {
-                val result = authRepository.getDummyUsers()
-                result.fold(
-                    onSuccess = { users ->
-                        val user = users.find { it.role == role }
-                        if (user != null) {
-                            // Log the fetched user information
-                            Log.d("Kiddozz", "Fetched user ${user.name} for role $role")
-                            
-                            // Show Toast with user's name
-                            Toast.makeText(
-                                context,
-                                "Hello, ${user.name}!",
-                                Toast.LENGTH_LONG
-                            ).show()
-                            
-                            authRepository.loginWithToken(user.token)
-                            when (role) {
-                                "educator" -> onEducatorViewClick()
-                                "parent" -> onParentViewClick()
-                                "super_educator" -> onSuperEducatorViewClick()
+                // For now, we'll use a hardcoded daycare ID
+                // In a real app, this would come from user selection or configuration
+                val daycareId = "default-daycare-id"
+                
+                when (role) {
+                    "educator" -> {
+                        val result = authRepository.getEducators(daycareId)
+                        result.fold(
+                            onSuccess = { educators ->
+                                val educator = educators.find { it.role == "educator" }
+                                if (educator != null) {
+                                    val loginResult = authRepository.devLoginAsEducator(educator.id)
+                                    loginResult.fold(
+                                        onSuccess = { tokenResponse ->
+                                            Log.d("Kiddozz", "Logged in as educator ${educator.full_name}")
+                                            Toast.makeText(
+                                                context,
+                                                "Hello, ${educator.full_name}!",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            authRepository.loginWithToken(tokenResponse.access_token)
+                                            onEducatorViewClick()
+                                        },
+                                        onFailure = { exception ->
+                                            errorMessage = "Failed to login as educator: ${exception.message}"
+                                        }
+                                    )
+                                } else {
+                                    errorMessage = "No educator found"
+                                }
+                            },
+                            onFailure = { exception ->
+                                errorMessage = "Failed to fetch educators: ${exception.message}"
                             }
-                        } else {
-                            errorMessage = "User with role $role not found"
-                        }
-                    },
-                    onFailure = { exception ->
-                        errorMessage = "Failed to fetch users: ${exception.message}"
+                        )
                     }
-                )
+                    "parent" -> {
+                        val result = authRepository.getParents(daycareId)
+                        result.fold(
+                            onSuccess = { parents ->
+                                val parent = parents.find { it.full_name.lowercase().contains("sara") }
+                                if (parent != null) {
+                                    val loginResult = authRepository.devLoginAsParent(parent.id)
+                                    loginResult.fold(
+                                        onSuccess = { tokenResponse ->
+                                            Log.d("Kiddozz", "Logged in as parent ${parent.full_name}")
+                                            Toast.makeText(
+                                                context,
+                                                "Hello, ${parent.full_name}!",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            authRepository.loginWithToken(tokenResponse.access_token)
+                                            onParentViewClick()
+                                        },
+                                        onFailure = { exception ->
+                                            errorMessage = "Failed to login as parent: ${exception.message}"
+                                        }
+                                    )
+                                } else {
+                                    errorMessage = "No parent found"
+                                }
+                            },
+                            onFailure = { exception ->
+                                errorMessage = "Failed to fetch parents: ${exception.message}"
+                            }
+                        )
+                    }
+                    "super_educator" -> {
+                        val result = authRepository.getEducators(daycareId)
+                        result.fold(
+                            onSuccess = { educators ->
+                                val educator = educators.find { it.role == "super_educator" }
+                                if (educator != null) {
+                                    val loginResult = authRepository.devLoginAsEducator(educator.id)
+                                    loginResult.fold(
+                                        onSuccess = { tokenResponse ->
+                                            Log.d("Kiddozz", "Logged in as super educator ${educator.full_name}")
+                                            Toast.makeText(
+                                                context,
+                                                "Hello, ${educator.full_name}!",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            authRepository.loginWithToken(tokenResponse.access_token)
+                                            onSuperEducatorViewClick()
+                                        },
+                                        onFailure = { exception ->
+                                            errorMessage = "Failed to login as super educator: ${exception.message}"
+                                        }
+                                    )
+                                } else {
+                                    errorMessage = "No super educator found"
+                                }
+                            },
+                            onFailure = { exception ->
+                                errorMessage = "Failed to fetch educators: ${exception.message}"
+                            }
+                        )
+                    }
+                }
             } catch (e: Exception) {
                 errorMessage = "Network error: ${e.message}"
             } finally {
@@ -110,7 +181,7 @@ fun RoleSelectionScreen(
             if (isLoading) {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Loading users...")
+                Text("Loading...")
             } else {
                 Button(
                     onClick = { handleRoleSelection("educator") },
