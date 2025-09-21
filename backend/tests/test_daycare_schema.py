@@ -36,6 +36,11 @@ def seeded_data(db_session):
     # Seed new data
     seed_daycare_data(db_session)
 
+    # Also seed educators
+    from app.services.educator_service import insert_dummy_educators
+
+    insert_dummy_educators(db_session)
+
     yield db_session
 
     # Clean up after test
@@ -357,24 +362,24 @@ class TestDaycareSchema:
 
         # Verify educators
         educator_names = [educator.full_name for educator in educators]
-        assert "Jessica" in educator_names
-        assert "Api" in educator_names
-        assert "Paulien" in educator_names
-        assert "Mervi" in educator_names
+        assert "Anna Johnson" in educator_names
+        assert "Mark Smith" in educator_names
+        assert "Sarah Davis" in educator_names
+        assert "Lisa Wilson" in educator_names
 
-        # Verify Mervi is super-educator
-        mervi = next(e for e in educators if e.full_name == "Mervi")
-        assert mervi.role == EducatorRole.SUPER_EDUCATOR.value
-        assert len(mervi.groups) == 0  # Not assigned to any group
+        # Verify Lisa Wilson is super-educator
+        lisa = next(e for e in educators if e.full_name == "Lisa Wilson")
+        assert lisa.role == EducatorRole.SUPER_EDUCATOR.value
+        assert len(lisa.groups) == 3  # Assigned to all groups
 
         # Verify other educators are assigned to groups
-        jessica = next(e for e in educators if e.full_name == "Jessica")
-        api = next(e for e in educators if e.full_name == "Api")
-        paulien = next(e for e in educators if e.full_name == "Paulien")
+        anna = next(e for e in educators if e.full_name == "Anna Johnson")
+        mark = next(e for e in educators if e.full_name == "Mark Smith")
+        sarah = next(e for e in educators if e.full_name == "Sarah Davis")
 
-        assert len(jessica.groups) == 1
-        assert len(api.groups) == 1
-        assert len(paulien.groups) == 1
+        assert len(anna.groups) == 1
+        assert len(mark.groups) == 1
+        assert len(sarah.groups) == 1
 
         # Verify parents
         parent_names = [parent.full_name for parent in parents]

@@ -4,8 +4,8 @@ from fastapi import FastAPI
 
 from app.api import auth, events, health
 from app.core.database import SessionLocal
-from app.services.user_service import insert_dummy_users
 from app.services.educator_service import insert_dummy_educators
+from app.services.user_service import insert_dummy_users
 
 app = FastAPI(title="Kiddozz Backend API", version="1.0.0")
 

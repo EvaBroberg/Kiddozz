@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token
+from app.models.daycare import Daycare
 from app.models.educator import Educator, EducatorRole
 from app.models.group import Group
-from app.models.daycare import Daycare
 
 
 def insert_dummy_educators(db: Session) -> None:
@@ -16,7 +16,9 @@ def insert_dummy_educators(db: Session) -> None:
     existing_educators = (
         db.query(Educator)
         .filter(
-            Educator.full_name.in_(["Anna Johnson", "Mark Smith", "Sarah Davis", "Lisa Wilson"])
+            Educator.full_name.in_(
+                ["Anna Johnson", "Mark Smith", "Sarah Davis", "Lisa Wilson"]
+            )
         )
         .count()
     )
@@ -27,9 +29,10 @@ def insert_dummy_educators(db: Session) -> None:
     # Get or create a default daycare
     daycare = db.query(Daycare).first()
     if not daycare:
-        from app.services.seeder import seed_daycare_data
-        seed_daycare_data(db)
-        daycare = db.query(Daycare).first()
+        daycare = Daycare(name="Happy Kids Daycare")
+        db.add(daycare)
+        db.commit()
+        db.refresh(daycare)
 
     # Get or create groups
     groups = db.query(Group).filter(Group.daycare_id == daycare.id).all()
@@ -111,3 +114,4 @@ def insert_dummy_educators(db: Session) -> None:
                 educator.groups.append(group)
 
     db.commit()
+    print("✅ Seeded educators successfully!")

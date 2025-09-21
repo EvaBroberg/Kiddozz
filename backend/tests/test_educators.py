@@ -1,11 +1,9 @@
-import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
 from app.main import app
+from app.models.daycare import Daycare
 from app.models.educator import Educator, EducatorRole
 from app.models.group import Group
-from app.models.daycare import Daycare
 from app.services.educator_service import insert_dummy_educators
 from tests.conftest import TestingSessionLocal
 
@@ -32,7 +30,12 @@ class TestEducatorSeeding:
 
             # Verify the expected names exist
             educator_names = [e.full_name for e in educators]
-            expected_names = ["Anna Johnson", "Mark Smith", "Sarah Davis", "Lisa Wilson"]
+            expected_names = [
+                "Anna Johnson",
+                "Mark Smith",
+                "Sarah Davis",
+                "Lisa Wilson",
+            ]
             for name in expected_names:
                 assert name in educator_names
         finally:
@@ -52,9 +55,11 @@ class TestEducatorSeeding:
             insert_dummy_educators(db)
 
             # Find the super educator
-            super_educator = db.query(Educator).filter(
-                Educator.role == EducatorRole.SUPER_EDUCATOR.value
-            ).first()
+            super_educator = (
+                db.query(Educator)
+                .filter(Educator.role == EducatorRole.SUPER_EDUCATOR.value)
+                .first()
+            )
             assert super_educator is not None
             assert super_educator.full_name == "Lisa Wilson"
 
@@ -83,16 +88,20 @@ class TestEducatorSeeding:
             insert_dummy_educators(db)
 
             # Get regular educators (not super educators)
-            regular_educators = db.query(Educator).filter(
-                Educator.role == EducatorRole.EDUCATOR.value
-            ).all()
+            regular_educators = (
+                db.query(Educator)
+                .filter(Educator.role == EducatorRole.EDUCATOR.value)
+                .all()
+            )
 
             # Verify each regular educator has exactly one group
             for educator in regular_educators:
                 assert len(educator.groups) == 1
 
             # Verify each educator is assigned to a different group
-            assigned_groups = [educator.groups[0].name for educator in regular_educators]
+            assigned_groups = [
+                educator.groups[0].name for educator in regular_educators
+            ]
             assert len(set(assigned_groups)) == len(regular_educators)  # All unique
         finally:
             db.close()
@@ -209,12 +218,16 @@ class TestEducatorSeeding:
             insert_dummy_educators(db)
 
             # Get educators by role
-            regular_educators = db.query(Educator).filter(
-                Educator.role == EducatorRole.EDUCATOR.value
-            ).all()
-            super_educators = db.query(Educator).filter(
-                Educator.role == EducatorRole.SUPER_EDUCATOR.value
-            ).all()
+            regular_educators = (
+                db.query(Educator)
+                .filter(Educator.role == EducatorRole.EDUCATOR.value)
+                .all()
+            )
+            super_educators = (
+                db.query(Educator)
+                .filter(Educator.role == EducatorRole.SUPER_EDUCATOR.value)
+                .all()
+            )
 
             # Verify role distribution
             assert len(regular_educators) == 3
@@ -222,13 +235,17 @@ class TestEducatorSeeding:
 
             # Verify specific educators have correct roles
             educator_names_by_role = {
-                educator.full_name: educator.role for educator in db.query(Educator).all()
+                educator.full_name: educator.role
+                for educator in db.query(Educator).all()
             }
 
             assert educator_names_by_role["Anna Johnson"] == EducatorRole.EDUCATOR.value
             assert educator_names_by_role["Mark Smith"] == EducatorRole.EDUCATOR.value
             assert educator_names_by_role["Sarah Davis"] == EducatorRole.EDUCATOR.value
-            assert educator_names_by_role["Lisa Wilson"] == EducatorRole.SUPER_EDUCATOR.value
+            assert (
+                educator_names_by_role["Lisa Wilson"]
+                == EducatorRole.SUPER_EDUCATOR.value
+            )
         finally:
             db.close()
 

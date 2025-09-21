@@ -3,9 +3,7 @@ from datetime import date
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.core.security import create_access_token
 from app.models.daycare import Daycare
-from app.models.educator import Educator, EducatorRole
 from app.models.group import Group
 from app.models.kid import Kid
 from app.models.parent import Parent
@@ -18,10 +16,8 @@ def seed_daycare_data(db: Session) -> None:
     Creates:
     - 1 daycare: "Happy Kids Daycare"
     - 3 groups: "Group A", "Group B", "Group C"
-    - 3 educators assigned to groups
     - 3 parents linked to kids
     - 9 kids (3 per group) with trusted adults
-    - 1 super-educator (Mervi) not tied to any group
     """
 
     # Create daycare
@@ -42,71 +38,6 @@ def seed_daycare_data(db: Session) -> None:
     db.commit()
     for group in groups:
         db.refresh(group)
-
-    # Create educators
-    educators_data = [
-        {
-            "full_name": "Jessica",
-            "email": "jessica@happykids.com",
-            "phone_num": "+1234567890",
-            "role": EducatorRole.EDUCATOR.value,
-            "group_index": 0,  # Group A
-        },
-        {
-            "full_name": "Api",
-            "email": "api@happykids.com",
-            "phone_num": "+1234567891",
-            "role": EducatorRole.EDUCATOR.value,
-            "group_index": 1,  # Group B
-        },
-        {
-            "full_name": "Paulien",
-            "email": "paulien@happykids.com",
-            "phone_num": "+1234567892",
-            "role": EducatorRole.EDUCATOR.value,
-            "group_index": 2,  # Group C
-        },
-        {
-            "full_name": "Mervi",
-            "email": "mervi@happykids.com",
-            "phone_num": "+1234567893",
-            "role": EducatorRole.SUPER_EDUCATOR.value,
-            "group_index": None,  # No group assignment
-        },
-    ]
-
-    educators = []
-    for educator_data in educators_data:
-        # Create JWT token
-        jwt_payload = {
-            "sub": educator_data["full_name"],
-            "role": educator_data["role"],
-            "user_id": len(educators) + 1,
-            "daycare_id": daycare.id,
-        }
-        jwt_token = create_access_token(jwt_payload)
-
-        educator = Educator(
-            full_name=educator_data["full_name"],
-            email=educator_data["email"],
-            phone_num=educator_data["phone_num"],
-            role=educator_data["role"],
-            jwt_token=jwt_token,
-            daycare_id=daycare.id,
-        )
-        db.add(educator)
-        educators.append(educator)
-
-    db.commit()
-    for educator in educators:
-        db.refresh(educator)
-
-    # Assign educators to groups (except Mervi)
-    for i, educator in enumerate(educators[:-1]):  # Exclude Mervi
-        group = groups[i]
-        educator.groups.append(group)
-
-    db.commit()
 
     # Create parents
     parents_data = [
@@ -274,10 +205,9 @@ def seed_daycare_data(db: Session) -> None:
 
     db.commit()
 
-    print("✅ Seeded daycare data successfully!")
+    print("✅ Seeded daycare data (without educators) successfully!")
     print(f"   - Daycare: {daycare.name} (ID: {daycare.id})")
     print(f"   - Groups: {len(groups)} created")
-    print(f"   - Educators: {len(educators)} created")
     print(f"   - Parents: {len(parents)} created")
     print(f"   - Kids: {len(kids)} created")
 
