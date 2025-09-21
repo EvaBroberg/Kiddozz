@@ -5,7 +5,6 @@ from fastapi import FastAPI
 from app.api import auth, educators, events, health, parents
 from app.core.database import SessionLocal
 from app.services.educator_service import insert_dummy_educators
-from app.services.user_service import insert_dummy_users
 
 app = FastAPI(title="Kiddozz Backend API", version="1.0.0")
 
@@ -48,19 +47,6 @@ def startup_event():
             # Don't exit here, let the app start and handle DB errors gracefully
     except Exception as e:
         print(f"⚠️  Could not run migrations: {e}")
-        # Don't exit here, let the app start and handle DB errors gracefully
-
-    # Insert dummy users
-    try:
-        print("👥 Inserting dummy users...")
-        db = SessionLocal()
-        try:
-            insert_dummy_users(db)
-            print("✅ Dummy users inserted successfully")
-        finally:
-            db.close()
-    except Exception as e:
-        print(f"⚠️  Could not insert dummy users: {e}")
         # Don't exit here, let the app start and handle DB errors gracefully
 
     # Insert dummy educators
