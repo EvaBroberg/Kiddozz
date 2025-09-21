@@ -1,0 +1,22 @@
+#!/bin/sh
+# Pre-push hook to enforce formatting and linting
+
+# Navigate to backend directory where Makefile is located
+cd backend
+
+echo "🔍 Running code format check (black via make format)..."
+make format
+if [ $? -ne 0 ]; then
+  echo "❌ Code format failed. Fix issues with 'make format'. Push aborted."
+  exit 1
+fi
+
+echo "🔍 Running lint check (ruff via make lint)..."
+make lint
+if [ $? -ne 0 ]; then
+  echo "❌ Lint check failed. Fix issues with 'make lint'. Push aborted."
+  exit 1
+fi
+
+echo "✅ Format and lint checks passed. Proceeding with push..."
+exit 0
