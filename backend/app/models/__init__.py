@@ -6,7 +6,6 @@ from .event import Event, EventImage
 from .group import Group
 from .kid import Kid
 from .parent import Parent
-from .user import User, UserRole
 
 __all__ = [
     "Daycare",
@@ -17,8 +16,6 @@ __all__ = [
     "Group",
     "Kid",
     "Parent",
-    "User",
-    "UserRole",
     "educator_groups",
     "parent_kids",
 ]
