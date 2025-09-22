@@ -35,21 +35,21 @@ fun EducatorDashboardScreen(
     // Remember the currently selected section
     var currentEducatorSection by remember { mutableStateOf(EducatorSection.KidsOverview) }
     
-    // Filter state for class filtering
-    var selectedClasses by remember { mutableStateOf(setOf("Class A")) } // Default to educator's class
+    // Filter state for group filtering
+    var selectedClasses by remember { mutableStateOf(setOf("1")) } // Default to educator's group
     var filterMenuExpanded by remember { mutableStateOf(false) }
     
-    // Get all available classes from kidsList
-    val availableClasses = remember(kidsList) {
-        kidsList.map { it.className }.distinct().sorted()
+    // Get all available groups from kidsList
+    val availableGroups = remember(kidsList) {
+        kidsList.map { it.group_id }.distinct().sorted()
     }
     
-    // Compute filtered kids based on selected classes
+    // Compute filtered kids based on selected groups
     val filteredKids = remember(kidsList, selectedClasses) {
         if (selectedClasses.isEmpty()) {
             kidsList
         } else {
-            kidsList.filter { kid -> kid.className in selectedClasses }
+            kidsList.filter { kid -> kid.group_id in selectedClasses }
         }
     }
 
@@ -66,24 +66,24 @@ fun EducatorDashboardScreen(
                     if (currentEducatorSection == EducatorSection.KidsOverview) {
                         Box {
                             IconButton(onClick = { filterMenuExpanded = true }) {
-                                Icon(Icons.Default.FilterList, contentDescription = "Filter by class")
+                                Icon(Icons.Default.FilterList, contentDescription = "Filter by group")
                             }
                             DropdownMenu(
                                 expanded = filterMenuExpanded,
                                 onDismissRequest = { filterMenuExpanded = false }
                             ) {
-                                availableClasses.forEach { className ->
+                                availableGroups.forEach { groupId ->
                                     DropdownMenuItem(
-                                        text = { Text(className) },
+                                        text = { Text("Group $groupId") },
                                         onClick = {
-                                            selectedClasses = if (className in selectedClasses) {
-                                                selectedClasses - className
+                                            selectedClasses = if (groupId in selectedClasses) {
+                                                selectedClasses - groupId
                                             } else {
-                                                selectedClasses + className
+                                                selectedClasses + groupId
                                             }
                                         },
                                         trailingIcon = {
-                                            if (className in selectedClasses) {
+                                            if (groupId in selectedClasses) {
                                                 Checkbox(
                                                     checked = true,
                                                     onCheckedChange = null

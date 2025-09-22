@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import fi.kidozz.app.data.models.Guardian
+import fi.kidozz.app.data.models.TrustedAdult
 
 @Composable
 fun SectionTitle(title: String) {
@@ -19,13 +19,17 @@ fun SectionTitle(title: String) {
 }
 
 @Composable
-fun GuardianInfoView(guardian: Guardian, isAuthorizedPickup: Boolean = false) {
+fun TrustedAdultInfoView(trustedAdult: TrustedAdult, isAuthorizedPickup: Boolean = false) {
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-        Text("Name: ${guardian.name}", style = MaterialTheme.typography.bodyLarge)
-        Text("Phone: ${guardian.phone}", style = MaterialTheme.typography.bodyMedium)
-        Text("Email: ${guardian.email}", style = MaterialTheme.typography.bodyMedium)
-        if (isAuthorizedPickup || guardian.relationship.isNotBlank()) {
-            Text("Relationship: ${guardian.relationship}", style = MaterialTheme.typography.bodyMedium)
+        Text("Name: ${trustedAdult.name}", style = MaterialTheme.typography.bodyLarge)
+        trustedAdult.phone_num?.let { phone ->
+            Text("Phone: $phone", style = MaterialTheme.typography.bodyMedium)
+        }
+        trustedAdult.email?.let { email ->
+            Text("Email: $email", style = MaterialTheme.typography.bodyMedium)
+        }
+        trustedAdult.address?.let { address ->
+            Text("Address: $address", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

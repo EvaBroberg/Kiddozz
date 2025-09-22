@@ -8,8 +8,11 @@ import androidx.compose.runtime.Composable
 import fi.kidozz.app.data.models.Kid
 
 @Composable
-fun KiddozCard(kid: Kid) {
-    Card {
+fun KiddozCard(
+    kid: Kid,
+    modifier: Modifier = Modifier
+) {
+    Card(modifier = modifier) {
         Column {
             Text(text = kid.full_name, style = MaterialTheme.typography.bodyLarge)
             Text(text = "DOB: ${kid.dob}")

@@ -1,11 +1,13 @@
 package fi.kidozz.app.features.dashboard
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.ui.Modifier
 import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.data.repository.KidsRepository
 
@@ -22,6 +24,25 @@ fun KidsGrid(
     LazyVerticalGrid(columns = GridCells.Fixed(2)) {
         items(kids) { kid ->
             KiddozCard(kid = kid)
+        }
+    }
+}
+
+@Composable
+fun KidsGrid(
+    filteredKids: List<Kid>,
+    onKidClick: (Kid) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = modifier
+    ) {
+        items(filteredKids) { kid ->
+            KiddozCard(
+                kid = kid,
+                modifier = Modifier.clickable { onKidClick(kid) }
+            )
         }
     }
 }

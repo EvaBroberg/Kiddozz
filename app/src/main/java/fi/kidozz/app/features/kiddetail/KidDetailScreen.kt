@@ -14,6 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.data.sample.sampleKidsState
+import fi.kidozz.app.data.sample.computeAge
 import fi.kidozz.app.ui.components.SectionTitle
 import fi.kidozz.app.ui.theme.KiddozzTheme
 
@@ -27,7 +28,7 @@ fun KidDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(kid.name) },
+                title = { Text(kid.full_name) },
                 navigationIcon = { 
                     IconButton(onClick = onBackClick) { 
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") 
@@ -53,7 +54,7 @@ fun KidDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = kid.name, 
+                        text = kid.full_name, 
                         style = MaterialTheme.typography.headlineSmall, 
                         textAlign = TextAlign.Center, 
                         modifier = Modifier.fillMaxWidth()
@@ -66,7 +67,16 @@ fun KidDetailScreen(
                 Text("ID: ${kid.id}") 
             }
             item { 
-                Text("Age: ${kid.age} years old") 
+                Text("Age: ${computeAge(kid.dob)} years old") 
+            }
+            item { 
+                Text("Date of Birth: ${kid.dob}") 
+            }
+            item { 
+                Text("Group ID: ${kid.group_id}") 
+            }
+            item { 
+                Text("Daycare ID: ${kid.daycare_id}") 
             }
         }
     }
