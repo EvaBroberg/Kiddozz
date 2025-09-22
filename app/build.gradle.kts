@@ -62,7 +62,25 @@ android {
 }
 
 dependencies {
+    // --- Compose Core ---
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("androidx.compose.ui:ui:1.6.8")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.6.8")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.6.8")
 
+    // --- Accompanist (animations, insets, flow layouts) ---
+    implementation("com.google.accompanist:accompanist-navigation-animation:0.34.0")
+    implementation("com.google.accompanist:accompanist-flowlayout:0.34.0")
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
+
+    // --- Material Icons ---
+    implementation("androidx.compose.material:material-icons-core:1.6.8")
+    implementation("androidx.compose.material:material-icons-extended:1.6.8")
+
+    // --- Lottie for animations ---
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
+
+    // --- Existing project dependencies (leave untouched) ---
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
