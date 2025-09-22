@@ -2,9 +2,10 @@ import os
 
 from fastapi import FastAPI
 
-from app.api import auth, educators, events, health, parents
+from app.api import auth, educators, events, health, kids, parents
 from app.core.database import SessionLocal
 from app.services.educator_service import insert_dummy_educators
+from app.services.seeder import seed_daycare_data
 
 app = FastAPI(title="Kiddozz Backend API", version="1.0.0")
 
@@ -17,6 +18,7 @@ app.include_router(
 app.include_router(events.router, prefix="/api/v1/events")
 app.include_router(educators.router, prefix="/api/v1", tags=["educators"])
 app.include_router(parents.router, prefix="/api/v1", tags=["parents"])
+app.include_router(kids.router, prefix="/api/v1", tags=["kids"])
 
 
 @app.on_event("startup")
@@ -47,6 +49,19 @@ def startup_event():
             # Don't exit here, let the app start and handle DB errors gracefully
     except Exception as e:
         print(f"⚠️  Could not run migrations: {e}")
+        # Don't exit here, let the app start and handle DB errors gracefully
+
+    # Seed daycare data (parents and kids)
+    try:
+        print("🌱 Seeding daycare data...")
+        db = SessionLocal()
+        try:
+            seed_daycare_data(db)
+            print("✅ Daycare data seeded successfully")
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"⚠️  Could not seed daycare data: {e}")
         # Don't exit here, let the app start and handle DB errors gracefully
 
     # Insert dummy educators
