@@ -1,5 +1,6 @@
 package fi.kidozz.app.features.kiddetail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -36,7 +37,9 @@ fun KidDetailScreen(
                 }
             )
         },
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.padding(innerPadding).padding(16.dp).fillMaxSize(),

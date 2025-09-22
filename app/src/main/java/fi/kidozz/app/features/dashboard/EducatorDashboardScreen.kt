@@ -1,6 +1,7 @@
 package fi.kidozz.app.features.dashboard;
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -111,6 +112,8 @@ fun EducatorDashboardScreen(
             }
         },
         modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
     ) {
         innerPadding ->
         // TODO: Replace with actual content for each section

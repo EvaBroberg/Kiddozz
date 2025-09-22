@@ -1,5 +1,6 @@
 package fi.kidozz.app.features.calendar
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -34,7 +35,10 @@ fun PreviousEventsScreen(
                     }
                 }
             )
-        }
+        },
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
     ) { innerPadding ->
         Column(
             modifier = modifier
