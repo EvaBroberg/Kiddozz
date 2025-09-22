@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,16 +27,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.ui.styles.AppTypography
-import fi.kidozz.app.ui.styles.ThumbnailCard
 
 @Composable
 fun KiddozCard(
     kid: Kid,
     modifier: Modifier = Modifier
 ) {
-    ThumbnailCard(
+    Card(
         modifier = modifier.size(200.dp),
-        backgroundColor = Color.White
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 8.dp
+        )
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -70,7 +77,7 @@ fun KiddozCard(
                     textAlign = TextAlign.Center
                 )
             }
-            
+
             // Button positioned at bottom, flush to edges
             Button(
                 onClick = { /* TODO: Handle OUT action */ },
