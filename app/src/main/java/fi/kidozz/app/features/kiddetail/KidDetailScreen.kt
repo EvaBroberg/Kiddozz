@@ -19,6 +19,7 @@ import fi.kidozz.app.data.sample.sampleKidsState
 import fi.kidozz.app.data.sample.computeAge
 import fi.kidozz.app.features.dashboard.KidsViewModel
 import fi.kidozz.app.ui.components.SectionTitle
+import fi.kidozz.app.ui.styles.AttendanceSegmentedControl
 import fi.kidozz.app.ui.theme.KiddozzTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,52 +104,14 @@ fun KidDetailScreen(
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
                         
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            // In Care Button
-                            FilterChip(
-                                onClick = {
-                                    currentAttendance = "in-care"
-                                    kidsViewModel?.updateAttendance(kid.id, "in-care")
-                                },
-                                label = { Text("In Care") },
-                                selected = currentAttendance == "in-care",
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color.Green.copy(alpha = 0.2f),
-                                    selectedLabelColor = Color.Green
-                                )
-                            )
-                            
-                            // Out Button
-                            FilterChip(
-                                onClick = {
-                                    currentAttendance = "out"
-                                    kidsViewModel?.updateAttendance(kid.id, "out")
-                                },
-                                label = { Text("Out") },
-                                selected = currentAttendance == "out",
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color.Gray.copy(alpha = 0.2f),
-                                    selectedLabelColor = Color.Gray
-                                )
-                            )
-                            
-                            // Sick Button
-                            FilterChip(
-                                onClick = {
-                                    currentAttendance = "sick"
-                                    kidsViewModel?.updateAttendance(kid.id, "sick")
-                                },
-                                label = { Text("Sick") },
-                                selected = currentAttendance == "sick",
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color.Red.copy(alpha = 0.2f),
-                                    selectedLabelColor = Color.Red
-                                )
-                            )
-                        }
+                        AttendanceSegmentedControl(
+                            selectedAttendance = currentAttendance,
+                            onAttendanceChange = { newAttendance ->
+                                currentAttendance = newAttendance
+                                kidsViewModel?.updateAttendance(kid.id, newAttendance)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }
