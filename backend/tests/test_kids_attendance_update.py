@@ -1,7 +1,6 @@
-import pytest
 from datetime import date
+
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
 from app.main import app
 from app.models.daycare import Daycare
@@ -36,7 +35,7 @@ class TestKidsAttendanceUpdate:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -44,8 +43,7 @@ class TestKidsAttendanceUpdate:
 
             # Update attendance to IN_CARE
             response = client.patch(
-                f"/api/v1/kids/{kid.id}/attendance",
-                json={"attendance": "in-care"}
+                f"/api/v1/kids/{kid.id}/attendance", json={"attendance": "in-care"}
             )
 
             assert response.status_code == 200
@@ -81,7 +79,7 @@ class TestKidsAttendanceUpdate:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -90,7 +88,7 @@ class TestKidsAttendanceUpdate:
             # Try to update with invalid status
             response = client.patch(
                 f"/api/v1/kids/{kid.id}/attendance",
-                json={"attendance": "invalid-status"}
+                json={"attendance": "invalid-status"},
             )
 
             assert response.status_code == 400
@@ -103,8 +101,7 @@ class TestKidsAttendanceUpdate:
     def test_update_attendance_kid_not_found(self, clean_db):
         """Test attendance update for non-existent kid."""
         response = client.patch(
-            "/api/v1/kids/999/attendance",
-            json={"attendance": "in-care"}
+            "/api/v1/kids/999/attendance", json={"attendance": "in-care"}
         )
 
         assert response.status_code == 404
@@ -132,7 +129,7 @@ class TestKidsAttendanceUpdate:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -140,11 +137,10 @@ class TestKidsAttendanceUpdate:
 
             # Test all valid statuses
             valid_statuses = ["out", "sick", "in-care"]
-            
+
             for status in valid_statuses:
                 response = client.patch(
-                    f"/api/v1/kids/{kid.id}/attendance",
-                    json={"attendance": status}
+                    f"/api/v1/kids/{kid.id}/attendance", json={"attendance": status}
                 )
 
                 assert response.status_code == 200
@@ -179,17 +175,14 @@ class TestKidsAttendanceUpdate:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
             db.refresh(kid)
 
             # Try to update without attendance field
-            response = client.patch(
-                f"/api/v1/kids/{kid.id}/attendance",
-                json={}
-            )
+            response = client.patch(f"/api/v1/kids/{kid.id}/attendance", json={})
 
             assert response.status_code == 422  # Validation error
 

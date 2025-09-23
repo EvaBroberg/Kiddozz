@@ -43,17 +43,20 @@ def update_attendance(
     except ValueError:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid attendance status: {request.attendance}. Must be one of: {[status.value for status in AttendanceStatus]}"
+            detail=f"Invalid attendance status: {request.attendance}. Must be one of: {[status.value for status in AttendanceStatus]}",
         )
-    
+
     # Find the kid
     kid = db.query(Kid).filter(Kid.id == kid_id).first()
     if not kid:
         raise HTTPException(status_code=404, detail="Kid not found")
-    
+
     # Update attendance
     kid.attendance = attendance_status
     db.commit()
     db.refresh(kid)
-    
-    return {"message": "Attendance updated successfully", "attendance": kid.attendance.value}
+
+    return {
+        "message": "Attendance updated successfully",
+        "attendance": kid.attendance.value,
+    }
