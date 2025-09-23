@@ -76,9 +76,21 @@ fun KiddozzAppHost(
         composable("kid_detail") {
             val kid = navController.previousBackStackEntry?.savedStateHandle?.get<Kid>("selectedKid")
             if (kid != null) {
+                // Set up API services for KidDetailScreen
+                val baseUrl = "http://10.0.2.2:8000" // Android emulator localhost
+                val retrofit = Retrofit.Builder()
+                    .baseUrl(baseUrl)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                
+                val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
+                val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService)
+                val kidsViewModel = remember { KidsViewModel(kidsRepository) }
+                
                 KidDetailScreen(
                     kid = kid,
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() },
+                    kidsViewModel = kidsViewModel
                 )
             }
         }

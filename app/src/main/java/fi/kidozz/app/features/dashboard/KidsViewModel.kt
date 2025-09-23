@@ -45,8 +45,10 @@ class KidsViewModel(
     fun updateAttendance(kidId: String, attendance: String) {
         viewModelScope.launch {
             if (kidsRepository != null) {
+                println("KidsViewModel: Updating attendance for kid $kidId to $attendance")
                 kidsRepository.updateAttendance(kidId, attendance).fold(
                     onSuccess = {
+                        println("KidsViewModel: Successfully updated attendance for kid $kidId")
                         // Update the local state to reflect the change
                         _kids.value = _kids.value.map { kid ->
                             if (kid.id == kidId) {
@@ -57,9 +59,12 @@ class KidsViewModel(
                         }
                     },
                     onFailure = { exception ->
+                        println("KidsViewModel: Failed to update attendance for kid $kidId: ${exception.message}")
                         _error.value = exception.message ?: "Failed to update attendance"
                     }
                 )
+            } else {
+                println("KidsViewModel: kidsRepository is null, cannot update attendance")
             }
         }
     }

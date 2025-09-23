@@ -12,13 +12,18 @@ class KidsRepository(private val api: KidsApiService) {
     
     suspend fun updateAttendance(kidId: String, attendance: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            println("KidsRepository: Making API call to update attendance for kid $kidId to $attendance")
             val response = api.updateAttendance(kidId, mapOf("attendance" to attendance))
+            println("KidsRepository: API response code: ${response.code()}, success: ${response.isSuccessful}")
             if (response.isSuccessful) {
+                println("KidsRepository: Successfully updated attendance in database")
                 Result.success(Unit)
             } else {
+                println("KidsRepository: API call failed with code ${response.code()}")
                 Result.failure(Exception("Failed to update attendance: ${response.code()}"))
             }
         } catch (e: Exception) {
+            println("KidsRepository: Exception occurred: ${e.message}")
             Result.failure(e)
         }
     }
