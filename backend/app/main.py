@@ -3,9 +3,6 @@ import os
 from fastapi import FastAPI
 
 from app.api import auth, educators, events, groups, health, kids, parents
-from app.core.database import SessionLocal
-from app.services.educator_service import insert_dummy_educators
-from app.services.seeder import seed_daycare_data
 
 app = FastAPI(title="Kiddozz Backend API", version="1.0.0")
 
@@ -24,7 +21,7 @@ app.include_router(groups.router, prefix="/api/v1", tags=["groups"])
 
 @app.on_event("startup")
 def startup_event():
-    """Run database migrations and insert dummy users on application startup."""
+    """Run database migrations on application startup."""
     import os
     import subprocess
     import sys
@@ -52,31 +49,9 @@ def startup_event():
         print(f"⚠️  Could not run migrations: {e}")
         # Don't exit here, let the app start and handle DB errors gracefully
 
-    # Seed daycare data (parents and kids)
-    try:
-        print("🌱 Seeding daycare data...")
-        db = SessionLocal()
-        try:
-            seed_daycare_data(db)
-            print("✅ Daycare data seeded successfully")
-        finally:
-            db.close()
-    except Exception as e:
-        print(f"⚠️  Could not seed daycare data: {e}")
-        # Don't exit here, let the app start and handle DB errors gracefully
-
-    # Insert dummy educators
-    try:
-        print("👨‍🏫 Inserting dummy educators...")
-        db = SessionLocal()
-        try:
-            insert_dummy_educators(db)
-            print("✅ Dummy educators inserted successfully")
-        finally:
-            db.close()
-    except Exception as e:
-        print(f"⚠️  Could not insert dummy educators: {e}")
-        # Don't exit here, let the app start and handle DB errors gracefully
+    print(
+        "ℹ️  No automatic seeding performed. Use test fixtures or manual scripts for dummy data."
+    )
 
 
 @app.get("/")
