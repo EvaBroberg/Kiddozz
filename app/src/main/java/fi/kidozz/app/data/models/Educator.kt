@@ -8,7 +8,9 @@ import kotlinx.parcelize.RawValue
 data class Group(
     val id: String,
     val name: String
-) : Parcelable
+) : Parcelable {
+    override fun describeContents(): Int = 0
+}
 
 @Parcelize
 data class Educator(
@@ -18,4 +20,6 @@ data class Educator(
     val email: String?,
     val phone_num: String?,
     val groups: @RawValue List<Group>
-) : Parcelable
+) : Parcelable {
+    override fun describeContents(): Int = 0
+}

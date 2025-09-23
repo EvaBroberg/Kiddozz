@@ -14,9 +14,9 @@ class AuthRepository(
     private val tokenManager: TokenManager
 ) {
     
-    suspend fun getEducators(daycareId: String): Result<List<Educator>> = withContext(Dispatchers.IO) {
+    suspend fun getEducators(daycareId: String, search: String? = null): Result<List<Educator>> = withContext(Dispatchers.IO) {
         try {
-            val response = authApiService.getEducators(daycareId)
+            val response = authApiService.getEducators(daycareId, search)
             if (response.isSuccessful) {
                 val educators = response.body() ?: emptyList()
                 Result.success(educators)
@@ -28,9 +28,9 @@ class AuthRepository(
         }
     }
     
-    suspend fun getParents(daycareId: String): Result<List<Parent>> = withContext(Dispatchers.IO) {
+    suspend fun getParents(daycareId: String, search: String? = null): Result<List<Parent>> = withContext(Dispatchers.IO) {
         try {
-            val response = authApiService.getParents(daycareId)
+            val response = authApiService.getParents(daycareId, search)
             if (response.isSuccessful) {
                 val parents = response.body() ?: emptyList()
                 Result.success(parents)

@@ -12,10 +12,16 @@ import retrofit2.http.Query
 
 interface AuthApiService {
     @GET("api/v1/educators")
-    suspend fun getEducators(@Query("daycare_id") daycareId: String): Response<List<Educator>>
+    suspend fun getEducators(
+        @Query("daycare_id") daycareId: String,
+        @Query("search") search: String? = null
+    ): Response<List<Educator>>
     
     @GET("api/v1/parents")
-    suspend fun getParents(@Query("daycare_id") daycareId: String): Response<List<Parent>>
+    suspend fun getParents(
+        @Query("daycare_id") daycareId: String,
+        @Query("search") search: String? = null
+    ): Response<List<Parent>>
     
     @POST("api/v1/auth/dev-login")
     suspend fun devLogin(@Body request: DevLoginRequest): Response<TokenResponse>

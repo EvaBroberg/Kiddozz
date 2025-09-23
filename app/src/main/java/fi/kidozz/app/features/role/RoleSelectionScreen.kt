@@ -62,10 +62,10 @@ fun RoleSelectionScreen(
                 
                 when (role) {
                     "educator" -> {
-                        val result = authRepository.getEducators(daycareId)
+                        val result = authRepository.getEducators(daycareId, "Jessica")
                         result.fold(
                             onSuccess = { educators ->
-                                val educator = educators.find { it.role == "educator" }
+                                val educator = educators.firstOrNull()
                                 if (educator != null) {
                                     val loginResult = authRepository.devLoginAsEducator(educator.id)
                                     loginResult.fold(
@@ -84,19 +84,19 @@ fun RoleSelectionScreen(
                                         }
                                     )
                                 } else {
-                                    errorMessage = "No educator found"
+                                    errorMessage = "Jessica not found"
                                 }
                             },
                             onFailure = { exception ->
-                                errorMessage = "Failed to fetch educators: ${exception.message}"
+                                errorMessage = "Failed to fetch Jessica: ${exception.message}"
                             }
                         )
                     }
                     "parent" -> {
-                        val result = authRepository.getParents(daycareId)
+                        val result = authRepository.getParents(daycareId, "Sara")
                         result.fold(
                             onSuccess = { parents ->
-                                val parent = parents.find { it.full_name.lowercase().contains("sara") }
+                                val parent = parents.firstOrNull()
                                 if (parent != null) {
                                     val loginResult = authRepository.devLoginAsParent(parent.id)
                                     loginResult.fold(
@@ -115,19 +115,19 @@ fun RoleSelectionScreen(
                                         }
                                     )
                                 } else {
-                                    errorMessage = "No parent found"
+                                    errorMessage = "Sara not found"
                                 }
                             },
                             onFailure = { exception ->
-                                errorMessage = "Failed to fetch parents: ${exception.message}"
+                                errorMessage = "Failed to fetch Sara: ${exception.message}"
                             }
                         )
                     }
                     "super_educator" -> {
-                        val result = authRepository.getEducators(daycareId)
+                        val result = authRepository.getEducators(daycareId, "Mervi")
                         result.fold(
                             onSuccess = { educators ->
-                                val educator = educators.find { it.role == "super_educator" }
+                                val educator = educators.firstOrNull()
                                 if (educator != null) {
                                     val loginResult = authRepository.devLoginAsEducator(educator.id)
                                     loginResult.fold(
@@ -146,11 +146,11 @@ fun RoleSelectionScreen(
                                         }
                                     )
                                 } else {
-                                    errorMessage = "No super educator found"
+                                    errorMessage = "Mervi not found"
                                 }
                             },
                             onFailure = { exception ->
-                                errorMessage = "Failed to fetch educators: ${exception.message}"
+                                errorMessage = "Failed to fetch Mervi: ${exception.message}"
                             }
                         )
                     }
