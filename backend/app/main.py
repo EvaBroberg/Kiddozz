@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI
 
-from app.api import auth, educators, events, health, kids, parents
+from app.api import auth, educators, events, groups, health, kids, parents
 from app.core.database import SessionLocal
 from app.services.educator_service import insert_dummy_educators
 from app.services.seeder import seed_daycare_data
@@ -19,6 +19,7 @@ app.include_router(events.router, prefix="/api/v1/events")
 app.include_router(educators.router, prefix="/api/v1", tags=["educators"])
 app.include_router(parents.router, prefix="/api/v1", tags=["parents"])
 app.include_router(kids.router, prefix="/api/v1", tags=["kids"])
+app.include_router(groups.router, prefix="/api/v1", tags=["groups"])
 
 
 @app.on_event("startup")
