@@ -22,26 +22,6 @@ class EducatorViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
     
-    fun loadCurrentEducator(token: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            
-            try {
-                if (educatorRepository != null) {
-                    val educator = educatorRepository.getCurrentEducator(token)
-                    _currentEducator.value = educator
-                } else {
-                    _currentEducator.value = null
-                }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to load educator"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-    
     fun loadCurrentEducatorByDaycare(daycareId: String) {
         viewModelScope.launch {
             _isLoading.value = true
