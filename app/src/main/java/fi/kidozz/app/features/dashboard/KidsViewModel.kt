@@ -41,4 +41,26 @@ class KidsViewModel(
             }
         }
     }
+    
+    fun updateAttendance(kidId: String, attendance: String) {
+        viewModelScope.launch {
+            if (kidsRepository != null) {
+                kidsRepository.updateAttendance(kidId, attendance).fold(
+                    onSuccess = {
+                        // Update the local state to reflect the change
+                        _kids.value = _kids.value.map { kid ->
+                            if (kid.id == kidId) {
+                                kid.copy(attendance = attendance)
+                            } else {
+                                kid
+                            }
+                        }
+                    },
+                    onFailure = { exception ->
+                        _error.value = exception.message ?: "Failed to update attendance"
+                    }
+                )
+            }
+        }
+    }
 }

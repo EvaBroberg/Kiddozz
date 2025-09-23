@@ -10,12 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.data.sample.sampleKidsState
 import fi.kidozz.app.data.sample.computeAge
+import fi.kidozz.app.features.dashboard.KidsViewModel
 import fi.kidozz.app.ui.components.SectionTitle
 import fi.kidozz.app.ui.theme.KiddozzTheme
 
@@ -24,8 +26,10 @@ import fi.kidozz.app.ui.theme.KiddozzTheme
 fun KidDetailScreen(
     kid: Kid,
     onBackClick: () -> Unit,
+    kidsViewModel: KidsViewModel? = null,
     modifier: Modifier = Modifier
 ) {
+    var currentAttendance by remember { mutableStateOf(kid.attendance) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -80,6 +84,73 @@ fun KidDetailScreen(
             }
             item { 
                 Text("Daycare ID: ${kid.daycare_id}") 
+            }
+            
+            item { SectionTitle("Attendance") }
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Current Status: ${currentAttendance.uppercase()}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            // In Care Button
+                            FilterChip(
+                                onClick = {
+                                    currentAttendance = "in-care"
+                                    kidsViewModel?.updateAttendance(kid.id, "in-care")
+                                },
+                                label = { Text("In Care") },
+                                selected = currentAttendance == "in-care",
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color.Green.copy(alpha = 0.2f),
+                                    selectedLabelColor = Color.Green
+                                )
+                            )
+                            
+                            // Out Button
+                            FilterChip(
+                                onClick = {
+                                    currentAttendance = "out"
+                                    kidsViewModel?.updateAttendance(kid.id, "out")
+                                },
+                                label = { Text("Out") },
+                                selected = currentAttendance == "out",
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color.Gray.copy(alpha = 0.2f),
+                                    selectedLabelColor = Color.Gray
+                                )
+                            )
+                            
+                            // Sick Button
+                            FilterChip(
+                                onClick = {
+                                    currentAttendance = "sick"
+                                    kidsViewModel?.updateAttendance(kid.id, "sick")
+                                },
+                                label = { Text("Sick") },
+                                selected = currentAttendance == "sick",
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color.Red.copy(alpha = 0.2f),
+                                    selectedLabelColor = Color.Red
+                                )
+                            )
+                        }
+                    }
+                }
             }
         }
     }
