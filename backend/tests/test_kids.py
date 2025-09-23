@@ -395,7 +395,7 @@ class TestKidAttendance:
                 full_name="Attendance Test",
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
-                group_id=group.id
+                group_id=group.id,
             )
             db.add(kid)
             db.commit()
@@ -427,7 +427,7 @@ class TestKidAttendance:
                 dob=date(2020, 2, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.SICK
+                attendance=AttendanceStatus.SICK,
             )
             db.add(sick_kid)
             db.commit()
@@ -441,7 +441,7 @@ class TestKidAttendance:
                 dob=date(2020, 3, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.IN_CARE
+                attendance=AttendanceStatus.IN_CARE,
             )
             db.add(in_care_kid)
             db.commit()
@@ -471,7 +471,7 @@ class TestKidAttendance:
             kids_data = [
                 ("Out Kid", AttendanceStatus.OUT),
                 ("Sick Kid", AttendanceStatus.SICK),
-                ("In Care Kid", AttendanceStatus.IN_CARE)
+                ("In Care Kid", AttendanceStatus.IN_CARE),
             ]
 
             for name, status in kids_data:
@@ -480,7 +480,7 @@ class TestKidAttendance:
                     dob=date(2020, 1, 1),
                     daycare_id=daycare.id,
                     group_id=group.id,
-                    attendance=status
+                    attendance=status,
                 )
                 db.add(kid)
             db.commit()
@@ -522,7 +522,7 @@ class TestKidAttendance:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -559,14 +559,18 @@ class TestKidAttendance:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.SICK
+                attendance=AttendanceStatus.SICK,
             )
             db.add(kid)
             db.commit()
 
             # Test that the enum values are properly constrained
             # by checking that only valid values are accepted
-            valid_statuses = [AttendanceStatus.OUT, AttendanceStatus.SICK, AttendanceStatus.IN_CARE]
+            valid_statuses = [
+                AttendanceStatus.OUT,
+                AttendanceStatus.SICK,
+                AttendanceStatus.IN_CARE,
+            ]
             for status in valid_statuses:
                 kid.attendance = status
                 db.commit()

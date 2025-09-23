@@ -16,6 +16,7 @@ class AttendanceStatus(PyEnum):
     OUT = "out"
     IN_CARE = "in-care"
 
+
 if TYPE_CHECKING:
     from .daycare import Daycare
     from .group import Group
@@ -42,9 +43,13 @@ class Kid(Base):
         JSON, nullable=True
     )
     attendance: Mapped[AttendanceStatus] = mapped_column(
-        Enum(AttendanceStatus, name="attendance_status", values_callable=lambda obj: [e.value for e in obj]), 
-        nullable=False, 
-        server_default="out"
+        Enum(
+            AttendanceStatus,
+            name="attendance_status",
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+        server_default="out",
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), nullable=False

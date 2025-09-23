@@ -80,12 +80,16 @@ fun KiddozCard(
 
             // Button positioned at bottom, flush to edges
             Button(
-                onClick = { /* TODO: Handle OUT action */ },
+                onClick = { /* TODO: Handle attendance action */ },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(40.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Gray,
+                    containerColor = when (kid.attendance.lowercase()) {
+                        "sick" -> Color.Red
+                        "in-care" -> Color.Green
+                        else -> Color.Gray // "out" or any other value
+                    },
                     contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(0.dp),
@@ -94,7 +98,7 @@ fun KiddozCard(
                 )
             ) {
                 Text(
-                    text = "OUT",
+                    text = kid.attendance.uppercase(),
                     style = MaterialTheme.typography.labelLarge
                 )
             }

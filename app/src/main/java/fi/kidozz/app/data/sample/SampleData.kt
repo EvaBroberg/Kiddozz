@@ -50,7 +50,8 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         phone_num = "+1234567891",
                         address = "123 Main St, City"
                     )
-                )
+                ),
+                attendance = "out"
             ),
             Kid(
                 id = "2",
@@ -65,7 +66,8 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         phone_num = "+1234567892",
                         address = "456 Oak Ave, City"
                     )
-                )
+                ),
+                attendance = "in-care"
             ),
             Kid(
                 id = "3",
@@ -86,7 +88,8 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         phone_num = "+1234567894",
                         address = "789 Pine St, City"
                     )
-                )
+                ),
+                attendance = "sick"
             ),
             Kid(
                 id = "4",
@@ -101,7 +104,8 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         phone_num = "+1234567895",
                         address = "321 Elm St, City"
                     )
-                )
+                ),
+                attendance = "out"
             ),
             Kid(
                 id = "5",
@@ -122,7 +126,8 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         phone_num = "+1234567897",
                         address = "654 Maple Ave, City"
                     )
-                )
+                ),
+                attendance = "in-care"
             ),
             Kid(
                 id = "6",
@@ -137,7 +142,8 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         phone_num = "+1234567898",
                         address = "987 Cedar St, City"
                     )
-                )
+                ),
+                attendance = "sick"
             ),
             Kid(
                 id = "7",
@@ -158,7 +164,8 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         phone_num = "+1234567800",
                         address = "147 Birch Rd, City"
                     )
-                )
+                ),
+                attendance = "out"
             ),
             Kid(
                 id = "8",
@@ -173,7 +180,8 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         phone_num = "+1234567801",
                         address = "258 Spruce Ln, City"
                     )
-                )
+                ),
+                attendance = "in-care"
             ),
             Kid(
                 id = "9",
@@ -194,7 +202,8 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         phone_num = "+1234567803",
                         address = "369 Willow Way, City"
                     )
-                )
+                ),
+                attendance = "sick"
             )
         )
     )
