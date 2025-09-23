@@ -153,3 +153,33 @@ def get_current_user_info(
         "role": current_user.get("role"),
         "exp": current_user.get("exp"),
     }
+
+
+@router.get("/me/educator")
+def get_current_educator_info(
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get current educator information including groups."""
+    role = current_user.get("role")
+    if role not in ["educator", "super_educator"]:
+        raise HTTPException(
+            status_code=403, 
+            detail="This endpoint is only available for educators"
+        )
+    
+    educator_id = current_user.get("sub")  # JWT sub field contains the educator ID
+    if not educator_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Educator ID not found in token"
+        )
+    
+    educator = db.query(Educator).filter(Educator.id == educator_id).first()
+    if not educator:
+        raise HTTPException(
+            status_code=404,
+            detail="Educator not found"
+        )
+    
+    return educator

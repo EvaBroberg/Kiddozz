@@ -63,7 +63,7 @@ fun EducatorDashboardScreen(
     // Load data on first composition
     LaunchedEffect(daycareId) {
         groupsViewModel.loadGroups(daycareId)
-        educatorViewModel.loadEducatorByName(daycareId, "Jessica") // Fetch Jessica from database
+        educatorViewModel.loadCurrentEducator(daycareId)
         kidsViewModel.loadKids(daycareId)
     }
     
