@@ -20,6 +20,8 @@ class KidBase(BaseModel):
     daycare_id: Union[str, int]
     trusted_adults: Optional[List[TrustedAdultOut]] = []
     attendance: AttendanceStatus = AttendanceStatus.OUT
+    allergies: Optional[str] = None
+    need_to_know: Optional[str] = None
 
 
 class KidCreate(KidBase):
@@ -33,6 +35,8 @@ class KidUpdate(BaseModel):
     daycare_id: Optional[Union[str, int]] = None
     trusted_adults: Optional[List[TrustedAdultOut]] = None
     attendance: Optional[AttendanceStatus] = None
+    allergies: Optional[str] = None
+    need_to_know: Optional[str] = None
 
 
 class KidOut(KidBase):
