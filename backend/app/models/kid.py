@@ -1,13 +1,20 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from sqlalchemy import JSON, Date, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import JSON, Date, DateTime, Enum, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+
+class AttendanceStatus(PyEnum):
+    SICK = "sick"
+    OUT = "out"
+    IN_CARE = "in-care"
 
 if TYPE_CHECKING:
     from .daycare import Daycare
@@ -33,6 +40,11 @@ class Kid(Base):
     )
     trusted_adults: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(
         JSON, nullable=True
+    )
+    attendance: Mapped[AttendanceStatus] = mapped_column(
+        Enum(AttendanceStatus, name="attendance_status", values_callable=lambda obj: [e.value for e in obj]), 
+        nullable=False, 
+        server_default="out"
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), nullable=False

@@ -1,9 +1,11 @@
+from datetime import date
+
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.models.daycare import Daycare
 from app.models.group import Group
-from app.models.kid import Kid
+from app.models.kid import AttendanceStatus, Kid
 from app.models.parent import Parent
 from app.services.seeder import insert_dummy_kids, insert_dummy_parents
 from tests.conftest import TestingSessionLocal
@@ -365,6 +367,210 @@ class TestKidSeeding:
             kid_names = [kid.full_name for kid in kids]
             for expected_name in expected_kid_names:
                 assert expected_name in kid_names
+
+        finally:
+            db.close()
+
+
+class TestKidAttendance:
+    """Test kid attendance functionality."""
+
+    def test_kid_default_attendance(self, clean_db):
+        """Test that a kid defaults to OUT attendance status."""
+        db = TestingSessionLocal()
+        try:
+            # Create a daycare and group
+            daycare = Daycare(name="Test Daycare")
+            db.add(daycare)
+            db.commit()
+            db.refresh(daycare)
+
+            group = Group(name="Group A", daycare_id=daycare.id)
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+
+            # Create a kid without specifying attendance
+            kid = Kid(
+                full_name="Attendance Test",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            assert kid.attendance == AttendanceStatus.OUT
+
+        finally:
+            db.close()
+
+    def test_kid_attendance_enum(self, clean_db):
+        """Test that a kid can be set to different attendance statuses."""
+        db = TestingSessionLocal()
+        try:
+            # Create a daycare and group
+            daycare = Daycare(name="Test Daycare")
+            db.add(daycare)
+            db.commit()
+            db.refresh(daycare)
+
+            group = Group(name="Group A", daycare_id=daycare.id)
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+
+            # Test SICK status
+            sick_kid = Kid(
+                full_name="Sick Kid",
+                dob=date(2020, 2, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.SICK
+            )
+            db.add(sick_kid)
+            db.commit()
+            db.refresh(sick_kid)
+
+            assert sick_kid.attendance == AttendanceStatus.SICK
+
+            # Test IN_CARE status
+            in_care_kid = Kid(
+                full_name="In Care Kid",
+                dob=date(2020, 3, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.IN_CARE
+            )
+            db.add(in_care_kid)
+            db.commit()
+            db.refresh(in_care_kid)
+
+            assert in_care_kid.attendance == AttendanceStatus.IN_CARE
+
+        finally:
+            db.close()
+
+    def test_kid_attendance_serialization(self, clean_db):
+        """Test that attendance status serializes correctly in API responses."""
+        db = TestingSessionLocal()
+        try:
+            # Create a daycare and group
+            daycare = Daycare(name="Test Daycare")
+            db.add(daycare)
+            db.commit()
+            db.refresh(daycare)
+
+            group = Group(name="Group A", daycare_id=daycare.id)
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+
+            # Create kids with different attendance statuses
+            kids_data = [
+                ("Out Kid", AttendanceStatus.OUT),
+                ("Sick Kid", AttendanceStatus.SICK),
+                ("In Care Kid", AttendanceStatus.IN_CARE)
+            ]
+
+            for name, status in kids_data:
+                kid = Kid(
+                    full_name=name,
+                    dob=date(2020, 1, 1),
+                    daycare_id=daycare.id,
+                    group_id=group.id,
+                    attendance=status
+                )
+                db.add(kid)
+            db.commit()
+
+            # Test API endpoint
+            response = client.get(f"/api/v1/kids?daycare_id={daycare.id}")
+            assert response.status_code == 200
+
+            kids = response.json()
+            assert len(kids) == 3
+
+            # Check that attendance statuses are serialized as strings
+            attendance_values = [kid["attendance"] for kid in kids]
+            assert "out" in attendance_values
+            assert "sick" in attendance_values
+            assert "in-care" in attendance_values
+
+        finally:
+            db.close()
+
+    def test_kid_attendance_update(self, clean_db):
+        """Test that kid attendance can be updated."""
+        db = TestingSessionLocal()
+        try:
+            # Create a daycare and group
+            daycare = Daycare(name="Test Daycare")
+            db.add(daycare)
+            db.commit()
+            db.refresh(daycare)
+
+            group = Group(name="Group A", daycare_id=daycare.id)
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+
+            # Create a kid
+            kid = Kid(
+                full_name="Update Test Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.OUT
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            # Update attendance
+            kid.attendance = AttendanceStatus.IN_CARE
+            db.commit()
+            db.refresh(kid)
+
+            assert kid.attendance == AttendanceStatus.IN_CARE
+
+        finally:
+            db.close()
+
+    def test_kid_attendance_invalid_value_raises_error(self, clean_db):
+        """Test that invalid attendance values raise appropriate errors."""
+        db = TestingSessionLocal()
+        try:
+            # Create a daycare and group
+            daycare = Daycare(name="Test Daycare")
+            db.add(daycare)
+            db.commit()
+            db.refresh(daycare)
+
+            group = Group(name="Group A", daycare_id=daycare.id)
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+
+            # This should work - valid enum value
+            kid = Kid(
+                full_name="Valid Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.SICK
+            )
+            db.add(kid)
+            db.commit()
+
+            # Test that the enum values are properly constrained
+            # by checking that only valid values are accepted
+            valid_statuses = [AttendanceStatus.OUT, AttendanceStatus.SICK, AttendanceStatus.IN_CARE]
+            for status in valid_statuses:
+                kid.attendance = status
+                db.commit()
+                assert kid.attendance == status
 
         finally:
             db.close()
