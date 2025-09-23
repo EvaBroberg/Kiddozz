@@ -2,6 +2,7 @@ package fi.kidozz.app.data.models
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.RawValue
 
 @Parcelize
 data class Group(
@@ -16,5 +17,5 @@ data class Educator(
     val role: String,
     val email: String?,
     val phone_num: String?,
-    val groups: List<Group>
+    val groups: @RawValue List<Group>
 ) : Parcelable

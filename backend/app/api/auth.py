@@ -164,22 +164,15 @@ def get_current_educator_info(
     role = current_user.get("role")
     if role not in ["educator", "super_educator"]:
         raise HTTPException(
-            status_code=403, 
-            detail="This endpoint is only available for educators"
+            status_code=403, detail="This endpoint is only available for educators"
         )
-    
+
     educator_id = current_user.get("sub")  # JWT sub field contains the educator ID
     if not educator_id:
-        raise HTTPException(
-            status_code=400,
-            detail="Educator ID not found in token"
-        )
-    
+        raise HTTPException(status_code=400, detail="Educator ID not found in token")
+
     educator = db.query(Educator).filter(Educator.id == educator_id).first()
     if not educator:
-        raise HTTPException(
-            status_code=404,
-            detail="Educator not found"
-        )
-    
+        raise HTTPException(status_code=404, detail="Educator not found")
+
     return educator

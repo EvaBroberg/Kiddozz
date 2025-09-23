@@ -42,7 +42,7 @@ class EducatorViewModel(
         }
     }
     
-    fun loadCurrentEducator(daycareId: String) {
+    fun loadCurrentEducatorByDaycare(daycareId: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null

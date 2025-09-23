@@ -2,6 +2,7 @@ package fi.kidozz.app.data.models
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.RawValue
 
 @Parcelize
 data class DummyUser(
@@ -13,5 +14,5 @@ data class DummyUser(
 
 @Parcelize
 data class DummyUsersResponse(
-    val users: List<DummyUser>
+    val users: @RawValue List<DummyUser>
 ) : Parcelable
