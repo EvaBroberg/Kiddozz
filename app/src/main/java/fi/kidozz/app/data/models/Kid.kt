@@ -12,6 +12,7 @@ data class Kid(
     val group_id: String,
     val daycare_id: String,
     val trusted_adults: @RawValue List<TrustedAdult>,
+    val parents: @RawValue List<Parent> = emptyList(),
     val attendance: String,
     val allergies: String? = null,
     val need_to_know: String? = null

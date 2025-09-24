@@ -60,6 +60,46 @@ def test_kids_include_allergies_and_need_to_know_fields(
         assert kid["need_to_know"] is None
 
 
+def test_kids_include_parents_and_trusted_adults_fields(
+    client_fixture, seeded_daycare_id
+):
+    """Test that kids API response includes both parents and trusted_adults fields."""
+    res = client_fixture.get(f"/api/v1/kids?daycare_id={seeded_daycare_id}")
+    assert res.status_code == 200
+    data = res.json()
+    assert isinstance(data, list)
+
+    # Check that all kids have both fields
+    for kid in data:
+        assert "parents" in kid
+        assert "trusted_adults" in kid
+        # parents should be a list
+        assert isinstance(kid["parents"], list)
+        # trusted_adults should be a list (can be empty)
+        assert isinstance(kid["trusted_adults"], list)
+
+
+def test_seeded_kids_have_parents(client_fixture, seeded_daycare_id):
+    """Test that seeded kids have at least one parent."""
+    res = client_fixture.get(f"/api/v1/kids?daycare_id={seeded_daycare_id}")
+    assert res.status_code == 200
+    data = res.json()
+    assert isinstance(data, list)
+    assert len(data) > 0
+
+    # Check that at least one kid has parents
+    kids_with_parents = [kid for kid in data if len(kid["parents"]) > 0]
+    assert len(kids_with_parents) > 0, "At least one seeded kid should have parents"
+    
+    # Verify parent structure
+    for kid in kids_with_parents:
+        for parent in kid["parents"]:
+            assert "id" in parent
+            assert "full_name" in parent
+            assert "email" in parent
+            assert "phone_num" in parent
+
+
 def test_kids_with_allergies_and_need_to_know_values(client_fixture, seeded_daycare_id):
     """Test that kids can be created/updated with allergies and need_to_know values."""
     from datetime import date

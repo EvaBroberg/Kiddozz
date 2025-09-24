@@ -4,6 +4,7 @@ from typing import List, Optional, Union
 from pydantic import BaseModel
 
 from app.models.kid import AttendanceStatus
+from app.schemas.parents import ParentOut
 
 
 class TrustedAdultOut(BaseModel):
@@ -41,6 +42,7 @@ class KidUpdate(BaseModel):
 
 class KidOut(KidBase):
     id: Union[str, int]
+    parents: List[ParentOut] = []
 
     class Config:
         from_attributes = True

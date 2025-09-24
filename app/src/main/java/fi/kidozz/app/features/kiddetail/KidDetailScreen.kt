@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.Kid
+import fi.kidozz.app.data.models.Parent
 import fi.kidozz.app.data.models.TrustedAdult
 import fi.kidozz.app.data.sample.sampleKidsState
 import fi.kidozz.app.data.sample.computeAge
@@ -27,22 +28,22 @@ import fi.kidozz.app.ui.theme.KiddozzTheme
 
 @Composable
 fun GuardiansInfoSection(kid: Kid, modifier: Modifier = Modifier) {
-    if (kid.trusted_adults.isNullOrEmpty()) {
+    if (kid.parents.isNullOrEmpty()) {
         Card(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(8.dp)
         ) {
             Text(
-                text = "No guardian information available",
+                text = "No guardians available",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(16.dp)
             )
         }
     } else {
         Column(modifier = modifier) {
-            kid.trusted_adults.forEach { guardian ->
-                GuardianAccordion(guardian = guardian)
+            kid.parents.forEach { parent ->
+                GuardianAccordion(parent = parent)
             }
         }
     }
@@ -50,7 +51,7 @@ fun GuardiansInfoSection(kid: Kid, modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GuardianAccordion(guardian: TrustedAdult, modifier: Modifier = Modifier) {
+fun GuardianAccordion(parent: Parent, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -60,7 +61,7 @@ fun GuardianAccordion(guardian: TrustedAdult, modifier: Modifier = Modifier) {
     ) {
         Column {
             ListItem(
-                headlineContent = { Text(guardian.name) },
+                headlineContent = { Text(parent.full_name) },
                 trailingContent = {
                     IconButton(onClick = { expanded = !expanded }) {
                         Icon(
@@ -73,13 +74,73 @@ fun GuardianAccordion(guardian: TrustedAdult, modifier: Modifier = Modifier) {
 
             if (expanded) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    guardian.email?.let {
+                    parent.email?.let {
                         GuardianInfoRow(label = "Email", value = it)
                     }
-                    guardian.phone_num?.let {
+                    parent.phone_num?.let {
                         GuardianInfoRow(label = "Phone", value = it)
                     }
-                    guardian.address?.let {
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EmergencyContactsSection(kid: Kid, modifier: Modifier = Modifier) {
+    if (kid.trusted_adults.isNullOrEmpty()) {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            Text(
+                text = "No emergency contacts available",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    } else {
+        Column(modifier = modifier) {
+            kid.trusted_adults.forEach { trustedAdult ->
+                EmergencyContactAccordion(trustedAdult = trustedAdult)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EmergencyContactAccordion(trustedAdult: TrustedAdult, modifier: Modifier = Modifier) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
+        Column {
+            ListItem(
+                headlineContent = { Text(trustedAdult.name) },
+                trailingContent = {
+                    IconButton(onClick = { expanded = !expanded }) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (expanded) "Collapse" else "Expand"
+                        )
+                    }
+                }
+            )
+
+            if (expanded) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    trustedAdult.email?.let {
+                        GuardianInfoRow(label = "Email", value = it)
+                    }
+                    trustedAdult.phone_num?.let {
+                        GuardianInfoRow(label = "Phone", value = it)
+                    }
+                    trustedAdult.address?.let {
                         GuardianInfoRow(label = "Address", value = it)
                     }
                 }
@@ -209,6 +270,14 @@ fun KidDetailScreen(
             item { SectionTitle("Guardians Info") }
             item {
                 GuardiansInfoSection(
+                    kid = kid,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            
+            item { SectionTitle("Emergency Contacts") }
+            item {
+                EmergencyContactsSection(
                     kid = kid,
                     modifier = Modifier.fillMaxWidth()
                 )
