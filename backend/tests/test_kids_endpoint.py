@@ -137,7 +137,7 @@ def test_update_kid_basic_functionality(client_fixture, seeded_daycare_id, make_
                 full_name="Test Parent",
                 email="test.parent@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -149,7 +149,7 @@ def test_update_kid_basic_functionality(client_fixture, seeded_daycare_id, make_
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -166,15 +166,13 @@ def test_update_kid_basic_functionality(client_fixture, seeded_daycare_id, make_
             # Test updating allergies and need_to_know
             update_data = {
                 "allergies": "Peanuts, dairy",
-                "need_to_know": "Has asthma, needs inhaler"
+                "need_to_know": "Has asthma, needs inhaler",
             }
-            
+
             response = client_fixture.patch(
-                f"/api/v1/kids/{kid.id}",
-                json=update_data,
-                headers=headers
+                f"/api/v1/kids/{kid.id}", json=update_data, headers=headers
             )
-            
+
             assert response.status_code == 200
             data = response.json()
             assert data["allergies"] == "Peanuts, dairy"
@@ -189,7 +187,9 @@ def test_update_kid_basic_functionality(client_fixture, seeded_daycare_id, make_
         db.close()
 
 
-def test_update_kid_as_linked_parent_success(client_fixture, seeded_daycare_id, make_token):
+def test_update_kid_as_linked_parent_success(
+    client_fixture, seeded_daycare_id, make_token
+):
     """Test that a parent linked to a kid can update allergies and need_to_know."""
     from datetime import date
 
@@ -211,7 +211,7 @@ def test_update_kid_as_linked_parent_success(client_fixture, seeded_daycare_id, 
                 full_name="Test Parent",
                 email="test.parent@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -223,7 +223,7 @@ def test_update_kid_as_linked_parent_success(client_fixture, seeded_daycare_id, 
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -240,15 +240,13 @@ def test_update_kid_as_linked_parent_success(client_fixture, seeded_daycare_id, 
             # Update kid with allergies and need_to_know
             update_data = {
                 "allergies": "Peanuts, dairy",
-                "need_to_know": "Has asthma, needs inhaler"
+                "need_to_know": "Has asthma, needs inhaler",
             }
-            
+
             response = client_fixture.patch(
-                f"/api/v1/kids/{kid.id}",
-                json=update_data,
-                headers=headers
+                f"/api/v1/kids/{kid.id}", json=update_data, headers=headers
             )
-            
+
             assert response.status_code == 200
             data = response.json()
             assert data["allergies"] == "Peanuts, dairy"
@@ -263,7 +261,9 @@ def test_update_kid_as_linked_parent_success(client_fixture, seeded_daycare_id, 
         db.close()
 
 
-def test_update_kid_as_unlinked_parent_forbidden(client_fixture, seeded_daycare_id, make_token):
+def test_update_kid_as_unlinked_parent_forbidden(
+    client_fixture, seeded_daycare_id, make_token
+):
     """Test that a parent not linked to a kid cannot update allergies and need_to_know."""
     from datetime import date
 
@@ -285,7 +285,7 @@ def test_update_kid_as_unlinked_parent_forbidden(client_fixture, seeded_daycare_
                 full_name="Test Parent",
                 email="test.parent@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -297,7 +297,7 @@ def test_update_kid_as_unlinked_parent_forbidden(client_fixture, seeded_daycare_
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -310,15 +310,13 @@ def test_update_kid_as_unlinked_parent_forbidden(client_fixture, seeded_daycare_
             # Try to update kid with allergies and need_to_know
             update_data = {
                 "allergies": "Peanuts, dairy",
-                "need_to_know": "Has asthma, needs inhaler"
+                "need_to_know": "Has asthma, needs inhaler",
             }
-            
+
             response = client_fixture.patch(
-                f"/api/v1/kids/{kid.id}",
-                json=update_data,
-                headers=headers
+                f"/api/v1/kids/{kid.id}", json=update_data, headers=headers
             )
-            
+
             assert response.status_code == 403
             assert "Only parents linked to this kid" in response.json()["detail"]
 
@@ -331,14 +329,16 @@ def test_update_kid_as_unlinked_parent_forbidden(client_fixture, seeded_daycare_
         db.close()
 
 
-def test_update_kid_as_educator_ignores_sensitive_fields(client_fixture, seeded_daycare_id, make_token):
+def test_update_kid_as_educator_ignores_sensitive_fields(
+    client_fixture, seeded_daycare_id, make_token
+):
     """Test that educators cannot update allergies and need_to_know fields."""
     from datetime import date
 
     from app.models.daycare import Daycare
+    from app.models.educator import Educator
     from app.models.group import Group
     from app.models.kid import AttendanceStatus, Kid
-    from app.models.educator import Educator
     from tests.conftest import TestingSessionLocal
 
     db = TestingSessionLocal()
@@ -354,7 +354,7 @@ def test_update_kid_as_educator_ignores_sensitive_fields(client_fixture, seeded_
                 email="test.educator@example.com",
                 phone_num="+1234567890",
                 daycare_id=daycare.id,
-                role="educator"
+                role="educator",
             )
             db.add(educator)
             db.commit()
@@ -368,7 +368,7 @@ def test_update_kid_as_educator_ignores_sensitive_fields(client_fixture, seeded_
                 group_id=group.id,
                 attendance=AttendanceStatus.OUT,
                 allergies="Original allergies",
-                need_to_know="Original need to know"
+                need_to_know="Original need to know",
             )
             db.add(kid)
             db.commit()
@@ -382,15 +382,13 @@ def test_update_kid_as_educator_ignores_sensitive_fields(client_fixture, seeded_
             update_data = {
                 "full_name": "Updated Kid Name",
                 "allergies": "New allergies",
-                "need_to_know": "New need to know"
+                "need_to_know": "New need to know",
             }
-            
+
             response = client_fixture.patch(
-                f"/api/v1/kids/{kid.id}",
-                json=update_data,
-                headers=headers
+                f"/api/v1/kids/{kid.id}", json=update_data, headers=headers
             )
-            
+
             assert response.status_code == 200
             data = response.json()
             # Name should be updated
@@ -408,14 +406,16 @@ def test_update_kid_as_educator_ignores_sensitive_fields(client_fixture, seeded_
         db.close()
 
 
-def test_update_kid_as_super_educator_ignores_sensitive_fields(client_fixture, seeded_daycare_id, make_token):
+def test_update_kid_as_super_educator_ignores_sensitive_fields(
+    client_fixture, seeded_daycare_id, make_token
+):
     """Test that super educators cannot update allergies and need_to_know fields."""
     from datetime import date
 
     from app.models.daycare import Daycare
+    from app.models.educator import Educator
     from app.models.group import Group
     from app.models.kid import AttendanceStatus, Kid
-    from app.models.educator import Educator
     from tests.conftest import TestingSessionLocal
 
     db = TestingSessionLocal()
@@ -431,7 +431,7 @@ def test_update_kid_as_super_educator_ignores_sensitive_fields(client_fixture, s
                 email="test.super@example.com",
                 phone_num="+1234567890",
                 daycare_id=daycare.id,
-                role="super_educator"
+                role="super_educator",
             )
             db.add(super_educator)
             db.commit()
@@ -445,29 +445,29 @@ def test_update_kid_as_super_educator_ignores_sensitive_fields(client_fixture, s
                 group_id=group.id,
                 attendance=AttendanceStatus.OUT,
                 allergies="Original allergies",
-                need_to_know="Original need to know"
+                need_to_know="Original need to know",
             )
             db.add(kid)
             db.commit()
             db.refresh(kid)
 
             # Create token for super educator
-            token = make_token(str(super_educator.id), "super_educator", daycare_id=daycare.id)
+            token = make_token(
+                str(super_educator.id), "super_educator", daycare_id=daycare.id
+            )
             headers = {"Authorization": f"Bearer {token}"}
 
             # Try to update kid with allergies and need_to_know
             update_data = {
                 "full_name": "Updated Kid Name",
                 "allergies": "New allergies",
-                "need_to_know": "New need to know"
+                "need_to_know": "New need to know",
             }
-            
+
             response = client_fixture.patch(
-                f"/api/v1/kids/{kid.id}",
-                json=update_data,
-                headers=headers
+                f"/api/v1/kids/{kid.id}", json=update_data, headers=headers
             )
-            
+
             assert response.status_code == 200
             data = response.json()
             # Name should be updated
@@ -485,7 +485,9 @@ def test_update_kid_as_super_educator_ignores_sensitive_fields(client_fixture, s
         db.close()
 
 
-def test_update_kid_parent_can_update_null_fields(client_fixture, seeded_daycare_id, make_token):
+def test_update_kid_parent_can_update_null_fields(
+    client_fixture, seeded_daycare_id, make_token
+):
     """Test that a linked parent can set allergies and need_to_know to null."""
     from datetime import date
 
@@ -507,7 +509,7 @@ def test_update_kid_parent_can_update_null_fields(client_fixture, seeded_daycare
                 full_name="Test Parent",
                 email="test.parent@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -521,7 +523,7 @@ def test_update_kid_parent_can_update_null_fields(client_fixture, seeded_daycare
                 group_id=group.id,
                 attendance=AttendanceStatus.OUT,
                 allergies="Existing allergies",
-                need_to_know="Existing need to know"
+                need_to_know="Existing need to know",
             )
             db.add(kid)
             db.commit()
@@ -536,17 +538,12 @@ def test_update_kid_parent_can_update_null_fields(client_fixture, seeded_daycare
             headers = {"Authorization": f"Bearer {token}"}
 
             # Update kid to set allergies and need_to_know to null
-            update_data = {
-                "allergies": "",
-                "need_to_know": ""
-            }
-            
+            update_data = {"allergies": "", "need_to_know": ""}
+
             response = client_fixture.patch(
-                f"/api/v1/kids/{kid.id}",
-                json=update_data,
-                headers=headers
+                f"/api/v1/kids/{kid.id}", json=update_data, headers=headers
             )
-            
+
             assert response.status_code == 200
             data = response.json()
             assert data["allergies"] == ""

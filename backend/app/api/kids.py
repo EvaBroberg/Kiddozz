@@ -106,7 +106,7 @@ def update_kid(
         if not is_linked_parent:
             raise HTTPException(
                 status_code=403,
-                detail="Only parents linked to this kid can update allergies and need_to_know fields"
+                detail="Only parents linked to this kid can update allergies and need_to_know fields",
             )
         # Parent is linked, allow updates to sensitive fields
         if kid_update.allergies is not None:

@@ -11,8 +11,8 @@ os.environ["ENVIRONMENT"] = "test"
 os.environ["SECRET_KEY"] = "test-secret-key"
 
 from app.core.database import Base, get_db
-from app.main import app
 from app.core.security import create_access_token
+from app.main import app
 
 # Create test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -90,14 +90,21 @@ def seeded_daycare_id():
 @pytest.fixture
 def make_token():
     """Helper fixture to create valid JWT tokens for testing."""
-    def _make_token(user_id: str, role: str, daycare_id: str = "default-daycare-id", groups: list = None):
+
+    def _make_token(
+        user_id: str,
+        role: str,
+        daycare_id: str = "default-daycare-id",
+        groups: list = None,
+    ):
         if groups is None:
             groups = []
         data = {
             "sub": user_id,
             "role": role,
             "daycare_id": daycare_id,
-            "groups": groups
+            "groups": groups,
         }
         return create_access_token(data)
+
     return _make_token
