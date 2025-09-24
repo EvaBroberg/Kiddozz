@@ -25,9 +25,32 @@ import fi.kidozz.app.ui.components.SectionTitle
 import fi.kidozz.app.ui.styles.AttendanceSegmentedControl
 import fi.kidozz.app.ui.theme.KiddozzTheme
 
+@Composable
+fun GuardiansInfoSection(kid: Kid, modifier: Modifier = Modifier) {
+    if (kid.trusted_adults.isNullOrEmpty()) {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            Text(
+                text = "No guardian information available",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    } else {
+        Column(modifier = modifier) {
+            kid.trusted_adults.forEach { guardian ->
+                GuardianAccordion(guardian = guardian)
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GuardiansInfoAccordion(kid: Kid, modifier: Modifier = Modifier) {
+fun GuardianAccordion(guardian: TrustedAdult, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -37,7 +60,7 @@ fun GuardiansInfoAccordion(kid: Kid, modifier: Modifier = Modifier) {
     ) {
         Column {
             ListItem(
-                headlineContent = { Text("Guardians") },
+                headlineContent = { Text(guardian.name) },
                 trailingContent = {
                     IconButton(onClick = { expanded = !expanded }) {
                         Icon(
@@ -49,18 +72,15 @@ fun GuardiansInfoAccordion(kid: Kid, modifier: Modifier = Modifier) {
             )
 
             if (expanded) {
-                if (kid.trusted_adults.isNullOrEmpty()) {
-                    Text(
-                        text = "No information available",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                } else {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        kid.trusted_adults.forEach { guardian ->
-                            GuardianItem(guardian)
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        }
+                Column(modifier = Modifier.padding(16.dp)) {
+                    guardian.email?.let {
+                        GuardianInfoRow(label = "Email", value = it)
+                    }
+                    guardian.phone_num?.let {
+                        GuardianInfoRow(label = "Phone", value = it)
+                    }
+                    guardian.address?.let {
+                        GuardianInfoRow(label = "Address", value = it)
                     }
                 }
             }
@@ -69,18 +89,21 @@ fun GuardiansInfoAccordion(kid: Kid, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun GuardianItem(guardian: TrustedAdult) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(text = guardian.name, style = MaterialTheme.typography.bodyLarge)
-        guardian.email?.let {
-            Text(text = "Email: $it", style = MaterialTheme.typography.bodyMedium)
-        }
-        guardian.phone_num?.let {
-            Text(text = "Phone: $it", style = MaterialTheme.typography.bodyMedium)
-        }
-        guardian.address?.let {
-            Text(text = "Address: $it", style = MaterialTheme.typography.bodyMedium)
-        }
+fun GuardianInfoRow(label: String, value: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.padding(vertical = 4.dp)
+    ) {
+        Text(
+            text = "$label:",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.width(80.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
@@ -171,7 +194,7 @@ fun KidDetailScreen(
             
             item { SectionTitle("Guardians Info") }
             item {
-                GuardiansInfoAccordion(
+                GuardiansInfoSection(
                     kid = kid,
                     modifier = Modifier.fillMaxWidth()
                 )
