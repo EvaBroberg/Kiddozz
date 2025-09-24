@@ -5,11 +5,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
+# Set test environment BEFORE importing app
+os.environ["APP_ENV"] = "test"
+os.environ["ENVIRONMENT"] = "test"
+os.environ["SECRET_KEY"] = "test-secret-key"
+
 from app.core.database import Base, get_db
 from app.main import app
-
-# Set test environment
-os.environ["APP_ENV"] = "test"
+from app.core.security import create_access_token
 
 # Create test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -82,3 +85,19 @@ def seeded_daycare_id():
         return str(daycare.id)
     finally:
         db.close()
+
+
+@pytest.fixture
+def make_token():
+    """Helper fixture to create valid JWT tokens for testing."""
+    def _make_token(user_id: str, role: str, daycare_id: str = "default-daycare-id", groups: list = None):
+        if groups is None:
+            groups = []
+        data = {
+            "sub": user_id,
+            "role": role,
+            "daycare_id": daycare_id,
+            "groups": groups
+        }
+        return create_access_token(data)
+    return _make_token

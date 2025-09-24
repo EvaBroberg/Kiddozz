@@ -39,7 +39,7 @@ def switch_role(
 
     # Create token data
     token_data = {
-        "user_id": user_id,
+        "sub": user_id,
         "role": role,
     }
 
@@ -83,7 +83,7 @@ def test_token(request: TestTokenRequest) -> Dict[str, Any]:
 
     # Create token data
     token_data = {
-        "user_id": str(request.user_id),
+        "sub": str(request.user_id),
         "role": role,
     }
 
@@ -100,6 +100,9 @@ def test_token(request: TestTokenRequest) -> Dict[str, Any]:
 
 @router.post("/dev-login", response_model=TokenResponse)
 def dev_login(payload: DevLoginRequest, db: Session = Depends(get_db)):
+    # Import settings at the beginning
+    from app.core.config import settings
+    
     # Disabled in production
     if settings.environment == "production":
         raise HTTPException(
@@ -140,6 +143,11 @@ def dev_login(payload: DevLoginRequest, db: Session = Depends(get_db)):
     token = create_access_token(
         data={"sub": sub, "role": role, "daycare_id": daycare_id, "groups": groups}
     )
+    
+    # Debug: Print secret key being used
+    print(f"Dev-login using secret key: {settings.secret_key}")
+    print(f"Dev-login environment: {settings.app_env}")
+    
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -149,7 +157,7 @@ def get_current_user_info(
 ) -> Dict[str, Any]:
     """Get current user information from JWT token."""
     return {
-        "user_id": current_user.get("user_id"),
+        "user_id": current_user.get("sub"),
         "role": current_user.get("role"),
         "exp": current_user.get("exp"),
     }

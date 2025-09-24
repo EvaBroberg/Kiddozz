@@ -24,7 +24,7 @@ class TestJWTSecurity:
     def test_create_access_token_generates_valid_jwt(self):
         """Test that create_access_token generates a valid JWT with correct claims."""
         # Test data
-        test_data = {"user_id": "test-user-123", "role": "educator"}
+        test_data = {"sub": "test-user-123", "role": "educator"}
 
         # Create token
         token = create_access_token(test_data)
@@ -41,12 +41,12 @@ class TestJWTSecurity:
         )
 
         # Verify required claims are present
-        assert "user_id" in decoded
+        assert "sub" in decoded
         assert "role" in decoded
         assert "exp" in decoded
 
         # Verify claim values
-        assert decoded["user_id"] == "test-user-123"
+        assert decoded["sub"] == "test-user-123"
         assert decoded["role"] == "educator"
 
         # Verify exp is in the future
@@ -77,13 +77,13 @@ class TestJWTSecurity:
 
     def test_decode_access_token_valid_token(self):
         """Test that decode_access_token correctly extracts claims from valid token."""
-        test_data = {"user_id": "test-user-456", "role": "parent"}
+        test_data = {"sub": "test-user-456", "role": "parent"}
 
         token = create_access_token(test_data)
         decoded = decode_access_token(token)
 
         # Verify all claims are correctly extracted
-        assert decoded["user_id"] == "test-user-456"
+        assert decoded["sub"] == "test-user-456"
         assert decoded["role"] == "parent"
         assert "exp" in decoded
 
@@ -143,7 +143,7 @@ class TestAuthEndpoints:
         # Verify token is valid
         token = data["access_token"]
         decoded = decode_access_token(token)
-        assert decoded["user_id"] == "test-user"
+        assert decoded["sub"] == "test-user"
         assert decoded["role"] == "educator"
 
     def test_switch_role_parent_returns_valid_jwt(self):
@@ -160,7 +160,7 @@ class TestAuthEndpoints:
         # Verify token is valid
         token = data["access_token"]
         decoded = decode_access_token(token)
-        assert decoded["user_id"] == "test-user"
+        assert decoded["sub"] == "test-user"
         assert decoded["role"] == "parent"
 
     def test_switch_role_invalid_role_fails(self):
@@ -349,7 +349,7 @@ class TestTestTokenEndpoint:
             # Verify token is valid and has correct claims
             token = data["access_token"]
             decoded = decode_access_token(token)
-            assert decoded["user_id"] == "123"
+            assert decoded["sub"] == "123"
             assert decoded["role"] == "parent"
 
     def test_test_token_educator_role_in_staging(self):
@@ -373,7 +373,7 @@ class TestTestTokenEndpoint:
             # Verify token is valid and has correct claims
             token = data["access_token"]
             decoded = decode_access_token(token)
-            assert decoded["user_id"] == "456"
+            assert decoded["sub"] == "456"
             assert decoded["role"] == "educator"
 
     def test_test_token_default_user_id(self):
@@ -393,7 +393,7 @@ class TestTestTokenEndpoint:
             # Verify token has correct claims
             token = data["access_token"]
             decoded = decode_access_token(token)
-            assert decoded["user_id"] == "1"
+            assert decoded["sub"] == "1"
             assert decoded["role"] == "parent"
 
     def test_test_token_super_educator_role_in_staging(self):
@@ -418,7 +418,7 @@ class TestTestTokenEndpoint:
             # Verify token is valid and has correct claims
             token = data["access_token"]
             decoded = decode_access_token(token)
-            assert decoded["user_id"] == "789"
+            assert decoded["sub"] == "789"
             assert decoded["role"] == "super_educator"
 
     def test_test_token_invalid_role(self):

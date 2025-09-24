@@ -13,7 +13,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
     """Get the current user from the JWT token."""
     try:
         payload = decode_access_token(token)
-        user_id = payload.get("user_id")
+        user_id = payload.get("sub")  # Changed from "user_id" to "sub"
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

@@ -5,22 +5,84 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.Kid
+import fi.kidozz.app.data.models.TrustedAdult
 import fi.kidozz.app.data.sample.sampleKidsState
 import fi.kidozz.app.data.sample.computeAge
 import fi.kidozz.app.features.dashboard.KidsViewModel
 import fi.kidozz.app.ui.components.SectionTitle
 import fi.kidozz.app.ui.styles.AttendanceSegmentedControl
 import fi.kidozz.app.ui.theme.KiddozzTheme
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GuardiansInfoAccordion(kid: Kid, modifier: Modifier = Modifier) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
+        Column {
+            ListItem(
+                headlineContent = { Text("Guardians") },
+                trailingContent = {
+                    IconButton(onClick = { expanded = !expanded }) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (expanded) "Collapse" else "Expand"
+                        )
+                    }
+                }
+            )
+
+            if (expanded) {
+                if (kid.trusted_adults.isNullOrEmpty()) {
+                    Text(
+                        text = "No information available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                } else {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        kid.trusted_adults.forEach { guardian ->
+                            GuardianItem(guardian)
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GuardianItem(guardian: TrustedAdult) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(text = guardian.name ?: "Unknown", style = MaterialTheme.typography.bodyLarge)
+        guardian.email?.let {
+            Text(text = "Email: $it", style = MaterialTheme.typography.bodyMedium)
+        }
+        guardian.phone_num?.let {
+            Text(text = "Phone: $it", style = MaterialTheme.typography.bodyMedium)
+        }
+        guardian.address?.let {
+            Text(text = "Address: $it", style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -114,6 +176,14 @@ fun KidDetailScreen(
                         )
                     }
                 }
+            }
+            
+            item { SectionTitle("Guardians Info") }
+            item {
+                GuardiansInfoAccordion(
+                    kid = kid,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

@@ -113,3 +113,449 @@ def test_kids_with_allergies_and_need_to_know_values(client_fixture, seeded_dayc
 
     finally:
         db.close()
+
+
+def test_update_kid_basic_functionality(client_fixture, seeded_daycare_id, make_token):
+    """Test that the PATCH endpoint can update allergies and need_to_know fields."""
+    from datetime import date
+
+    from app.models.daycare import Daycare
+    from app.models.group import Group
+    from app.models.kid import AttendanceStatus, Kid
+    from app.models.parent import Parent
+    from tests.conftest import TestingSessionLocal
+
+    db = TestingSessionLocal()
+    try:
+        # Get the first daycare and group
+        daycare = db.query(Daycare).first()
+        group = db.query(Group).first()
+
+        if daycare and group:
+            # Create a parent
+            parent = Parent(
+                full_name="Test Parent",
+                email="test.parent@example.com",
+                phone_num="+1234567890",
+                daycare_id=daycare.id
+            )
+            db.add(parent)
+            db.commit()
+            db.refresh(parent)
+
+            # Create a kid and link to parent
+            kid = Kid(
+                full_name="Test Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.OUT
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            # Link parent to kid
+            parent.kids.append(kid)
+            db.commit()
+
+            # Create a token for the parent
+            token = make_token(str(parent.id), "parent", daycare_id=daycare.id)
+            headers = {"Authorization": f"Bearer {token}"}
+
+            # Test updating allergies and need_to_know
+            update_data = {
+                "allergies": "Peanuts, dairy",
+                "need_to_know": "Has asthma, needs inhaler"
+            }
+            
+            response = client_fixture.patch(
+                f"/api/v1/kids/{kid.id}",
+                json=update_data,
+                headers=headers
+            )
+            
+            assert response.status_code == 200
+            data = response.json()
+            assert data["allergies"] == "Peanuts, dairy"
+            assert data["need_to_know"] == "Has asthma, needs inhaler"
+
+            # Clean up
+            db.delete(kid)
+            db.delete(parent)
+            db.commit()
+
+    finally:
+        db.close()
+
+
+def test_update_kid_as_linked_parent_success(client_fixture, seeded_daycare_id, make_token):
+    """Test that a parent linked to a kid can update allergies and need_to_know."""
+    from datetime import date
+
+    from app.models.daycare import Daycare
+    from app.models.group import Group
+    from app.models.kid import AttendanceStatus, Kid
+    from app.models.parent import Parent
+    from tests.conftest import TestingSessionLocal
+
+    db = TestingSessionLocal()
+    try:
+        # Get the first daycare and group
+        daycare = db.query(Daycare).first()
+        group = db.query(Group).first()
+
+        if daycare and group:
+            # Create a parent
+            parent = Parent(
+                full_name="Test Parent",
+                email="test.parent@example.com",
+                phone_num="+1234567890",
+                daycare_id=daycare.id
+            )
+            db.add(parent)
+            db.commit()
+            db.refresh(parent)
+
+            # Create a kid and link to parent
+            kid = Kid(
+                full_name="Test Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.OUT
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            # Link parent to kid
+            parent.kids.append(kid)
+            db.commit()
+
+            # Create token for parent
+            token = make_token(str(parent.id), "parent", daycare_id=daycare.id)
+            headers = {"Authorization": f"Bearer {token}"}
+
+            # Update kid with allergies and need_to_know
+            update_data = {
+                "allergies": "Peanuts, dairy",
+                "need_to_know": "Has asthma, needs inhaler"
+            }
+            
+            response = client_fixture.patch(
+                f"/api/v1/kids/{kid.id}",
+                json=update_data,
+                headers=headers
+            )
+            
+            assert response.status_code == 200
+            data = response.json()
+            assert data["allergies"] == "Peanuts, dairy"
+            assert data["need_to_know"] == "Has asthma, needs inhaler"
+
+            # Clean up
+            db.delete(kid)
+            db.delete(parent)
+            db.commit()
+
+    finally:
+        db.close()
+
+
+def test_update_kid_as_unlinked_parent_forbidden(client_fixture, seeded_daycare_id, make_token):
+    """Test that a parent not linked to a kid cannot update allergies and need_to_know."""
+    from datetime import date
+
+    from app.models.daycare import Daycare
+    from app.models.group import Group
+    from app.models.kid import AttendanceStatus, Kid
+    from app.models.parent import Parent
+    from tests.conftest import TestingSessionLocal
+
+    db = TestingSessionLocal()
+    try:
+        # Get the first daycare and group
+        daycare = db.query(Daycare).first()
+        group = db.query(Group).first()
+
+        if daycare and group:
+            # Create a parent
+            parent = Parent(
+                full_name="Test Parent",
+                email="test.parent@example.com",
+                phone_num="+1234567890",
+                daycare_id=daycare.id
+            )
+            db.add(parent)
+            db.commit()
+            db.refresh(parent)
+
+            # Create a kid (not linked to parent)
+            kid = Kid(
+                full_name="Test Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.OUT
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            # Create token for parent
+            token = make_token(str(parent.id), "parent", daycare_id=daycare.id)
+            headers = {"Authorization": f"Bearer {token}"}
+
+            # Try to update kid with allergies and need_to_know
+            update_data = {
+                "allergies": "Peanuts, dairy",
+                "need_to_know": "Has asthma, needs inhaler"
+            }
+            
+            response = client_fixture.patch(
+                f"/api/v1/kids/{kid.id}",
+                json=update_data,
+                headers=headers
+            )
+            
+            assert response.status_code == 403
+            assert "Only parents linked to this kid" in response.json()["detail"]
+
+            # Clean up
+            db.delete(kid)
+            db.delete(parent)
+            db.commit()
+
+    finally:
+        db.close()
+
+
+def test_update_kid_as_educator_ignores_sensitive_fields(client_fixture, seeded_daycare_id, make_token):
+    """Test that educators cannot update allergies and need_to_know fields."""
+    from datetime import date
+
+    from app.models.daycare import Daycare
+    from app.models.group import Group
+    from app.models.kid import AttendanceStatus, Kid
+    from app.models.educator import Educator
+    from tests.conftest import TestingSessionLocal
+
+    db = TestingSessionLocal()
+    try:
+        # Get the first daycare and group
+        daycare = db.query(Daycare).first()
+        group = db.query(Group).first()
+
+        if daycare and group:
+            # Create an educator
+            educator = Educator(
+                full_name="Test Educator",
+                email="test.educator@example.com",
+                phone_num="+1234567890",
+                daycare_id=daycare.id,
+                role="educator"
+            )
+            db.add(educator)
+            db.commit()
+            db.refresh(educator)
+
+            # Create a kid
+            kid = Kid(
+                full_name="Test Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.OUT,
+                allergies="Original allergies",
+                need_to_know="Original need to know"
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            # Create token for educator
+            token = make_token(str(educator.id), "educator", daycare_id=daycare.id)
+            headers = {"Authorization": f"Bearer {token}"}
+
+            # Try to update kid with allergies and need_to_know
+            update_data = {
+                "full_name": "Updated Kid Name",
+                "allergies": "New allergies",
+                "need_to_know": "New need to know"
+            }
+            
+            response = client_fixture.patch(
+                f"/api/v1/kids/{kid.id}",
+                json=update_data,
+                headers=headers
+            )
+            
+            assert response.status_code == 200
+            data = response.json()
+            # Name should be updated
+            assert data["full_name"] == "Updated Kid Name"
+            # Sensitive fields should remain unchanged
+            assert data["allergies"] == "Original allergies"
+            assert data["need_to_know"] == "Original need to know"
+
+            # Clean up
+            db.delete(kid)
+            db.delete(educator)
+            db.commit()
+
+    finally:
+        db.close()
+
+
+def test_update_kid_as_super_educator_ignores_sensitive_fields(client_fixture, seeded_daycare_id, make_token):
+    """Test that super educators cannot update allergies and need_to_know fields."""
+    from datetime import date
+
+    from app.models.daycare import Daycare
+    from app.models.group import Group
+    from app.models.kid import AttendanceStatus, Kid
+    from app.models.educator import Educator
+    from tests.conftest import TestingSessionLocal
+
+    db = TestingSessionLocal()
+    try:
+        # Get the first daycare and group
+        daycare = db.query(Daycare).first()
+        group = db.query(Group).first()
+
+        if daycare and group:
+            # Create a super educator
+            super_educator = Educator(
+                full_name="Test Super Educator",
+                email="test.super@example.com",
+                phone_num="+1234567890",
+                daycare_id=daycare.id,
+                role="super_educator"
+            )
+            db.add(super_educator)
+            db.commit()
+            db.refresh(super_educator)
+
+            # Create a kid
+            kid = Kid(
+                full_name="Test Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.OUT,
+                allergies="Original allergies",
+                need_to_know="Original need to know"
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            # Create token for super educator
+            token = make_token(str(super_educator.id), "super_educator", daycare_id=daycare.id)
+            headers = {"Authorization": f"Bearer {token}"}
+
+            # Try to update kid with allergies and need_to_know
+            update_data = {
+                "full_name": "Updated Kid Name",
+                "allergies": "New allergies",
+                "need_to_know": "New need to know"
+            }
+            
+            response = client_fixture.patch(
+                f"/api/v1/kids/{kid.id}",
+                json=update_data,
+                headers=headers
+            )
+            
+            assert response.status_code == 200
+            data = response.json()
+            # Name should be updated
+            assert data["full_name"] == "Updated Kid Name"
+            # Sensitive fields should remain unchanged
+            assert data["allergies"] == "Original allergies"
+            assert data["need_to_know"] == "Original need to know"
+
+            # Clean up
+            db.delete(kid)
+            db.delete(super_educator)
+            db.commit()
+
+    finally:
+        db.close()
+
+
+def test_update_kid_parent_can_update_null_fields(client_fixture, seeded_daycare_id, make_token):
+    """Test that a linked parent can set allergies and need_to_know to null."""
+    from datetime import date
+
+    from app.models.daycare import Daycare
+    from app.models.group import Group
+    from app.models.kid import AttendanceStatus, Kid
+    from app.models.parent import Parent
+    from tests.conftest import TestingSessionLocal
+
+    db = TestingSessionLocal()
+    try:
+        # Get the first daycare and group
+        daycare = db.query(Daycare).first()
+        group = db.query(Group).first()
+
+        if daycare and group:
+            # Create a parent
+            parent = Parent(
+                full_name="Test Parent",
+                email="test.parent@example.com",
+                phone_num="+1234567890",
+                daycare_id=daycare.id
+            )
+            db.add(parent)
+            db.commit()
+            db.refresh(parent)
+
+            # Create a kid with existing allergies and need_to_know
+            kid = Kid(
+                full_name="Test Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.OUT,
+                allergies="Existing allergies",
+                need_to_know="Existing need to know"
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            # Link parent to kid
+            parent.kids.append(kid)
+            db.commit()
+
+            # Create token for parent
+            token = make_token(str(parent.id), "parent", daycare_id=daycare.id)
+            headers = {"Authorization": f"Bearer {token}"}
+
+            # Update kid to set allergies and need_to_know to null
+            update_data = {
+                "allergies": "",
+                "need_to_know": ""
+            }
+            
+            response = client_fixture.patch(
+                f"/api/v1/kids/{kid.id}",
+                json=update_data,
+                headers=headers
+            )
+            
+            assert response.status_code == 200
+            data = response.json()
+            assert data["allergies"] == ""
+            assert data["need_to_know"] == ""
+
+            # Clean up
+            db.delete(kid)
+            db.delete(parent)
+            db.commit()
+
+    finally:
+        db.close()
