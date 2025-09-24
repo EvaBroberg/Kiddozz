@@ -157,11 +157,9 @@ fun KidDetailScreen(
                 Text("Group: Group ${kid.group_id}") 
             }
             
-            // Allergies
+            // Allergies (always show to indicate system is checking)
             item {
-                if (!kid.allergies.isNullOrBlank()) {
-                    Text("Allergies: ${kid.allergies}")
-                }
+                Text("Allergies: ${kid.allergies ?: "None"}")
             }
             
             // Need to Know
