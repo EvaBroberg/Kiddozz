@@ -71,7 +71,7 @@ fun GuardiansInfoAccordion(kid: Kid, modifier: Modifier = Modifier) {
 @Composable
 fun GuardianItem(guardian: TrustedAdult) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(text = guardian.name ?: "Unknown", style = MaterialTheme.typography.bodyLarge)
+        Text(text = guardian.name, style = MaterialTheme.typography.bodyLarge)
         guardian.email?.let {
             Text(text = "Email: $it", style = MaterialTheme.typography.bodyMedium)
         }
@@ -132,6 +132,18 @@ fun KidDetailScreen(
                 }
             }
             
+            // Attendance toggle right after kid's image and name
+            item {
+                AttendanceSegmentedControl(
+                    selectedAttendance = currentAttendance,
+                    onAttendanceChange = { newAttendance ->
+                        currentAttendance = newAttendance
+                        kidsViewModel?.updateAttendance(kid.id, newAttendance)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            
             item { SectionTitle("Basic Information") }
             item { 
                 Text("ID: ${kid.id}") 
@@ -147,35 +159,6 @@ fun KidDetailScreen(
             }
             item { 
                 Text("Daycare ID: ${kid.daycare_id}") 
-            }
-            
-            item { SectionTitle("Attendance") }
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "Current Status: ${currentAttendance.uppercase()}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                        
-                        AttendanceSegmentedControl(
-                            selectedAttendance = currentAttendance,
-                            onAttendanceChange = { newAttendance ->
-                                currentAttendance = newAttendance
-                                kidsViewModel?.updateAttendance(kid.id, newAttendance)
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
             }
             
             item { SectionTitle("Guardians Info") }
