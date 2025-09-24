@@ -90,7 +90,7 @@ def test_seeded_kids_have_parents(client_fixture, seeded_daycare_id):
     # Check that at least one kid has parents
     kids_with_parents = [kid for kid in data if len(kid["parents"]) > 0]
     assert len(kids_with_parents) > 0, "At least one seeded kid should have parents"
-    
+
     # Verify parent structure
     for kid in kids_with_parents:
         for parent in kid["parents"]:

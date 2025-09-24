@@ -87,31 +87,17 @@ fun GuardianAccordion(parent: Parent, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun EmergencyContactsSection(kid: Kid, modifier: Modifier = Modifier) {
-    if (kid.trusted_adults.isNullOrEmpty()) {
-        Card(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        ) {
-            Text(
-                text = "No emergency contacts available",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-    } else {
-        Column(modifier = modifier) {
-            kid.trusted_adults.forEach { trustedAdult ->
-                EmergencyContactAccordion(trustedAdult = trustedAdult)
-            }
+fun TrustedAdultsSection(kid: Kid, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        kid.trusted_adults.forEach { trustedAdult ->
+            TrustedAdultAccordion(trustedAdult = trustedAdult)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EmergencyContactAccordion(trustedAdult: TrustedAdult, modifier: Modifier = Modifier) {
+fun TrustedAdultAccordion(trustedAdult: TrustedAdult, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -275,12 +261,15 @@ fun KidDetailScreen(
                 )
             }
             
-            item { SectionTitle("Emergency Contacts") }
-            item {
-                EmergencyContactsSection(
-                    kid = kid,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            // Only show Trusted Adults section if there are trusted adults
+            if (!kid.trusted_adults.isNullOrEmpty()) {
+                item { SectionTitle("Trusted Adults") }
+                item {
+                    TrustedAdultsSection(
+                        kid = kid,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }
