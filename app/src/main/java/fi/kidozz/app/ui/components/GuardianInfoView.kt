@@ -13,23 +13,34 @@ fun SectionTitle(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
     )
 }
 
 @Composable
-fun TrustedAdultInfoView(trustedAdult: TrustedAdult, isAuthorizedPickup: Boolean = false) {
+fun TrustedAdultInfoView(trustedAdult: TrustedAdult) {
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-        Text("Name: ${trustedAdult.name}", style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = "Name: ${trustedAdult.name}", 
+            style = MaterialTheme.typography.bodyLarge
+        )
         trustedAdult.phone_num?.let { phone ->
-            Text("Phone: $phone", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "Phone: $phone", 
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
         trustedAdult.email?.let { email ->
-            Text("Email: $email", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "Email: $email", 
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
         trustedAdult.address?.let { address ->
-            Text("Address: $address", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "Address: $address", 
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }

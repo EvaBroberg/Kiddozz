@@ -166,7 +166,16 @@ fun RoleSelectionScreen(
     }
     
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Kiddozz Daycare App - Staging") }) },
+        topBar = { 
+            TopAppBar(
+                title = { 
+                    Text(
+                        text = "Kiddozz Daycare App - Staging",
+                        style = MaterialTheme.typography.titleLarge
+                    ) 
+                }
+            ) 
+        },
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
@@ -181,20 +190,32 @@ fun RoleSelectionScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("Welcome to Kiddozz!")
-            Text("Staging Environment", style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = "Welcome to Kiddozz!",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Text(
+                text = "Staging Environment", 
+                style = MaterialTheme.typography.bodySmall
+            )
             Spacer(modifier = Modifier.height(32.dp))
             
             if (isLoading) {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Loading...")
+                Text(
+                    text = "Loading...",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             } else {
                 Button(
                     onClick = { handleRoleSelection("educator") },
                     enabled = !isLoading
                 ) { 
-                    Text("Educator View") 
+                    Text(
+                        text = "Educator View",
+                        style = MaterialTheme.typography.labelLarge
+                    ) 
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 
@@ -202,7 +223,10 @@ fun RoleSelectionScreen(
                     onClick = { handleRoleSelection("parent") },
                     enabled = !isLoading
                 ) { 
-                    Text("Parent View") 
+                    Text(
+                        text = "Parent View",
+                        style = MaterialTheme.typography.labelLarge
+                    ) 
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 
@@ -210,7 +234,10 @@ fun RoleSelectionScreen(
                     onClick = { handleRoleSelection("super_educator") },
                     enabled = !isLoading
                 ) { 
-                    Text("Super-Educator View") 
+                    Text(
+                        text = "Super-Educator View",
+                        style = MaterialTheme.typography.labelLarge
+                    ) 
                 }
             }
             

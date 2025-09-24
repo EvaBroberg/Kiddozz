@@ -60,8 +60,8 @@ fun EducatorCalendarScreen(
             .verticalScroll(rememberScrollState())
     ) {
         Text(
-            "Educator Calendar",
-            style = MaterialTheme.typography.headlineSmall,
+            text = "Educator Calendar",
+            style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
@@ -82,14 +82,20 @@ fun EducatorCalendarScreen(
                 onClick = { navController.navigate("upcoming_events") },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Upcoming Events")
+                Text(
+                    text = "Upcoming Events",
+                    style = MaterialTheme.typography.labelLarge
+                )
             }
             
             Button(
                 onClick = { navController.navigate("previous_events") },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Previous Events")
+                Text(
+                    text = "Previous Events",
+                    style = MaterialTheme.typography.labelLarge
+                )
             }
         }
 
@@ -102,14 +108,22 @@ fun EducatorCalendarScreen(
             onClick = { showAddEventDialog = true },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Add Event")
+            Text(
+                text = "Add Event",
+                style = MaterialTheme.typography.labelLarge
+            )
         }
 
         // Add Event Dialog
         if (showAddEventDialog) {
             AlertDialog(
                 onDismissRequest = { showAddEventDialog = false },
-                title = { Text("Add New Event") },
+                title = { 
+                    Text(
+                        text = "Add New Event",
+                        style = MaterialTheme.typography.titleMedium
+                    ) 
+                },
                 text = {
                     AddEventForm(
                         onEventAdded = { title, dateTime, location ->
@@ -129,7 +143,10 @@ fun EducatorCalendarScreen(
                 confirmButton = {},
                 dismissButton = {
                     TextButton(onClick = { showAddEventDialog = false }) {
-                        Text("Cancel")
+                        Text(
+                            text = "Cancel",
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     }
                 }
             )
@@ -156,7 +173,8 @@ fun BasicCalendarView(
         ) {
             listOf("S", "M", "T", "W", "T", "F", "S").forEach {
                 Text(
-                    it,
+                    text = it,
+                    style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center
                 )
@@ -177,7 +195,10 @@ fun BasicCalendarView(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(text = date.dayOfMonth.toString())
+                        Text(
+                            text = date.dayOfMonth.toString(),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                         if (hasEvent) {
                             Spacer(modifier = Modifier.height(2.dp))
                             Box(

@@ -95,8 +95,7 @@ fun GuardianInfoRow(label: String, value: String, modifier: Modifier = Modifier)
     ) {
         Text(
             text = "$label:",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
+            style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.width(80.dp)
         )
         Text(
@@ -169,26 +168,41 @@ fun KidDetailScreen(
             
             // Age and Date of Birth
             item { 
-                Text("Age: ${computeAge(kid.dob)} years old") 
+                Text(
+                    text = "Age: ${computeAge(kid.dob)} years old",
+                    style = MaterialTheme.typography.bodyMedium
+                ) 
             }
             item { 
-                Text("Date of Birth: ${kid.dob}") 
+                Text(
+                    text = "Date of Birth: ${kid.dob}",
+                    style = MaterialTheme.typography.bodyMedium
+                ) 
             }
             
             // Group Name (using group_id for now, could be enhanced to fetch actual group name)
             item { 
-                Text("Group: Group ${kid.group_id}") 
+                Text(
+                    text = "Group: Group ${kid.group_id}",
+                    style = MaterialTheme.typography.bodyMedium
+                ) 
             }
             
             // Allergies (always show to indicate system is checking)
             item {
-                Text("Allergies: ${kid.allergies ?: "None"}")
+                Text(
+                    text = "Allergies: ${kid.allergies ?: "None"}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
             
             // Need to Know
             item {
                 if (!kid.need_to_know.isNullOrBlank()) {
-                    Text("Good to Know: ${kid.need_to_know}")
+                    Text(
+                        text = "Good to Know: ${kid.need_to_know}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
             
