@@ -12,7 +12,9 @@ data class Kid(
     val group_id: String,
     val daycare_id: String,
     val trusted_adults: @RawValue List<TrustedAdult>,
-    val attendance: String
+    val attendance: String,
+    val allergies: String? = null,
+    val need_to_know: String? = null
 ) : Parcelable
 
 @Parcelize

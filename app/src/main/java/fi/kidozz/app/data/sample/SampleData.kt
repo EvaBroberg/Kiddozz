@@ -51,7 +51,9 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         address = "123 Main St, City"
                     )
                 ),
-                attendance = "out"
+                attendance = "out",
+                allergies = "Peanuts, dairy",
+                need_to_know = "Has asthma, needs inhaler nearby"
             ),
             Kid(
                 id = "2",
@@ -67,7 +69,9 @@ val sampleKidsState = mutableStateListOf<Kid>().apply {
                         address = "456 Oak Ave, City"
                     )
                 ),
-                attendance = "in-care"
+                attendance = "in-care",
+                allergies = null,
+                need_to_know = "Very active, needs extra outdoor time"
             ),
             Kid(
                 id = "3",

@@ -144,21 +144,31 @@ fun KidDetailScreen(
                 )
             }
             
-            item { SectionTitle("Basic Information") }
-            item { 
-                Text("ID: ${kid.id}") 
-            }
+            // Age and Date of Birth
             item { 
                 Text("Age: ${computeAge(kid.dob)} years old") 
             }
             item { 
                 Text("Date of Birth: ${kid.dob}") 
             }
+            
+            // Group Name (using group_id for now, could be enhanced to fetch actual group name)
             item { 
-                Text("Group ID: ${kid.group_id}") 
+                Text("Group: Group ${kid.group_id}") 
             }
-            item { 
-                Text("Daycare ID: ${kid.daycare_id}") 
+            
+            // Allergies
+            item {
+                if (!kid.allergies.isNullOrBlank()) {
+                    Text("Allergies: ${kid.allergies}")
+                }
+            }
+            
+            // Need to Know
+            item {
+                if (!kid.need_to_know.isNullOrBlank()) {
+                    Text("Good to Know: ${kid.need_to_know}")
+                }
             }
             
             item { SectionTitle("Guardians Info") }
