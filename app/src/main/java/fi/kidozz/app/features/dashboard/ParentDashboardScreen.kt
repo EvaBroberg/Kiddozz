@@ -176,12 +176,7 @@ fun KidAccordionCard(
         Card(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight()
-                .border(
-                    width = 1.dp,
-                    color = Color(0xFFE0E0E0), // Light grey
-                    shape = RectangleShape
-                ),
+                .fillMaxHeight(),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             shape = RectangleShape
@@ -189,7 +184,19 @@ fun KidAccordionCard(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Collapsed state - kid name, attendance, and chat icon
+                // Top border
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0xFFE0E0E0))
+                )
+                
+                // Content
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Collapsed state - kid name, attendance, and chat icon
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -266,6 +273,15 @@ fun KidAccordionCard(
                         }
                     }
                 }
+                }
+                
+                // Bottom border
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0xFFE0E0E0))
+                )
             }
         }
     }
