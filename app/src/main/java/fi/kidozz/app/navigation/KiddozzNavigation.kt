@@ -88,7 +88,7 @@ fun KiddozzAppHost(
             val parentsViewModel = remember { ParentsViewModel(parentsRepository) }
             
             ParentDashboardScreen(
-                parentId = "1", // TODO: Get from authentication or navigation args
+                parentId = "10", // Sara Johnson - first parent with kids
                 parentsViewModel = parentsViewModel,
                 modifier = modifier
             )
