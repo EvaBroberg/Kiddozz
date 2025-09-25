@@ -22,15 +22,22 @@ val fontProvider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
-// App font family using Google Sans with Roboto fallback
+// App font family using Open Sans (Google Fonts) with system fallback
 @Composable
-fun AppFontFamily(): FontFamily = FontFamily(
-    Font(
-        googleFont = GoogleFont("Google Sans"),
-        fontProvider = fontProvider,
-        weight = FontWeight.Normal
-    )
-)
+fun AppFontFamily(): FontFamily {
+    return try {
+        FontFamily(
+            Font(
+                googleFont = GoogleFont("Open Sans"),
+                fontProvider = fontProvider,
+                weight = FontWeight.Normal
+            )
+        )
+    } catch (e: Exception) {
+        // Fallback to system default if Google Fonts fails
+        FontFamily.Default
+    }
+}
 
 object AppTypography {
     // Typography using Google Sans with Roboto fallback
