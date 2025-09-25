@@ -14,5 +14,5 @@ val BackgroundColor = Color(0xFFFEF0EE)
 
 // Attendance status colors
 val InCareColor = Color(0xFF14CD76)
-val OutColor = Color(0xFF757575)
+val OutColor = Color(0xFFDFE0E4)
 val SickColor = Color(0xFFD32F2F)
