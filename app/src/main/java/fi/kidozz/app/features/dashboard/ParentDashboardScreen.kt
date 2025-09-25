@@ -136,38 +136,61 @@ fun ParentDashboardScreen(
                 ) {
                     items(kids) { kid ->
                         Column {
-                            KidAccordionCard(
-                                kidName = kid.full_name,
-                                status = kid.attendance,
-                                onChatClick = { /* TODO: Implement chat functionality */ },
-                                expandedContent = {
-                                    // Date of Birth
-                                    Text(
-                                        text = "Date of Birth: ${kid.dob}",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    // Age
-                                    Text(
-                                        text = "Age: ${computeAge(kid.dob)} years old",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Spacer(modifier = Modifier.height(16.dp))
-
-                                    // Guardians Info
-                                    if (kid.parents.isNotEmpty()) {
-                                        SectionTitle("Guardians")
+                            // Determine status color
+                            val statusColor = when (kid.attendance.lowercase()) {
+                                "in-care" -> InCareColor
+                                "out" -> OutColor
+                                "sick" -> SickColor
+                                else -> OutColor // Default to out color
+                            }
+                            
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(IntrinsicSize.Min)
+                            ) {
+                                // Status indicator line
+                                Box(
+                                    modifier = Modifier
+                                        .width(16.dp)
+                                        .fillMaxHeight()
+                                        .background(statusColor)
+                                )
+                                
+                                // Accordion card
+                                KidAccordionCard(
+                                    kidName = kid.full_name,
+                                    status = kid.attendance,
+                                    onChatClick = { /* TODO: Implement chat functionality */ },
+                                    expandedContent = {
+                                        // Date of Birth
+                                        Text(
+                                            text = "Date of Birth: ${kid.dob}",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
                                         Spacer(modifier = Modifier.height(8.dp))
-                                        kid.parents.forEach { parent ->
-                                            GuardianInfoItem(parent = parent)
-                                            if (parent != kid.parents.last()) {
-                                                Spacer(modifier = Modifier.height(8.dp))
+
+                                        // Age
+                                        Text(
+                                            text = "Age: ${computeAge(kid.dob)} years old",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        // Guardians Info
+                                        if (kid.parents.isNotEmpty()) {
+                                            SectionTitle("Guardians")
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            kid.parents.forEach { parent ->
+                                                GuardianInfoItem(parent = parent)
+                                                if (parent != kid.parents.last()) {
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            )
+                                )
+                            }
                             if (kid != kids.last()) {
                                 Spacer(modifier = Modifier.height(6.dp))
                             }
