@@ -173,9 +173,6 @@ fun KidAccordionCard(
                 )
         )
         
-        // Small spacer between indicator and card
-        Spacer(modifier = Modifier.width(4.dp))
-        
         // Main card content
         Card(
             modifier = Modifier
