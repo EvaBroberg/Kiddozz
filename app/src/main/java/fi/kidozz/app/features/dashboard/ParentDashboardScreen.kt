@@ -5,8 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.ExpandLess
@@ -123,8 +121,7 @@ fun ParentDashboardScreen(
                 LazyColumn(
                     modifier = Modifier
                         .padding(innerPadding)
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
+                        .fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -276,27 +273,6 @@ fun GuardianInfoItem(
 @Composable
 fun ParentDashboardScreenPreview() {
     KiddozzTheme {
-        // Preview with sample data
-        val sampleKids = listOf(
-            Kid(
-                id = "1",
-                full_name = "Emma Johnson",
-                dob = "2020-03-15",
-                group_id = "1",
-                daycare_id = "test",
-                trusted_adults = emptyList(),
-                parents = listOf(
-                    Parent(
-                        id = "1",
-                        full_name = "John Johnson",
-                        email = "john@example.com",
-                        phone_num = "+1234567890"
-                    )
-                ),
-                attendance = "in-care"
-            )
-        )
-        
         // Note: This preview won't work without a real ViewModel
         // In a real app, you'd use a preview ViewModel or mock data
         Text("Parent Dashboard Preview")
