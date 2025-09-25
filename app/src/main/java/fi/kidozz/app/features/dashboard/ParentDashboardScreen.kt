@@ -145,22 +145,27 @@ fun KidAccordionCard(
     
     // Determine status color
     val statusColor = when (kid.attendance.lowercase()) {
-        "in-care" -> Color(0xFF4CAF50) // Green
-        "out" -> Color(0xFF9E9E9E) // Gray
-        "sick" -> Color(0xFFF44336) // Red
-        else -> Color(0xFF9E9E9E) // Default gray
+        "in-care" -> Color(0xFF00C853) // Bright Green
+        "out" -> Color(0xFF757575) // Dark Gray
+        "sick" -> Color(0xFFD32F2F) // Bright Red
+        else -> Color(0xFF757575) // Default dark gray
     }
     
     Row(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min) // Ensure proper height calculation
     ) {
         // Status indicator line
         Box(
             modifier = Modifier
-                .width(12.dp)
+                .width(16.dp) // Increased width for better visibility
                 .fillMaxHeight()
                 .background(statusColor)
         )
+        
+        // Small spacer between indicator and card
+        Spacer(modifier = Modifier.width(4.dp))
         
         // Main card content
         Card(
