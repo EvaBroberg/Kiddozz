@@ -139,12 +139,14 @@ fun KidDetailScreen(
             .background(MaterialTheme.colorScheme.background)
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.padding(innerPadding).padding(16.dp).fillMaxSize(),
+            modifier = Modifier.padding(innerPadding).fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 Column(
-                    modifier = Modifier.fillMaxWidth(), 
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp), 
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
@@ -170,7 +172,9 @@ fun KidDetailScreen(
                         currentAttendance = newAttendance
                         kidsViewModel?.updateAttendance(kid.id, newAttendance)
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
                 )
             }
             
@@ -178,13 +182,15 @@ fun KidDetailScreen(
             item { 
                 Text(
                     text = "Age: ${computeAge(kid.dob)} years old",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 ) 
             }
             item { 
                 Text(
                     text = "Date of Birth: ${kid.dob}",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 ) 
             }
             
@@ -192,7 +198,8 @@ fun KidDetailScreen(
             item { 
                 Text(
                     text = "Group: Group ${kid.group_id}",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 ) 
             }
             
@@ -200,7 +207,8 @@ fun KidDetailScreen(
             item {
                 Text(
                     text = "Allergies: ${kid.allergies ?: "None"}",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
             
@@ -209,12 +217,18 @@ fun KidDetailScreen(
                 if (!kid.need_to_know.isNullOrBlank()) {
                     Text(
                         text = "Good to Know: ${kid.need_to_know}",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
             }
             
-            item { SectionTitle("Guardians Info") }
+            item { 
+                SectionTitle(
+                    "Guardians Info",
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) 
+            }
             item {
                 GuardiansInfoSection(
                     kid = kid,
@@ -224,7 +238,12 @@ fun KidDetailScreen(
             
             // Only show Trusted Adults section if there are trusted adults
             if (!kid.trusted_adults.isNullOrEmpty()) {
-                item { SectionTitle("Trusted Adults") }
+                item { 
+                    SectionTitle(
+                        "Trusted Adults",
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) 
+                }
                 item {
                     TrustedAdultsSection(
                         kid = kid,

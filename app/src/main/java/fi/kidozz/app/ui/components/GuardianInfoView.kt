@@ -9,11 +9,11 @@ import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.TrustedAdult
 
 @Composable
-fun SectionTitle(title: String) {
+fun SectionTitle(title: String, modifier: Modifier = Modifier) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+        modifier = modifier.padding(top = 8.dp, bottom = 4.dp)
     )
 }
 
