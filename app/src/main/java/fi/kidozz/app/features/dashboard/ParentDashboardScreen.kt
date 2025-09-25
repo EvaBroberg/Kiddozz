@@ -29,6 +29,7 @@ import fi.kidozz.app.ui.theme.KiddozzTheme
 import fi.kidozz.app.ui.theme.InCareColor
 import fi.kidozz.app.ui.theme.OutColor
 import fi.kidozz.app.ui.theme.SickColor
+import fi.kidozz.app.ui.theme.SecondaryTextColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -218,7 +219,8 @@ fun KidAccordionCard(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Status: ${kid.attendance.uppercase()}",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = SecondaryTextColor
                         )
                     }
                     
@@ -228,7 +230,8 @@ fun KidAccordionCard(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ChatBubbleOutline,
-                            contentDescription = "Chat with educator"
+                            contentDescription = "Chat with educator",
+                            tint = SecondaryTextColor
                         )
                     }
                     
@@ -238,7 +241,8 @@ fun KidAccordionCard(
                     ) {
                         Icon(
                             imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (expanded) "Collapse" else "Expand"
+                            contentDescription = if (expanded) "Collapse" else "Expand",
+                            tint = SecondaryTextColor
                         )
                     }
                 }
