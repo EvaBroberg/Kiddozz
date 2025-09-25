@@ -142,89 +142,107 @@ fun KidAccordionCard(
 ) {
     var expanded by remember { mutableStateOf(false) }
     
+    // Determine status color
+    val statusColor = when (kid.attendance.lowercase()) {
+        "in-care" -> MaterialTheme.colorScheme.primary
+        "out" -> MaterialTheme.colorScheme.outline
+        "sick" -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    
     Card(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column {
-            // Collapsed state - kid name, attendance, and chat icon
-            Row(
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Status indicator line
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded }
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = kid.full_name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Status: ${kid.attendance.uppercase()}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = when (kid.attendance.lowercase()) {
-                            "in-care" -> MaterialTheme.colorScheme.primary
-                            "out" -> MaterialTheme.colorScheme.outline
-                            "sick" -> MaterialTheme.colorScheme.error
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
-                    )
-                }
-                
-                // Chat icon (placeholder)
-                IconButton(
-                    onClick = { /* TODO: Implement chat functionality */ }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Chat,
-                        contentDescription = "Chat with educator"
-                    )
-                }
-                
-                // Expand/collapse icon
-                IconButton(
-                    onClick = { expanded = !expanded }
-                ) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "Collapse" else "Expand"
-                    )
-                }
-            }
+                    .width(10.dp)
+                    .fillMaxHeight()
+                    .background(statusColor)
+            )
             
-            // Expanded state - DOB and guardians info
-            if (expanded) {
-                HorizontalDivider()
-                Column(
-                    modifier = Modifier.padding(16.dp)
+            // Main content
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                // Collapsed state - kid name, attendance, and chat icon
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = !expanded }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Date of Birth
-                    Text(
-                        text = "Date of Birth: ${kid.dob}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = kid.full_name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Status: ${kid.attendance.uppercase()}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = statusColor
+                        )
+                    }
                     
-                    // Age
-                    Text(
-                        text = "Age: ${computeAge(kid.dob)} years old",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // Chat icon (placeholder)
+                    IconButton(
+                        onClick = { /* TODO: Implement chat functionality */ }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Chat,
+                            contentDescription = "Chat with educator"
+                        )
+                    }
                     
-                    // Guardians Info
-                    if (kid.parents.isNotEmpty()) {
-                        SectionTitle("Guardians")
+                    // Expand/collapse icon
+                    IconButton(
+                        onClick = { expanded = !expanded }
+                    ) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (expanded) "Collapse" else "Expand"
+                        )
+                    }
+                }
+                
+                // Expanded state - DOB and guardians info
+                if (expanded) {
+                    HorizontalDivider()
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        // Date of Birth
+                        Text(
+                            text = "Date of Birth: ${kid.dob}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
-                        kid.parents.forEach { parent ->
-                            GuardianInfoItem(parent = parent)
-                            if (parent != kid.parents.last()) {
-                                Spacer(modifier = Modifier.height(8.dp))
+                        
+                        // Age
+                        Text(
+                            text = "Age: ${computeAge(kid.dob)} years old",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Guardians Info
+                        if (kid.parents.isNotEmpty()) {
+                            SectionTitle("Guardians")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            kid.parents.forEach { parent ->
+                                GuardianInfoItem(parent = parent)
+                                if (parent != kid.parents.last()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
                             }
                         }
                     }
