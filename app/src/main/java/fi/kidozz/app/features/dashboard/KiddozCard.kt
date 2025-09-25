@@ -27,6 +27,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.ui.styles.AppTypography
+import fi.kidozz.app.ui.theme.InCareColor
+import fi.kidozz.app.ui.theme.OutColor
+import fi.kidozz.app.ui.theme.SickColor
 
 @Composable
 fun KiddozCard(
@@ -86,9 +89,9 @@ fun KiddozCard(
                     .height(40.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = when (kid.attendance.lowercase()) {
-                        "sick" -> Color.Red
-                        "in-care" -> Color.Green
-                        else -> Color.Gray // "out" or any other value
+                        "sick" -> SickColor
+                        "in-care" -> InCareColor
+                        else -> OutColor // "out" or any other value
                     },
                     contentColor = Color.White
                 ),

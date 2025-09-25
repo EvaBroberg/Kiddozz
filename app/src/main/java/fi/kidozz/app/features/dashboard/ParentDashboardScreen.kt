@@ -26,6 +26,9 @@ import fi.kidozz.app.data.models.Parent
 import fi.kidozz.app.data.sample.computeAge
 import fi.kidozz.app.ui.components.SectionTitle
 import fi.kidozz.app.ui.theme.KiddozzTheme
+import fi.kidozz.app.ui.theme.InCareColor
+import fi.kidozz.app.ui.theme.OutColor
+import fi.kidozz.app.ui.theme.SickColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,10 +156,10 @@ fun KidAccordionCard(
     
     // Determine status color
     val statusColor = when (kid.attendance.lowercase()) {
-        "in-care" -> Color(0xFF00C853) // Bright Green
-        "out" -> Color(0xFF757575) // Dark Gray
-        "sick" -> Color(0xFFD32F2F) // Bright Red
-        else -> Color(0xFF757575) // Default dark gray
+        "in-care" -> InCareColor
+        "out" -> OutColor
+        "sick" -> SickColor
+        else -> OutColor // Default to out color
     }
     
     Row(

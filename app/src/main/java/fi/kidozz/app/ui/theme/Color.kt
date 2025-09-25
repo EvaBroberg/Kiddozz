@@ -11,3 +11,8 @@ val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
 val BackgroundColor = Color(0xFFFEF0EE)
+
+// Attendance status colors
+val InCareColor = Color(0xFF14CD76)
+val OutColor = Color(0xFF757575)
+val SickColor = Color(0xFFD32F2F)

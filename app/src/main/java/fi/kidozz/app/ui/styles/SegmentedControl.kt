@@ -13,6 +13,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import fi.kidozz.app.ui.theme.InCareColor
+import fi.kidozz.app.ui.theme.OutColor
+import fi.kidozz.app.ui.theme.SickColor
 
 /**
  * A segmented control component that mimics the style from the provided image.
@@ -91,12 +94,12 @@ fun AttendanceSegmentedControl(
     
     // Define colors for each attendance status
     val statusColors = mapOf(
-        "in-care" to Color(0xFF4CAF50), // Green
-        "out" to Color(0xFF9E9E9E),     // Gray
-        "sick" to Color(0xFFF44336)     // Red
+        "in-care" to InCareColor,
+        "out" to OutColor,
+        "sick" to SickColor
     )
     
-    val selectedColor = statusColors[selectedAttendance] ?: Color(0xFF9E9E9E)
+    val selectedColor = statusColors[selectedAttendance] ?: OutColor
     
     SegmentedControl(
         options = options,
