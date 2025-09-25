@@ -212,7 +212,7 @@ fun KidAccordionCard(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = kid.full_name,
+                            text = kid.full_name.uppercase(),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Normal
                         )
