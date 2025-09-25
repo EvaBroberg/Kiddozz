@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +21,7 @@ import fi.kidozz.app.data.sample.sampleKidsState
 import fi.kidozz.app.data.sample.computeAge
 import fi.kidozz.app.features.dashboard.KidsViewModel
 import fi.kidozz.app.ui.components.SectionTitle
+import fi.kidozz.app.ui.components.AccordionCard
 import fi.kidozz.app.ui.styles.AttendanceSegmentedControl
 import fi.kidozz.app.ui.theme.KiddozzTheme
 
@@ -49,41 +48,22 @@ fun GuardiansInfoSection(kid: Kid, modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuardianAccordion(parent: Parent, modifier: Modifier = Modifier) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Column {
-            ListItem(
-                headlineContent = { Text(parent.full_name) },
-                trailingContent = {
-                    IconButton(onClick = { expanded = !expanded }) {
-                        Icon(
-                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (expanded) "Collapse" else "Expand"
-                        )
-                    }
-                }
-            )
-
-            if (expanded) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    parent.email?.let {
-                        GuardianInfoRow(label = "Email", value = it)
-                    }
-                    parent.phone_num?.let {
-                        GuardianInfoRow(label = "Phone", value = it)
-                    }
-                }
+    AccordionCard(
+        title = parent.full_name,
+        subtitle = null,
+        showChatButton = false,
+        expandedContent = {
+            parent.email?.let {
+                GuardianInfoRow(label = "Email", value = it)
             }
-        }
-    }
+            parent.phone_num?.let {
+                GuardianInfoRow(label = "Phone", value = it)
+            }
+        },
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -95,44 +75,25 @@ fun TrustedAdultsSection(kid: Kid, modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrustedAdultAccordion(trustedAdult: TrustedAdult, modifier: Modifier = Modifier) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Column {
-            ListItem(
-                headlineContent = { Text(trustedAdult.name) },
-                trailingContent = {
-                    IconButton(onClick = { expanded = !expanded }) {
-                        Icon(
-                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (expanded) "Collapse" else "Expand"
-                        )
-                    }
-                }
-            )
-
-            if (expanded) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    trustedAdult.email?.let {
-                        GuardianInfoRow(label = "Email", value = it)
-                    }
-                    trustedAdult.phone_num?.let {
-                        GuardianInfoRow(label = "Phone", value = it)
-                    }
-                    trustedAdult.address?.let {
-                        GuardianInfoRow(label = "Address", value = it)
-                    }
-                }
+    AccordionCard(
+        title = trustedAdult.name,
+        subtitle = null,
+        showChatButton = false,
+        expandedContent = {
+            trustedAdult.email?.let {
+                GuardianInfoRow(label = "Email", value = it)
             }
-        }
-    }
+            trustedAdult.phone_num?.let {
+                GuardianInfoRow(label = "Phone", value = it)
+            }
+            trustedAdult.address?.let {
+                GuardianInfoRow(label = "Address", value = it)
+            }
+        },
+        modifier = modifier
+    )
 }
 
 @Composable
