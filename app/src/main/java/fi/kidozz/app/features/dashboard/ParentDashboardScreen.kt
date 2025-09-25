@@ -25,6 +25,7 @@ import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.data.models.Parent
 import fi.kidozz.app.data.sample.computeAge
 import fi.kidozz.app.ui.components.SectionTitle
+import fi.kidozz.app.ui.components.KidAccordionCard
 import fi.kidozz.app.ui.theme.KiddozzTheme
 import fi.kidozz.app.ui.theme.InCareColor
 import fi.kidozz.app.ui.theme.OutColor
@@ -135,7 +136,38 @@ fun ParentDashboardScreen(
                 ) {
                     items(kids) { kid ->
                         Column {
-                            KidAccordionCard(kid = kid)
+                            KidAccordionCard(
+                                kidName = kid.full_name,
+                                status = kid.attendance,
+                                onChatClick = { /* TODO: Implement chat functionality */ },
+                                expandedContent = {
+                                    // Date of Birth
+                                    Text(
+                                        text = "Date of Birth: ${kid.dob}",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    // Age
+                                    Text(
+                                        text = "Age: ${computeAge(kid.dob)} years old",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    // Guardians Info
+                                    if (kid.parents.isNotEmpty()) {
+                                        SectionTitle("Guardians")
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        kid.parents.forEach { parent ->
+                                            GuardianInfoItem(parent = parent)
+                                            if (parent != kid.parents.last()) {
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                            }
+                                        }
+                                    }
+                                }
+                            )
                             if (kid != kids.last()) {
                                 Spacer(modifier = Modifier.height(6.dp))
                             }
@@ -147,152 +179,6 @@ fun ParentDashboardScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun KidAccordionCard(
-    kid: Kid,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-    
-    // Determine status color
-    val statusColor = when (kid.attendance.lowercase()) {
-        "in-care" -> InCareColor
-        "out" -> OutColor
-        "sick" -> SickColor
-        else -> OutColor // Default to out color
-    }
-    
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min) // Ensure proper height calculation
-    ) {
-        // Status indicator line
-        Box(
-            modifier = Modifier
-                .width(16.dp) // Increased width for better visibility
-                .fillMaxHeight()
-                .background(statusColor)
-        )
-        
-        // Main card content
-        Card(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RectangleShape
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Top border
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Color(0xFFE0E0E0))
-                )
-                
-                // Content
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // Collapsed state - kid name, attendance, and chat icon
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { expanded = !expanded }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            text = kid.full_name.uppercase(),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Status: ${kid.attendance.uppercase()}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = SecondaryTextColor
-                        )
-                    }
-                    
-                    // Chat icon (placeholder)
-                    IconButton(
-                        onClick = { /* TODO: Implement chat functionality */ }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.ChatBubbleOutline,
-                            contentDescription = "Chat with educator",
-                            tint = SecondaryTextColor
-                        )
-                    }
-                    
-                    // Expand/collapse icon
-                    IconButton(
-                        onClick = { expanded = !expanded }
-                    ) {
-                        Icon(
-                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (expanded) "Collapse" else "Expand",
-                            tint = SecondaryTextColor
-                        )
-                    }
-                }
-                
-                // Expanded state - DOB and guardians info
-                if (expanded) {
-                    HorizontalDivider()
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        // Date of Birth
-                        Text(
-                            text = "Date of Birth: ${kid.dob}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        // Age
-                        Text(
-                            text = "Age: ${computeAge(kid.dob)} years old",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Guardians Info
-                        if (kid.parents.isNotEmpty()) {
-                            SectionTitle("Guardians")
-                            Spacer(modifier = Modifier.height(8.dp))
-                            kid.parents.forEach { parent ->
-                                GuardianInfoItem(parent = parent)
-                                if (parent != kid.parents.last()) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-                }
-                
-                // Bottom border
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Color(0xFFE0E0E0))
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun GuardianInfoItem(
