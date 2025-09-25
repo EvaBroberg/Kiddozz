@@ -79,6 +79,9 @@ dependencies {
 
     // --- Lottie for animations ---
     implementation("com.airbnb.android:lottie-compose:6.4.0")
+    
+    // --- Google Fonts ---
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.6.8")
 
     // --- Existing project dependencies (leave untouched) ---
     implementation(libs.androidx.core.ktx)

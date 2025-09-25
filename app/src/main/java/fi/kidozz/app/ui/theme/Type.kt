@@ -1,34 +1,36 @@
 package fi.kidozz.app.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
 
 /**
- * Material3 Typography using our DesignTypography system
+ * Material3 Typography using our DesignTypography system with Google Fonts
  * Maps Material3 text styles to our custom typography
  */
-val Typography = Typography(
+@Composable
+fun Typography(): Typography = Typography(
     // Headlines
-    headlineLarge = DesignTypography.Title,
-    headlineMedium = DesignTypography.Subtitle,
-    headlineSmall = DesignTypography.Heading,
+    headlineLarge = DesignTypography.Title(),
+    headlineMedium = DesignTypography.Subtitle(),
+    headlineSmall = DesignTypography.Heading(),
     
     // Titles
-    titleLarge = DesignTypography.Title,
-    titleMedium = DesignTypography.Subtitle,
-    titleSmall = DesignTypography.Heading,
+    titleLarge = DesignTypography.Title(),
+    titleMedium = DesignTypography.Subtitle(),
+    titleSmall = DesignTypography.Heading(),
     
     // Body text
-    bodyLarge = DesignTypography.Body,
-    bodyMedium = DesignTypography.BodyMedium,
-    bodySmall = DesignTypography.BodySmall,
+    bodyLarge = DesignTypography.Body(),
+    bodyMedium = DesignTypography.BodyMedium(),
+    bodySmall = DesignTypography.BodySmall(),
     
     // Labels
-    labelLarge = DesignTypography.ButtonLarge,
-    labelMedium = DesignTypography.Button,
-    labelSmall = DesignTypography.Label,
+    labelLarge = DesignTypography.ButtonLarge(),
+    labelMedium = DesignTypography.Button(),
+    labelSmall = DesignTypography.Label(),
     
     // Display (for very large text)
-    displayLarge = DesignTypography.Title,
-    displayMedium = DesignTypography.Subtitle,
-    displaySmall = DesignTypography.Heading
+    displayLarge = DesignTypography.Title(),
+    displayMedium = DesignTypography.Subtitle(),
+    displaySmall = DesignTypography.Heading()
 )
