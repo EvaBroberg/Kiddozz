@@ -203,6 +203,7 @@ class TestParentKidsEndpoint:
     def test_parent_kids_endpoint_returns_kids(self, clean_db):
         """Test that parent kids endpoint returns linked kids."""
         from datetime import date
+
         from app.models.group import Group
         from app.models.kid import AttendanceStatus, Kid
 
@@ -225,7 +226,7 @@ class TestParentKidsEndpoint:
                 full_name="Test Parent",
                 email="test@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -237,7 +238,7 @@ class TestParentKidsEndpoint:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -250,15 +251,22 @@ class TestParentKidsEndpoint:
             # Test the endpoint
             response = client.get(f"/api/v1/parents/{parent.id}/kids")
             assert response.status_code == 200
-            
+
             data = response.json()
             assert isinstance(data, list)
             assert len(data) == 1
-            
+
             kid_data = data[0]
             assert kid_data["id"] == kid.id
             assert kid_data["full_name"] == "Test Kid"
-            assert kid_data["parents"] == [{"id": parent.id, "full_name": "Test Parent", "email": "test@example.com", "phone_num": "+1234567890"}]
+            assert kid_data["parents"] == [
+                {
+                    "id": parent.id,
+                    "full_name": "Test Parent",
+                    "email": "test@example.com",
+                    "phone_num": "+1234567890",
+                }
+            ]
 
         finally:
             db.close()
@@ -278,7 +286,7 @@ class TestParentKidsEndpoint:
                 full_name="Test Parent",
                 email="test@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -287,7 +295,7 @@ class TestParentKidsEndpoint:
             # Test the endpoint
             response = client.get(f"/api/v1/parents/{parent.id}/kids")
             assert response.status_code == 200
-            
+
             data = response.json()
             assert isinstance(data, list)
             assert len(data) == 0

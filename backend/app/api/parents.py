@@ -52,7 +52,7 @@ def get_kids_for_parent_endpoint(
     parent = db.query(Parent).filter(Parent.id == parent_id).first()
     if not parent:
         raise HTTPException(status_code=404, detail="Parent not found")
-    
+
     # Get kids for this parent
     kids = get_kids_for_parent(db, parent_id)
     return kids
