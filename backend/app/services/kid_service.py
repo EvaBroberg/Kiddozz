@@ -98,6 +98,11 @@ def get_kids_by_parent(db: Session, parent_id: int) -> List[Kid]:
     return parent.kids
 
 
+def get_kids_for_parent(db: Session, parent_id: int) -> List[Kid]:
+    """Get all kids linked to a specific parent (alias for get_kids_by_parent)."""
+    return get_kids_by_parent(db, parent_id)
+
+
 def validate_kid_parent_relationship(db: Session, kid_id: int) -> bool:
     """
     Validate that a kid has at least one parent linked.

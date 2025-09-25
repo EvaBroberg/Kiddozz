@@ -195,3 +195,108 @@ class TestParentSeeding:
 
         finally:
             db.close()
+
+
+class TestParentKidsEndpoint:
+    """Test parent kids endpoint functionality."""
+
+    def test_parent_kids_endpoint_returns_kids(self, clean_db):
+        """Test that parent kids endpoint returns linked kids."""
+        from datetime import date
+        from app.models.group import Group
+        from app.models.kid import AttendanceStatus, Kid
+
+        db = TestingSessionLocal()
+        try:
+            # Create a daycare
+            daycare = Daycare(name="Test Daycare")
+            db.add(daycare)
+            db.commit()
+            db.refresh(daycare)
+
+            # Create a group
+            group = Group(name="Group A", daycare_id=daycare.id)
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+
+            # Create a parent
+            parent = Parent(
+                full_name="Test Parent",
+                email="test@example.com",
+                phone_num="+1234567890",
+                daycare_id=daycare.id
+            )
+            db.add(parent)
+            db.commit()
+            db.refresh(parent)
+
+            # Create a kid and link to parent
+            kid = Kid(
+                full_name="Test Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.OUT
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            # Link parent to kid
+            parent.kids.append(kid)
+            db.commit()
+
+            # Test the endpoint
+            response = client.get(f"/api/v1/parents/{parent.id}/kids")
+            assert response.status_code == 200
+            
+            data = response.json()
+            assert isinstance(data, list)
+            assert len(data) == 1
+            
+            kid_data = data[0]
+            assert kid_data["id"] == kid.id
+            assert kid_data["full_name"] == "Test Kid"
+            assert kid_data["parents"] == [{"id": parent.id, "full_name": "Test Parent", "email": "test@example.com", "phone_num": "+1234567890"}]
+
+        finally:
+            db.close()
+
+    def test_parent_with_no_kids_returns_empty_list(self, clean_db):
+        """Test that parent with no kids returns empty list."""
+        db = TestingSessionLocal()
+        try:
+            # Create a daycare
+            daycare = Daycare(name="Test Daycare")
+            db.add(daycare)
+            db.commit()
+            db.refresh(daycare)
+
+            # Create a parent with no kids
+            parent = Parent(
+                full_name="Test Parent",
+                email="test@example.com",
+                phone_num="+1234567890",
+                daycare_id=daycare.id
+            )
+            db.add(parent)
+            db.commit()
+            db.refresh(parent)
+
+            # Test the endpoint
+            response = client.get(f"/api/v1/parents/{parent.id}/kids")
+            assert response.status_code == 200
+            
+            data = response.json()
+            assert isinstance(data, list)
+            assert len(data) == 0
+
+        finally:
+            db.close()
+
+    def test_parent_kids_endpoint_parent_not_found(self, clean_db):
+        """Test that parent kids endpoint returns 404 for non-existent parent."""
+        response = client.get("/api/v1/parents/99999/kids")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Parent not found"

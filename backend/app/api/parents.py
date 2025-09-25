@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.parent import Parent
+from app.schemas.kid import KidOut
 from app.schemas.parents import ParentOut
+from app.services.kid_service import get_kids_for_parent
 from app.utils.daycare_resolver import resolve_daycare_id
 
 router = APIRouter()
@@ -38,3 +40,19 @@ def list_parents(
         )
 
     return q.all()
+
+
+@router.get("/parents/{parent_id}/kids", response_model=List[KidOut])
+def get_kids_for_parent_endpoint(
+    parent_id: int,
+    db: Session = Depends(get_db),
+):
+    """Get all kids linked to a specific parent."""
+    # Verify parent exists
+    parent = db.query(Parent).filter(Parent.id == parent_id).first()
+    if not parent:
+        raise HTTPException(status_code=404, detail="Parent not found")
+    
+    # Get kids for this parent
+    kids = get_kids_for_parent(db, parent_id)
+    return kids

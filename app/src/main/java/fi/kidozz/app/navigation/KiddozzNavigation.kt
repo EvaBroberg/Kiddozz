@@ -10,9 +10,11 @@ import androidx.navigation.compose.composable
 import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.data.sample.sampleKidsState
 import fi.kidozz.app.features.dashboard.EducatorDashboardScreen
+import fi.kidozz.app.features.dashboard.ParentDashboardScreen
 import fi.kidozz.app.features.dashboard.GroupsViewModel
 import fi.kidozz.app.features.dashboard.EducatorViewModel
 import fi.kidozz.app.features.dashboard.KidsViewModel
+import fi.kidozz.app.features.dashboard.ParentsViewModel
 import fi.kidozz.app.features.kiddetail.KidDetailScreen
 import fi.kidozz.app.features.role.RoleSelectionScreen
 import fi.kidozz.app.features.calendar.UpcomingEventsScreen
@@ -32,7 +34,7 @@ fun KiddozzAppHost(
         composable("role_selection") {
             RoleSelectionScreen(
                 onEducatorViewClick = { navController.navigate("educator_dashboard") },
-                onParentViewClick = { /* TODO: Navigate to Parent View */ },
+                onParentViewClick = { navController.navigate("parent_dashboard") },
                 onSuperEducatorViewClick = { navController.navigate("educator_dashboard") }, // Same as educator for now
                 modifier = modifier
             )
@@ -70,6 +72,25 @@ fun KiddozzAppHost(
                 educatorViewModel = educatorViewModel,
                 kidsViewModel = kidsViewModel,
                 daycareId = "default-daycare-id"
+            )
+        }
+
+        composable("parent_dashboard") {
+            // Set up API services for ParentDashboardScreen
+            val baseUrl = "http://10.0.2.2:8000" // Android emulator localhost
+            val retrofit = Retrofit.Builder()
+                .baseUrl(baseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+            
+            val parentsApiService = retrofit.create(fi.kidozz.app.data.api.ParentsApiService::class.java)
+            val parentsRepository = fi.kidozz.app.data.repository.ParentsRepository(parentsApiService)
+            val parentsViewModel = remember { ParentsViewModel(parentsRepository) }
+            
+            ParentDashboardScreen(
+                parentId = "1", // TODO: Get from authentication or navigation args
+                parentsViewModel = parentsViewModel,
+                modifier = modifier
             )
         }
 
