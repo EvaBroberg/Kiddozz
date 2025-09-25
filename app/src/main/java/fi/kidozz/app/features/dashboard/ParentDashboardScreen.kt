@@ -137,7 +137,7 @@ fun ParentDashboardScreen(
                         Column {
                             KidAccordionCard(kid = kid)
                             if (kid != kids.last()) {
-                                Spacer(modifier = Modifier.height(10.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
                             }
                         }
                     }
