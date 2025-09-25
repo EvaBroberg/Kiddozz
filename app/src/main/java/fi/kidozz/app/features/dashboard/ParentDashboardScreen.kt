@@ -181,7 +181,13 @@ fun KidAccordionCard(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            shape = RoundedCornerShape(
+                topStart = 0.dp,
+                topEnd = 8.dp,
+                bottomStart = 0.dp,
+                bottomEnd = 8.dp
+            )
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth()
