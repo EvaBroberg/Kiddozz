@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -144,30 +145,32 @@ fun KidAccordionCard(
     
     // Determine status color
     val statusColor = when (kid.attendance.lowercase()) {
-        "in-care" -> MaterialTheme.colorScheme.primary
-        "out" -> MaterialTheme.colorScheme.outline
-        "sick" -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.onSurface
+        "in-care" -> Color(0xFF4CAF50) // Green
+        "out" -> Color(0xFF9E9E9E) // Gray
+        "sick" -> Color(0xFFF44336) // Red
+        else -> Color(0xFF9E9E9E) // Default gray
     }
     
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    Row(
+        modifier = modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth()
+        // Status indicator line
+        Box(
+            modifier = Modifier
+                .width(12.dp)
+                .fillMaxHeight()
+                .background(statusColor)
+        )
+        
+        // Main card content
+        Card(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            // Status indicator line
-            Box(
-                modifier = Modifier
-                    .width(10.dp)
-                    .fillMaxHeight()
-                    .background(statusColor)
-            )
-            
-            // Main content
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 // Collapsed state - kid name, attendance, and chat icon
                 Row(
