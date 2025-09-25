@@ -22,16 +22,28 @@ def upgrade() -> None:
                existing_type=sa.UUID(),
                nullable=False)
     
-    # Drop constraints only if they exist
-    try:
-        op.drop_constraint(op.f('uq_educators_daycare_email'), 'educators', type_='unique')
-    except Exception:
-        pass  # Constraint doesn't exist, continue
+    # Check if constraints exist before dropping them
+    connection = op.get_bind()
     
-    try:
+    # Check if uq_educators_daycare_email constraint exists
+    result = connection.execute(sa.text("""
+        SELECT constraint_name 
+        FROM information_schema.table_constraints 
+        WHERE table_name = 'educators' 
+        AND constraint_name = 'uq_educators_daycare_email'
+    """))
+    if result.fetchone():
+        op.drop_constraint(op.f('uq_educators_daycare_email'), 'educators', type_='unique')
+    
+    # Check if uq_groups_daycare_name constraint exists
+    result = connection.execute(sa.text("""
+        SELECT constraint_name 
+        FROM information_schema.table_constraints 
+        WHERE table_name = 'groups' 
+        AND constraint_name = 'uq_groups_daycare_name'
+    """))
+    if result.fetchone():
         op.drop_constraint(op.f('uq_groups_daycare_name'), 'groups', type_='unique')
-    except Exception:
-        pass  # Constraint doesn't exist, continue
     
     op.add_column('kids', sa.Column('allergies', sa.Text(), nullable=True))
     op.add_column('kids', sa.Column('need_to_know', sa.Text(), nullable=True))
@@ -43,16 +55,28 @@ def downgrade() -> None:
     op.drop_column('kids', 'need_to_know')
     op.drop_column('kids', 'allergies')
     
-    # Create constraints only if they don't exist
-    try:
-        op.create_unique_constraint(op.f('uq_groups_daycare_name'), 'groups', ['daycare_id', 'name'], postgresql_nulls_not_distinct=False)
-    except Exception:
-        pass  # Constraint already exists, continue
+    # Check if constraints exist before creating them
+    connection = op.get_bind()
     
-    try:
+    # Check if uq_groups_daycare_name constraint exists
+    result = connection.execute(sa.text("""
+        SELECT constraint_name 
+        FROM information_schema.table_constraints 
+        WHERE table_name = 'groups' 
+        AND constraint_name = 'uq_groups_daycare_name'
+    """))
+    if not result.fetchone():
+        op.create_unique_constraint(op.f('uq_groups_daycare_name'), 'groups', ['daycare_id', 'name'], postgresql_nulls_not_distinct=False)
+    
+    # Check if uq_educators_daycare_email constraint exists
+    result = connection.execute(sa.text("""
+        SELECT constraint_name 
+        FROM information_schema.table_constraints 
+        WHERE table_name = 'educators' 
+        AND constraint_name = 'uq_educators_daycare_email'
+    """))
+    if not result.fetchone():
         op.create_unique_constraint(op.f('uq_educators_daycare_email'), 'educators', ['daycare_id', 'email'], postgresql_nulls_not_distinct=False)
-    except Exception:
-        pass  # Constraint already exists, continue
     
     op.alter_column('educators', 'daycare_id',
                existing_type=sa.UUID(),
