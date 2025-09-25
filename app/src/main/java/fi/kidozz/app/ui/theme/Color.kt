@@ -13,7 +13,7 @@ val Pink40 = Color(0xFF7D5260)
 val BackgroundColor = Color(0xFFFEF0EE)
 
 // Text colors
-val SecondaryTextColor = Color(0xFF373738)
+val SecondaryTextColor = Color(0xFF5A5A5A)
 
 // Attendance status colors
 val InCareColor = Color(0xFF14CD76)
