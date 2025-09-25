@@ -9,7 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
@@ -227,7 +227,7 @@ fun KidAccordionCard(
                         onClick = { /* TODO: Implement chat functionality */ }
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Chat,
+                            imageVector = Icons.AutoMirrored.Filled.Message,
                             contentDescription = "Chat with educator"
                         )
                     }
