@@ -124,11 +124,16 @@ fun ParentDashboardScreen(
                     modifier = Modifier
                         .padding(innerPadding)
                         .fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(0.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     items(kids) { kid ->
-                        KidAccordionCard(kid = kid)
+                        Column {
+                            KidAccordionCard(kid = kid)
+                            if (kid != kids.last()) {
+                                Spacer(modifier = Modifier.height(1.dp))
+                            }
+                        }
                     }
                 }
             }
