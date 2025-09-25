@@ -214,7 +214,7 @@ fun KidAccordionCard(
                         Text(
                             text = kid.full_name,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Normal
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
