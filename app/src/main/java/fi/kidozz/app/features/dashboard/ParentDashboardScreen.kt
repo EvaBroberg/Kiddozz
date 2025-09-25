@@ -191,8 +191,7 @@ fun KidAccordionCard(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Status: ${kid.attendance.uppercase()}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = statusColor
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                     
