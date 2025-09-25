@@ -1,10 +1,12 @@
 package fi.kidozz.app.features.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -174,9 +176,15 @@ fun KidAccordionCard(
         Card(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight(),
+                .fillMaxHeight()
+                .border(
+                    width = 1.dp,
+                    color = Color(0xFFE0E0E0), // Light grey
+                    shape = RectangleShape
+                ),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RectangleShape
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth()
