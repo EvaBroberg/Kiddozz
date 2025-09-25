@@ -131,7 +131,7 @@ fun ParentDashboardScreen(
                         Column {
                             KidAccordionCard(kid = kid)
                             if (kid != kids.last()) {
-                                Spacer(modifier = Modifier.height(1.dp))
+                                Spacer(modifier = Modifier.height(10.dp))
                             }
                         }
                     }
@@ -167,15 +167,7 @@ fun KidAccordionCard(
             modifier = Modifier
                 .width(16.dp) // Increased width for better visibility
                 .fillMaxHeight()
-                .background(
-                    color = statusColor,
-                    shape = RoundedCornerShape(
-                        topStart = 8.dp,
-                        topEnd = 0.dp,
-                        bottomStart = 8.dp,
-                        bottomEnd = 0.dp
-                    )
-                )
+                .background(statusColor)
         )
         
         // Main card content
@@ -183,13 +175,8 @@ fun KidAccordionCard(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            shape = RoundedCornerShape(
-                topStart = 0.dp,
-                topEnd = 8.dp,
-                bottomStart = 0.dp,
-                bottomEnd = 8.dp
-            )
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth()
