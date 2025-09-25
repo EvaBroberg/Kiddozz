@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.ExpandLess
@@ -161,7 +162,15 @@ fun KidAccordionCard(
             modifier = Modifier
                 .width(16.dp) // Increased width for better visibility
                 .fillMaxHeight()
-                .background(statusColor)
+                .background(
+                    color = statusColor,
+                    shape = RoundedCornerShape(
+                        topStart = 8.dp,
+                        topEnd = 0.dp,
+                        bottomStart = 8.dp,
+                        bottomEnd = 0.dp
+                    )
+                )
         )
         
         // Small spacer between indicator and card
