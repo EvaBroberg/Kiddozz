@@ -53,16 +53,6 @@ fun AbsenceCalendarDialog(
                 Column(
                     modifier = Modifier.padding(20.dp)
                 ) {
-                    // Header
-                    Text(
-                        text = "Report Absence for $kidName",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
                     
                     // Month navigation
                     Row(
