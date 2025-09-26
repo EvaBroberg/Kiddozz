@@ -4,8 +4,9 @@ from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models.kid import Kid
+from app.models.kid import AbsenceReason, Kid, KidAbsence
 from app.models.parent import Parent
+from app.schemas.kid import KidAbsenceCreate
 
 
 def create_kid(
@@ -136,3 +137,114 @@ def ensure_kid_has_parents(db: Session, kid: Kid) -> None:
         raise HTTPException(
             status_code=400, detail="Kid must be linked to at least one parent"
         )
+
+
+def create_kid_absence(
+    db: Session, kid_id: int, absence_data: KidAbsenceCreate, parent_id: int
+) -> KidAbsence:
+    """
+    Create a new absence record for a kid.
+
+    Args:
+        db: Database session
+        kid_id: ID of the kid
+        absence_data: Absence data
+        parent_id: ID of the parent creating the absence
+
+    Returns:
+        Created KidAbsence object
+
+    Raises:
+        HTTPException: If validation fails
+    """
+    # Verify kid exists and parent is linked to kid
+    kid = db.query(Kid).filter(Kid.id == kid_id).first()
+    if not kid:
+        raise HTTPException(status_code=404, detail="Kid not found")
+
+    # Check if parent is linked to this kid
+    parent_linked = any(parent.id == parent_id for parent in kid.parents)
+    if not parent_linked:
+        raise HTTPException(
+            status_code=403, detail="Parent not authorized to create absences for this kid"
+        )
+
+    # Check if absence already exists for this date
+    existing_absence = db.query(KidAbsence).filter(
+        KidAbsence.kid_id == kid_id, KidAbsence.date == absence_data.date
+    ).first()
+    if existing_absence:
+        # Update existing absence
+        existing_absence.reason = absence_data.reason
+        db.commit()
+        db.refresh(existing_absence)
+        return existing_absence
+
+    # Create new absence
+    absence = KidAbsence(
+        kid_id=kid_id,
+        date=absence_data.date,
+        reason=absence_data.reason
+    )
+    db.add(absence)
+    db.commit()
+    db.refresh(absence)
+    return absence
+
+
+def get_kid_absences(db: Session, kid_id: int, parent_id: int) -> List[KidAbsence]:
+    """
+    Get all absences for a kid.
+
+    Args:
+        db: Database session
+        kid_id: ID of the kid
+        parent_id: ID of the parent requesting absences
+
+    Returns:
+        List of KidAbsence objects
+
+    Raises:
+        HTTPException: If validation fails
+    """
+    # Verify kid exists and parent is linked to kid
+    kid = db.query(Kid).filter(Kid.id == kid_id).first()
+    if not kid:
+        raise HTTPException(status_code=404, detail="Kid not found")
+
+    # Check if parent is linked to this kid
+    parent_linked = any(parent.id == parent_id for parent in kid.parents)
+    if not parent_linked:
+        raise HTTPException(
+            status_code=403, detail="Parent not authorized to view absences for this kid"
+        )
+
+    return db.query(KidAbsence).filter(KidAbsence.kid_id == kid_id).all()
+
+
+def get_effective_attendance(db: Session, kid: Kid, target_date: date = None) -> str:
+    """
+    Get effective attendance for a kid considering absences.
+
+    Args:
+        db: Database session
+        kid: Kid object
+        target_date: Date to check attendance for (defaults to today)
+
+    Returns:
+        Effective attendance status
+    """
+    if target_date is None:
+        target_date = date.today()
+
+    # Check if there's an absence for this date
+    absence = db.query(KidAbsence).filter(
+        KidAbsence.kid_id == kid.id, KidAbsence.date == target_date
+    ).first()
+
+    # If there's an absence, return the absence reason
+    # The base attendance field is only used when there's no absence
+    if absence:
+        return absence.reason.value
+    else:
+        return kid.attendance.value

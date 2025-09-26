@@ -1,3 +1,4 @@
+from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -6,9 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.models.kid import AttendanceStatus, Kid
+from app.models.kid import AttendanceStatus, Kid, KidAbsence
 from app.models.parent import Parent
-from app.schemas.kid import KidOut, KidUpdate
+from app.schemas.kid import KidAbsenceCreate, KidAbsenceOut, KidOut, KidUpdate
+from app.services.kid_service import create_kid_absence, get_effective_attendance, get_kid_absences
 from app.utils.daycare_resolver import resolve_daycare_id
 
 router = APIRouter()
@@ -30,7 +32,15 @@ def list_kids(
     query = db.query(Kid).filter(Kid.daycare_id == daycare_id)
     if group_id:
         query = query.filter(Kid.group_id == group_id)
-    return query.all()
+    
+    kids = query.all()
+    
+    # Apply effective attendance logic
+    for kid in kids:
+        effective_attendance = get_effective_attendance(db, kid)
+        kid.attendance = AttendanceStatus(effective_attendance)
+    
+    return kids
 
 
 @router.patch("/kids/{kid_id}/attendance")
@@ -55,6 +65,17 @@ def update_attendance(
 
     # Update attendance
     kid.attendance = attendance_status
+    
+    # If teacher is setting attendance, remove any existing absence for today
+    # This allows teacher override of parent-reported absences
+    today = date.today()
+    existing_absence = db.query(KidAbsence).filter(
+        KidAbsence.kid_id == kid_id, KidAbsence.date == today
+    ).first()
+    
+    if existing_absence:
+        db.delete(existing_absence)
+    
     db.commit()
     db.refresh(kid)
 
@@ -122,3 +143,46 @@ def update_kid(
     db.refresh(kid)
 
     return kid
+
+
+@router.post("/kids/{kid_id}/absences", response_model=KidAbsenceOut)
+def create_absence(
+    kid_id: int,
+    absence_data: KidAbsenceCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Create or update an absence for a kid. Only parents linked to the kid can create absences."""
+    user_role = current_user.get("role")
+    user_id = current_user.get("sub")
+    
+    if user_role != "parent":
+        raise HTTPException(
+            status_code=403, detail="Only parents can create absences"
+        )
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User ID not found in token")
+    
+    return create_kid_absence(db, kid_id, absence_data, int(user_id))
+
+
+@router.get("/kids/{kid_id}/absences", response_model=List[KidAbsenceOut])
+def list_absences(
+    kid_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Get all absences for a kid. Only parents linked to the kid can view absences."""
+    user_role = current_user.get("role")
+    user_id = current_user.get("sub")
+    
+    if user_role != "parent":
+        raise HTTPException(
+            status_code=403, detail="Only parents can view absences"
+        )
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User ID not found in token")
+    
+    return get_kid_absences(db, kid_id, int(user_id))

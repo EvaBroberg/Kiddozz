@@ -3,7 +3,7 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
-from app.models.kid import AttendanceStatus
+from app.models.kid import AbsenceReason, AttendanceStatus
 from app.schemas.parents import ParentOut
 
 
@@ -43,6 +43,23 @@ class KidUpdate(BaseModel):
 class KidOut(KidBase):
     id: Union[str, int]
     parents: List[ParentOut] = []
+
+    class Config:
+        from_attributes = True
+
+
+class KidAbsenceCreate(BaseModel):
+    date: date
+    reason: AbsenceReason
+
+
+class KidAbsenceOut(BaseModel):
+    id: str
+    kid_id: int
+    date: date
+    reason: AbsenceReason
+    created_at: str
+    updated_at: str
 
     class Config:
         from_attributes = True
