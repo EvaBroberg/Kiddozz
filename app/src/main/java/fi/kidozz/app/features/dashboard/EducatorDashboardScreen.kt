@@ -177,15 +177,15 @@ fun EducatorDashboardScreen(
             EducatorSection.KidsOverview -> KidsGrid(
                 filteredKids = filteredKids,
                 onKidClick = onKidClick,
-                modifier = Modifier.padding(innerPadding).fillMaxSize()
+                modifier = Modifier.padding(innerPadding).padding(top = 24.dp).fillMaxSize()
             )
             EducatorSection.Calendar -> EducatorCalendarScreen(
                 navController = navController,
-                modifier = Modifier.padding(innerPadding).fillMaxSize()
+                modifier = Modifier.padding(innerPadding).padding(top = 24.dp).fillMaxSize()
             )
             else -> PlaceholderScreen(
                 section = currentEducatorSection,
-                modifier = Modifier.padding(innerPadding).fillMaxSize()
+                modifier = Modifier.padding(innerPadding).padding(top = 24.dp).fillMaxSize()
             )
         }
     }

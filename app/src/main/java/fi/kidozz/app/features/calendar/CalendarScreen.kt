@@ -57,6 +57,7 @@ fun EducatorCalendarScreen(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
+            .padding(top = 24.dp)
             .verticalScroll(rememberScrollState())
     ) {
         Text(

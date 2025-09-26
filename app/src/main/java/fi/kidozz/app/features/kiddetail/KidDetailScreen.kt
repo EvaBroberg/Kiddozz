@@ -139,7 +139,7 @@ fun KidDetailScreen(
             .background(MaterialTheme.colorScheme.background)
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.padding(innerPadding).fillMaxSize(),
+            modifier = Modifier.padding(innerPadding).padding(top = 24.dp).fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {

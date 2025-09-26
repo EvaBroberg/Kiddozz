@@ -47,6 +47,7 @@ fun UpcomingEventsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
+                .padding(top = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             EventAccordion(
