@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import fi.kidozz.app.ui.styles.BasicButton
+import fi.kidozz.app.ui.styles.WarningButton
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -124,23 +126,21 @@ fun AbsenceCalendarDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        OutlinedButton(
+                        BasicButton(
+                            text = "Cancel",
                             onClick = onDismiss,
                             modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Cancel")
-                        }
+                        )
                         
-                        Button(
+                        WarningButton(
+                            text = "Submit Absence",
                             onClick = {
                                 onAbsenceSelected(selectedDates.sorted())
                                 onDismiss()
                             },
                             enabled = selectedDates.isNotEmpty(),
                             modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Submit Absence")
-                        }
+                        )
                     }
                 }
             }
@@ -156,7 +156,6 @@ private fun AbsenceCalendarGrid(
     modifier: Modifier = Modifier
 ) {
     val firstDayOfMonth = yearMonth.atDay(1)
-    val lastDayOfMonth = yearMonth.atEndOfMonth()
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // Convert to 0-based (Sunday = 0)
     val daysInMonth = yearMonth.lengthOfMonth()
     
