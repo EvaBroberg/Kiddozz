@@ -596,3 +596,39 @@ def test_update_kid_parent_can_update_null_fields(
 
     finally:
         db.close()
+
+
+def test_get_absence_reasons_returns_200():
+    """Test that /kids/absence-reasons returns a 200 status code."""
+    response = client.get("/api/v1/kids/absence-reasons")
+    assert response.status_code == 200
+
+
+def test_get_absence_reasons_returns_expected_values():
+    """Test that the response contains all expected values from the enum."""
+    response = client.get("/api/v1/kids/absence-reasons")
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert "absence_reasons" in data
+    assert isinstance(data["absence_reasons"], list)
+    
+    # Check that we get the expected values from AbsenceReason enum
+    expected_reasons = ["sick", "holiday"]
+    assert set(data["absence_reasons"]) == set(expected_reasons)
+    assert len(data["absence_reasons"]) == len(expected_reasons)
+
+
+def test_get_absence_reasons_enum_sync():
+    """Test that if the enum changes, the endpoint reflects it automatically."""
+    from app.models.kid import AbsenceReason
+    
+    response = client.get("/api/v1/kids/absence-reasons")
+    assert response.status_code == 200
+    
+    data = response.json()
+    api_reasons = set(data["absence_reasons"])
+    enum_reasons = set(r.value for r in AbsenceReason)
+    
+    # The API should return exactly what the enum contains
+    assert api_reasons == enum_reasons

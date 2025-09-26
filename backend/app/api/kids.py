@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.models.kid import AttendanceStatus, Kid, KidAbsence
+from app.models.kid import AbsenceReason, AttendanceStatus, Kid, KidAbsence
 from app.models.parent import Parent
 from app.schemas.kid import KidAbsenceCreate, KidAbsenceOut, KidOut, KidUpdate
 from app.services.kid_service import (
@@ -188,3 +188,9 @@ def list_absences(
         raise HTTPException(status_code=401, detail="User ID not found in token")
 
     return get_kid_absences(db, kid_id, int(user_id))
+
+
+@router.get("/kids/absence-reasons")
+def get_absence_reasons():
+    """Get all valid absence reasons from the enum."""
+    return {"absence_reasons": [r.value for r in AbsenceReason]}
