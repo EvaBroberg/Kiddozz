@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models.kid import AbsenceReason, Kid, KidAbsence
+from app.models.kid import Kid, KidAbsence
 from app.models.parent import Parent
 from app.schemas.kid import KidAbsenceCreate
 
@@ -166,13 +166,16 @@ def create_kid_absence(
     parent_linked = any(parent.id == parent_id for parent in kid.parents)
     if not parent_linked:
         raise HTTPException(
-            status_code=403, detail="Parent not authorized to create absences for this kid"
+            status_code=403,
+            detail="Parent not authorized to create absences for this kid",
         )
 
     # Check if absence already exists for this date
-    existing_absence = db.query(KidAbsence).filter(
-        KidAbsence.kid_id == kid_id, KidAbsence.date == absence_data.date
-    ).first()
+    existing_absence = (
+        db.query(KidAbsence)
+        .filter(KidAbsence.kid_id == kid_id, KidAbsence.date == absence_data.date)
+        .first()
+    )
     if existing_absence:
         # Update existing absence
         existing_absence.reason = absence_data.reason
@@ -182,9 +185,7 @@ def create_kid_absence(
 
     # Create new absence
     absence = KidAbsence(
-        kid_id=kid_id,
-        date=absence_data.date,
-        reason=absence_data.reason
+        kid_id=kid_id, date=absence_data.date, reason=absence_data.reason
     )
     db.add(absence)
     db.commit()
@@ -216,7 +217,8 @@ def get_kid_absences(db: Session, kid_id: int, parent_id: int) -> List[KidAbsenc
     parent_linked = any(parent.id == parent_id for parent in kid.parents)
     if not parent_linked:
         raise HTTPException(
-            status_code=403, detail="Parent not authorized to view absences for this kid"
+            status_code=403,
+            detail="Parent not authorized to view absences for this kid",
         )
 
     return db.query(KidAbsence).filter(KidAbsence.kid_id == kid_id).all()
@@ -238,9 +240,11 @@ def get_effective_attendance(db: Session, kid: Kid, target_date: date = None) ->
         target_date = date.today()
 
     # Check if there's an absence for this date
-    absence = db.query(KidAbsence).filter(
-        KidAbsence.kid_id == kid.id, KidAbsence.date == target_date
-    ).first()
+    absence = (
+        db.query(KidAbsence)
+        .filter(KidAbsence.kid_id == kid.id, KidAbsence.date == target_date)
+        .first()
+    )
 
     # If there's an absence, return the absence reason
     # The base attendance field is only used when there's no absence

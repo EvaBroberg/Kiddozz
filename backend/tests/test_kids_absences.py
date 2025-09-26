@@ -1,15 +1,14 @@
-import pytest
 from datetime import date, timedelta
-from freezegun import freeze_time
+
+import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
+from freezegun import freeze_time
 
 from app.main import app
-from app.models.kid import AbsenceReason, AttendanceStatus, Kid, KidAbsence
-from app.models.parent import Parent
 from app.models.daycare import Daycare
 from app.models.group import Group
-from app.services.seeder import insert_dummy_parents
+from app.models.kid import AbsenceReason, AttendanceStatus, Kid, KidAbsence
+from app.models.parent import Parent
 from tests.conftest import TestingSessionLocal
 
 client = TestClient(app)
@@ -37,7 +36,7 @@ class TestAbsenceSystem:
                 full_name="Test Parent",
                 email="test@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -48,7 +47,7 @@ class TestAbsenceSystem:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -60,9 +59,7 @@ class TestAbsenceSystem:
 
             # Create absence for today
             absence = KidAbsence(
-                kid_id=kid.id,
-                date=date.today(),
-                reason=AbsenceReason.SICK
+                kid_id=kid.id, date=date.today(), reason=AbsenceReason.SICK
             )
             db.add(absence)
             db.commit()
@@ -97,7 +94,7 @@ class TestAbsenceSystem:
                 full_name="Test Parent",
                 email="test@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -108,7 +105,7 @@ class TestAbsenceSystem:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -121,9 +118,7 @@ class TestAbsenceSystem:
             # Create absence for tomorrow
             tomorrow = date.today() + timedelta(days=1)
             absence = KidAbsence(
-                kid_id=kid.id,
-                date=tomorrow,
-                reason=AbsenceReason.HOLIDAY
+                kid_id=kid.id, date=tomorrow, reason=AbsenceReason.HOLIDAY
             )
             db.add(absence)
             db.commit()
@@ -134,7 +129,9 @@ class TestAbsenceSystem:
 
             kids_data = response.json()
             assert len(kids_data) == 1
-            assert kids_data[0]["attendance"] == "out"  # Should show original attendance
+            assert (
+                kids_data[0]["attendance"] == "out"
+            )  # Should show original attendance
 
         finally:
             db.close()
@@ -158,7 +155,7 @@ class TestAbsenceSystem:
                 full_name="Test Parent",
                 email="test@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -169,7 +166,7 @@ class TestAbsenceSystem:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -181,9 +178,7 @@ class TestAbsenceSystem:
 
             # Create absence for today
             absence = KidAbsence(
-                kid_id=kid.id,
-                date=date.today(),
-                reason=AbsenceReason.SICK
+                kid_id=kid.id, date=date.today(), reason=AbsenceReason.SICK
             )
             db.add(absence)
             db.commit()
@@ -220,7 +215,7 @@ class TestAbsenceSystem:
                 full_name="Test Parent",
                 email="test@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -231,7 +226,7 @@ class TestAbsenceSystem:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -244,13 +239,12 @@ class TestAbsenceSystem:
             # Test with invalid reason
             invalid_absence = {
                 "date": date.today().isoformat(),
-                "reason": "out"  # Invalid reason
+                "reason": "out",  # Invalid reason
             }
 
             # Get parent JWT token
             login_response = client.post(
-                "/api/v1/auth/dev-login",
-                json={"parent_id": str(parent.id)}
+                "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
             )
             assert login_response.status_code == 200
             token = login_response.json()["access_token"]
@@ -259,7 +253,7 @@ class TestAbsenceSystem:
             response = client.post(
                 f"/api/v1/kids/{kid.id}/absences",
                 json=invalid_absence,
-                headers={"Authorization": f"Bearer {token}"}
+                headers={"Authorization": f"Bearer {token}"},
             )
             assert response.status_code == 422  # Validation error
 
@@ -283,12 +277,13 @@ class TestAbsenceSystem:
 
             # Create educator
             from app.models.educator import Educator
+
             educator = Educator(
                 full_name="Test Educator",
                 email="educator@example.com",
                 phone_num="+1234567890",
                 daycare_id=daycare.id,
-                role="educator"
+                role="educator",
             )
             db.add(educator)
             db.commit()
@@ -298,7 +293,7 @@ class TestAbsenceSystem:
                 full_name="Test Parent",
                 email="test@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -309,7 +304,7 @@ class TestAbsenceSystem:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -321,22 +316,18 @@ class TestAbsenceSystem:
 
             # Get educator JWT token
             login_response = client.post(
-                "/api/v1/auth/dev-login",
-                json={"educator_id": str(educator.id)}
+                "/api/v1/auth/dev-login", json={"educator_id": str(educator.id)}
             )
             assert login_response.status_code == 200
             token = login_response.json()["access_token"]
 
             # Test POST absence as educator
-            absence_data = {
-                "date": date.today().isoformat(),
-                "reason": "sick"
-            }
+            absence_data = {"date": date.today().isoformat(), "reason": "sick"}
 
             response = client.post(
                 f"/api/v1/kids/{kid.id}/absences",
                 json=absence_data,
-                headers={"Authorization": f"Bearer {token}"}
+                headers={"Authorization": f"Bearer {token}"},
             )
             assert response.status_code == 403
             assert "Only parents can create absences" in response.json()["detail"]
@@ -364,13 +355,13 @@ class TestAbsenceSystem:
                 full_name="Parent 1",
                 email="parent1@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             parent2 = Parent(
                 full_name="Parent 2",
                 email="parent2@example.com",
                 phone_num="+1234567891",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add_all([parent1, parent2])
             db.commit()
@@ -383,7 +374,7 @@ class TestAbsenceSystem:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -395,22 +386,18 @@ class TestAbsenceSystem:
 
             # Get parent2 JWT token
             login_response = client.post(
-                "/api/v1/auth/dev-login",
-                json={"parent_id": str(parent2.id)}
+                "/api/v1/auth/dev-login", json={"parent_id": str(parent2.id)}
             )
             assert login_response.status_code == 200
             token = login_response.json()["access_token"]
 
             # Test POST absence as unrelated parent
-            absence_data = {
-                "date": date.today().isoformat(),
-                "reason": "sick"
-            }
+            absence_data = {"date": date.today().isoformat(), "reason": "sick"}
 
             response = client.post(
                 f"/api/v1/kids/{kid.id}/absences",
                 json=absence_data,
-                headers={"Authorization": f"Bearer {token}"}
+                headers={"Authorization": f"Bearer {token}"},
             )
             assert response.status_code == 403
             assert "not authorized" in response.json()["detail"]
@@ -437,7 +424,7 @@ class TestAbsenceSystem:
                 full_name="Test Parent",
                 email="test@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -448,7 +435,7 @@ class TestAbsenceSystem:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -460,17 +447,14 @@ class TestAbsenceSystem:
 
             # Create absence for today
             absence = KidAbsence(
-                kid_id=kid.id,
-                date=date.today(),
-                reason=AbsenceReason.SICK
+                kid_id=kid.id, date=date.today(), reason=AbsenceReason.SICK
             )
             db.add(absence)
             db.commit()
 
             # Teacher overrides attendance to in-care
             response = client.patch(
-                f"/api/v1/kids/{kid.id}/attendance",
-                json={"attendance": "in-care"}
+                f"/api/v1/kids/{kid.id}/attendance", json={"attendance": "in-care"}
             )
             assert response.status_code == 200
 
@@ -504,7 +488,7 @@ class TestAbsenceSystem:
                 full_name="Test Parent",
                 email="test@example.com",
                 phone_num="+1234567890",
-                daycare_id=daycare.id
+                daycare_id=daycare.id,
             )
             db.add(parent)
             db.commit()
@@ -515,7 +499,7 @@ class TestAbsenceSystem:
                 dob=date(2020, 1, 1),
                 daycare_id=daycare.id,
                 group_id=group.id,
-                attendance=AttendanceStatus.OUT
+                attendance=AttendanceStatus.OUT,
             )
             db.add(kid)
             db.commit()
@@ -527,21 +511,17 @@ class TestAbsenceSystem:
 
             # Create first absence
             absence1 = KidAbsence(
-                kid_id=kid.id,
-                date=date.today(),
-                reason=AbsenceReason.SICK
+                kid_id=kid.id, date=date.today(), reason=AbsenceReason.SICK
             )
             db.add(absence1)
             db.commit()
 
             # Try to create second absence for same day
             absence2 = KidAbsence(
-                kid_id=kid.id,
-                date=date.today(),
-                reason=AbsenceReason.HOLIDAY
+                kid_id=kid.id, date=date.today(), reason=AbsenceReason.HOLIDAY
             )
             db.add(absence2)
-            
+
             # This should raise an integrity error
             with pytest.raises(Exception):  # SQLAlchemy integrity error
                 db.commit()
