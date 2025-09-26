@@ -23,11 +23,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.ui.components.KidAccordionCard
+import fi.kidozz.app.ui.components.AbsenceCalendarDialog
 import fi.kidozz.app.ui.styles.WarningButton
 import fi.kidozz.app.ui.theme.KiddozzTheme
 import fi.kidozz.app.ui.theme.InCareColor
 import fi.kidozz.app.ui.theme.OutColor
 import fi.kidozz.app.ui.theme.SickColor
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +41,10 @@ fun ParentDashboardScreen(
     val kids by parentsViewModel.kids.collectAsState()
     val isLoading by parentsViewModel.isLoading.collectAsState()
     val error by parentsViewModel.error.collectAsState()
+    
+    // Calendar dialog state
+    var showAbsenceCalendar by remember { mutableStateOf(false) }
+    var selectedKid by remember { mutableStateOf<Kid?>(null) }
     
     // Load kids when screen is first displayed
     LaunchedEffect(parentId) {
@@ -154,7 +160,10 @@ fun ParentDashboardScreen(
                                         expandedContent = {
                                             WarningButton(
                                                 text = "Report Absence",
-                                                onClick = { /* TODO: Implement absence reporting */ }
+                                                onClick = { 
+                                                    selectedKid = kid
+                                                    showAbsenceCalendar = true
+                                                }
                                             )
                                         }
                                     )
@@ -167,6 +176,23 @@ fun ParentDashboardScreen(
                     }
                 }
             }
+        }
+        
+        // Absence Calendar Dialog
+        selectedKid?.let { kid ->
+            AbsenceCalendarDialog(
+                isVisible = showAbsenceCalendar,
+                onDismiss = { 
+                    showAbsenceCalendar = false
+                    selectedKid = null
+                },
+                onAbsenceSelected = { selectedDates ->
+                    // TODO: Implement absence reporting API call
+                    // For now, just show a simple confirmation
+                    // In a real app, this would call the backend API
+                },
+                kidName = kid.full_name
+            )
         }
     }
 }
