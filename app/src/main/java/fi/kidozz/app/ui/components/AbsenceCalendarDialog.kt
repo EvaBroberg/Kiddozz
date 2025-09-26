@@ -122,14 +122,13 @@ fun AbsenceCalendarDialog(
                     }
                     
                     // Action buttons
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         BasicButton(
                             text = "Cancel",
-                            onClick = onDismiss,
-                            modifier = Modifier.weight(1f)
+                            onClick = onDismiss
                         )
                         
                         WarningButton(
@@ -138,8 +137,7 @@ fun AbsenceCalendarDialog(
                                 onAbsenceSelected(selectedDates.sorted())
                                 onDismiss()
                             },
-                            enabled = selectedDates.isNotEmpty(),
-                            modifier = Modifier.weight(1f)
+                            enabled = selectedDates.isNotEmpty()
                         )
                     }
                 }
