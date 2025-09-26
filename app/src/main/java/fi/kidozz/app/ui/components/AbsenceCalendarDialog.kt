@@ -38,7 +38,7 @@ fun AbsenceCalendarDialog(
     modifier: Modifier = Modifier
 ) {
     if (isVisible) {
-        var selectedDates by remember { mutableStateOf(setOf<LocalDate>()) }
+        var selectedDates by remember { mutableStateOf(setOf(LocalDate.now())) }
         var currentMonth by remember { mutableStateOf(YearMonth.now()) }
         
         Dialog(onDismissRequest = onDismiss) {
@@ -201,7 +201,7 @@ private fun AbsenceCalendarGrid(
                         .clip(CircleShape)
                         .background(
                             when {
-                                isSelected -> MaterialTheme.colorScheme.primary
+                                isSelected -> Color(0xFFED9738) // Yellow color from warning button
                                 isToday -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)
                                 else -> Color.Transparent
                             }
@@ -217,7 +217,7 @@ private fun AbsenceCalendarGrid(
                         text = date.dayOfMonth.toString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = when {
-                            isSelected -> MaterialTheme.colorScheme.onPrimary
+                            isSelected -> Color.White
                             isPast -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                             else -> MaterialTheme.colorScheme.onSurface
                         },
