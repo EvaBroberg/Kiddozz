@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,17 +31,22 @@ import java.time.temporal.ChronoUnit
  * A calendar dialog for selecting absence dates.
  * Allows parents to select multiple days for reporting their child's absence.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AbsenceCalendarDialog(
     isVisible: Boolean,
     onDismiss: () -> Unit,
-    onAbsenceSelected: (List<LocalDate>) -> Unit,
+    onAbsenceSelected: (List<LocalDate>, String) -> Unit,
     kidName: String,
     modifier: Modifier = Modifier
 ) {
     if (isVisible) {
         var selectedDates by remember { mutableStateOf(setOf(LocalDate.now())) }
         var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+        var selectedReason by remember { mutableStateOf("sick") }
+        var expanded by remember { mutableStateOf(false) }
+        
+        val absenceReasons = listOf("sick", "holiday")
         
         Dialog(onDismissRequest = onDismiss) {
             Card(
@@ -100,6 +107,56 @@ fun AbsenceCalendarDialog(
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
+                    // Reason for absence dropdown
+                    Text(
+                        text = "Reason for absence",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedReason.replaceFirstChar { it.uppercase() },
+                            onValueChange = { },
+                            readOnly = true,
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                        )
+                        
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            absenceReasons.forEach { reason ->
+                                DropdownMenuItem(
+                                    text = { 
+                                        Text(
+                                            text = reason.replaceFirstChar { it.uppercase() },
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    },
+                                    onClick = {
+                                        selectedReason = reason
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
                     // Selected dates summary
                     if (selectedDates.isNotEmpty()) {
                         Text(
@@ -125,7 +182,7 @@ fun AbsenceCalendarDialog(
                         WarningButton(
                             text = "Submit Absence",
                             onClick = {
-                                onAbsenceSelected(selectedDates.sorted())
+                                onAbsenceSelected(selectedDates.sorted(), selectedReason)
                                 onDismiss()
                             },
                             enabled = selectedDates.isNotEmpty()

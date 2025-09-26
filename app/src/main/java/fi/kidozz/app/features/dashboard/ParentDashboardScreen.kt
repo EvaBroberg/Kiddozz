@@ -186,10 +186,11 @@ fun ParentDashboardScreen(
                     showAbsenceCalendar = false
                     selectedKid = null
                 },
-                onAbsenceSelected = { selectedDates ->
+                onAbsenceSelected = { selectedDates, reason ->
                     // TODO: Implement absence reporting API call
                     // For now, just show a simple confirmation
                     // In a real app, this would call the backend API
+                    // selectedDates: List<LocalDate>, reason: String
                 },
                 kidName = kid.full_name
             )
