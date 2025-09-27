@@ -530,7 +530,7 @@ class TestAbsenceSystem:
             db.close()
 
     def test_multiple_day_absence_holiday(self, clean_db):
-        """Test that absence for multiple consecutive days (tomorrow until next week) 
+        """Test that absence for multiple consecutive days (tomorrow until next week)
         changes attendance on each indicated date."""
         db = TestingSessionLocal()
         try:
@@ -574,20 +574,18 @@ class TestAbsenceSystem:
             # Let's say tomorrow is Monday, and we're absent until Friday (5 days)
             tomorrow = date.today() + timedelta(days=1)
             next_week = tomorrow + timedelta(days=4)  # 5 consecutive days
-            
+
             # Create absences for each day
             absence_dates = []
             current_date = tomorrow
             while current_date <= next_week:
                 absence = KidAbsence(
-                    kid_id=kid.id, 
-                    date=current_date, 
-                    reason=AbsenceReason.HOLIDAY
+                    kid_id=kid.id, date=current_date, reason=AbsenceReason.HOLIDAY
                 )
                 db.add(absence)
                 absence_dates.append(current_date)
                 current_date += timedelta(days=1)
-            
+
             db.commit()
 
             # Test that today's attendance is still "out" (no absence for today)
@@ -621,7 +619,7 @@ class TestAbsenceSystem:
             db.close()
 
     def test_multiple_day_absence_sick(self, clean_db):
-        """Test that absence for multiple consecutive days with 'sick' reason 
+        """Test that absence for multiple consecutive days with 'sick' reason
         changes attendance on each indicated date."""
         db = TestingSessionLocal()
         try:
@@ -664,20 +662,18 @@ class TestAbsenceSystem:
             # Create absences for 3 consecutive days starting tomorrow
             tomorrow = date.today() + timedelta(days=1)
             end_date = tomorrow + timedelta(days=2)  # 3 consecutive days
-            
+
             # Create absences for each day
             absence_dates = []
             current_date = tomorrow
             while current_date <= end_date:
                 absence = KidAbsence(
-                    kid_id=kid.id, 
-                    date=current_date, 
-                    reason=AbsenceReason.SICK
+                    kid_id=kid.id, date=current_date, reason=AbsenceReason.SICK
                 )
                 db.add(absence)
                 absence_dates.append(current_date)
                 current_date += timedelta(days=1)
-            
+
             db.commit()
 
             # Test that today's attendance is still "in-care" (no absence for today)
