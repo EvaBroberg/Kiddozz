@@ -28,6 +28,7 @@ import fi.kidozz.app.ui.styles.WarningButton
 import fi.kidozz.app.ui.theme.KiddozzTheme
 import fi.kidozz.app.ui.theme.InCareColor
 import fi.kidozz.app.ui.theme.OutColor
+import kotlinx.coroutines.launch
 import fi.kidozz.app.ui.theme.SickColor
 import java.time.LocalDate
 
@@ -36,11 +37,13 @@ import java.time.LocalDate
 fun ParentDashboardScreen(
     parentId: String,
     parentsViewModel: ParentsViewModel,
+    absenceReasonsViewModel: AbsenceReasonsViewModel,
     modifier: Modifier = Modifier
 ) {
     val kids by parentsViewModel.kids.collectAsState()
     val isLoading by parentsViewModel.isLoading.collectAsState()
     val error by parentsViewModel.error.collectAsState()
+    val absenceReasons by absenceReasonsViewModel.absenceReasons.collectAsState()
     
     // Calendar dialog state
     var showAbsenceCalendar by remember { mutableStateOf(false) }
@@ -49,6 +52,7 @@ fun ParentDashboardScreen(
     // Load kids when screen is first displayed
     LaunchedEffect(parentId) {
         parentsViewModel.loadKidsForParent(parentId)
+        absenceReasonsViewModel.loadAbsenceReasons()
     }
     
     Scaffold(
@@ -192,7 +196,8 @@ fun ParentDashboardScreen(
                     // In a real app, this would call the backend API
                     // selectedDates: List<LocalDate>, reason: String
                 },
-                kidName = kid.full_name
+                kidName = kid.full_name,
+                absenceReasons = absenceReasons
             )
         }
     }

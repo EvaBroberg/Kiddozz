@@ -38,15 +38,14 @@ fun AbsenceCalendarDialog(
     onDismiss: () -> Unit,
     onAbsenceSelected: (List<LocalDate>, String) -> Unit,
     kidName: String,
+    absenceReasons: List<String> = listOf("sick", "holiday"), // Default fallback
     modifier: Modifier = Modifier
 ) {
     if (isVisible) {
         var selectedDates by remember { mutableStateOf(setOf(LocalDate.now())) }
         var currentMonth by remember { mutableStateOf(YearMonth.now()) }
-        var selectedReason by remember { mutableStateOf("sick") }
+        var selectedReason by remember { mutableStateOf(absenceReasons.firstOrNull() ?: "sick") }
         var expanded by remember { mutableStateOf(false) }
-        
-        val absenceReasons = listOf("sick", "holiday")
         
         Dialog(onDismissRequest = onDismiss) {
             Card(

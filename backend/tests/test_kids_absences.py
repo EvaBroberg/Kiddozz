@@ -528,3 +528,184 @@ class TestAbsenceSystem:
 
         finally:
             db.close()
+
+    def test_multiple_day_absence_holiday(self, clean_db):
+        """Test that absence for multiple consecutive days (tomorrow until next week) 
+        changes attendance on each indicated date."""
+        db = TestingSessionLocal()
+        try:
+            # Create test data
+            daycare = Daycare(name="Test Daycare")
+            db.add(daycare)
+            db.commit()
+            db.refresh(daycare)
+
+            group = Group(name="Group A", daycare_id=daycare.id)
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+
+            parent = Parent(
+                full_name="Test Parent",
+                email="test@example.com",
+                phone_num="+1234567890",
+                daycare_id=daycare.id,
+            )
+            db.add(parent)
+            db.commit()
+            db.refresh(parent)
+
+            kid = Kid(
+                full_name="Test Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.OUT,
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            # Link parent to kid
+            parent.kids.append(kid)
+            db.commit()
+
+            # Create absences for multiple consecutive days (tomorrow until next week)
+            # Let's say tomorrow is Monday, and we're absent until Friday (5 days)
+            tomorrow = date.today() + timedelta(days=1)
+            next_week = tomorrow + timedelta(days=4)  # 5 consecutive days
+            
+            # Create absences for each day
+            absence_dates = []
+            current_date = tomorrow
+            while current_date <= next_week:
+                absence = KidAbsence(
+                    kid_id=kid.id, 
+                    date=current_date, 
+                    reason=AbsenceReason.HOLIDAY
+                )
+                db.add(absence)
+                absence_dates.append(current_date)
+                current_date += timedelta(days=1)
+            
+            db.commit()
+
+            # Test that today's attendance is still "out" (no absence for today)
+            response = client.get(f"/api/v1/kids?daycare_id={daycare.id}")
+            assert response.status_code == 200
+            kids_data = response.json()
+            assert len(kids_data) == 1
+            assert kids_data[0]["attendance"] == "out"
+
+            # Test attendance for each day of absence using freeze_time
+            for absence_date in absence_dates:
+                with freeze_time(absence_date):
+                    response = client.get(f"/api/v1/kids?daycare_id={daycare.id}")
+                    assert response.status_code == 200
+                    kids_data = response.json()
+                    assert len(kids_data) == 1
+                    assert kids_data[0]["attendance"] == "holiday"
+                    print(f"✓ Attendance on {absence_date} is 'holiday'")
+
+            # Test that attendance reverts to "out" after the absence period
+            day_after_absence = next_week + timedelta(days=1)
+            with freeze_time(day_after_absence):
+                response = client.get(f"/api/v1/kids?daycare_id={daycare.id}")
+                assert response.status_code == 200
+                kids_data = response.json()
+                assert len(kids_data) == 1
+                assert kids_data[0]["attendance"] == "out"
+                print(f"✓ Attendance on {day_after_absence} reverts to 'out'")
+
+        finally:
+            db.close()
+
+    def test_multiple_day_absence_sick(self, clean_db):
+        """Test that absence for multiple consecutive days with 'sick' reason 
+        changes attendance on each indicated date."""
+        db = TestingSessionLocal()
+        try:
+            # Create test data
+            daycare = Daycare(name="Test Daycare")
+            db.add(daycare)
+            db.commit()
+            db.refresh(daycare)
+
+            group = Group(name="Group A", daycare_id=daycare.id)
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+
+            parent = Parent(
+                full_name="Test Parent",
+                email="test@example.com",
+                phone_num="+1234567890",
+                daycare_id=daycare.id,
+            )
+            db.add(parent)
+            db.commit()
+            db.refresh(parent)
+
+            kid = Kid(
+                full_name="Test Kid",
+                dob=date(2020, 1, 1),
+                daycare_id=daycare.id,
+                group_id=group.id,
+                attendance=AttendanceStatus.IN_CARE,
+            )
+            db.add(kid)
+            db.commit()
+            db.refresh(kid)
+
+            # Link parent to kid
+            parent.kids.append(kid)
+            db.commit()
+
+            # Create absences for 3 consecutive days starting tomorrow
+            tomorrow = date.today() + timedelta(days=1)
+            end_date = tomorrow + timedelta(days=2)  # 3 consecutive days
+            
+            # Create absences for each day
+            absence_dates = []
+            current_date = tomorrow
+            while current_date <= end_date:
+                absence = KidAbsence(
+                    kid_id=kid.id, 
+                    date=current_date, 
+                    reason=AbsenceReason.SICK
+                )
+                db.add(absence)
+                absence_dates.append(current_date)
+                current_date += timedelta(days=1)
+            
+            db.commit()
+
+            # Test that today's attendance is still "in-care" (no absence for today)
+            response = client.get(f"/api/v1/kids?daycare_id={daycare.id}")
+            assert response.status_code == 200
+            kids_data = response.json()
+            assert len(kids_data) == 1
+            assert kids_data[0]["attendance"] == "in-care"
+
+            # Test attendance for each day of absence using freeze_time
+            for absence_date in absence_dates:
+                with freeze_time(absence_date):
+                    response = client.get(f"/api/v1/kids?daycare_id={daycare.id}")
+                    assert response.status_code == 200
+                    kids_data = response.json()
+                    assert len(kids_data) == 1
+                    assert kids_data[0]["attendance"] == "sick"
+                    print(f"✓ Attendance on {absence_date} is 'sick'")
+
+            # Test that attendance reverts to "in-care" after the absence period
+            day_after_absence = end_date + timedelta(days=1)
+            with freeze_time(day_after_absence):
+                response = client.get(f"/api/v1/kids?daycare_id={daycare.id}")
+                assert response.status_code == 200
+                kids_data = response.json()
+                assert len(kids_data) == 1
+                assert kids_data[0]["attendance"] == "in-care"
+                print(f"✓ Attendance on {day_after_absence} reverts to 'in-care'")
+
+        finally:
+            db.close()

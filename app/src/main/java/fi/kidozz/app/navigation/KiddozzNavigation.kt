@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.data.sample.sampleKidsState
+import fi.kidozz.app.features.dashboard.AbsenceReasonsViewModel
 import fi.kidozz.app.features.dashboard.EducatorDashboardScreen
 import fi.kidozz.app.features.dashboard.ParentDashboardScreen
 import fi.kidozz.app.features.dashboard.GroupsViewModel
@@ -84,12 +85,16 @@ fun KiddozzAppHost(
                 .build()
             
             val parentsApiService = retrofit.create(fi.kidozz.app.data.api.ParentsApiService::class.java)
+            val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
             val parentsRepository = fi.kidozz.app.data.repository.ParentsRepository(parentsApiService)
+            val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService)
             val parentsViewModel = remember { ParentsViewModel(parentsRepository) }
+            val absenceReasonsViewModel = remember { AbsenceReasonsViewModel(kidsRepository) }
             
             ParentDashboardScreen(
                 parentId = "10", // Sara Johnson - first parent with kids
                 parentsViewModel = parentsViewModel,
+                absenceReasonsViewModel = absenceReasonsViewModel,
                 modifier = modifier
             )
         }

@@ -1,5 +1,6 @@
 package fi.kidozz.app.data.api
 
+import fi.kidozz.app.data.models.AbsenceReasonsResponse
 import fi.kidozz.app.data.models.Kid
 import retrofit2.Response
 import retrofit2.http.Body
@@ -20,4 +21,7 @@ interface KidsApiService {
         @Path("id") id: String,
         @Body status: Map<String, String>
     ): Response<Unit>
+    
+    @GET("/api/v1/kids/absence-reasons")
+    suspend fun getAbsenceReasons(): Response<AbsenceReasonsResponse>
 }

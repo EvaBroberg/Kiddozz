@@ -27,4 +27,17 @@ class KidsRepository(private val api: KidsApiService) {
             Result.failure(e)
         }
     }
+    
+    suspend fun getAbsenceReasons(): List<String> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.getAbsenceReasons()
+            if (response.isSuccessful) {
+                response.body()?.absence_reasons ?: emptyList()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 }
