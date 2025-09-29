@@ -36,6 +36,7 @@ fun TitleDropdown(
             value = if (selectedValue.isEmpty()) title else selectedValue.replaceFirstChar { it.uppercase() },
             onValueChange = { },
             readOnly = true,
+            enabled = false,
             placeholder = {
                 Text(
                     text = title,
