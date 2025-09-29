@@ -22,9 +22,7 @@ fun WarningButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFFDE9D2),
             contentColor = Color(0xFFED9738),
@@ -36,7 +34,8 @@ fun WarningButton(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(vertical = 8.dp)
         )
     }
 }

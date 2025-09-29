@@ -23,9 +23,7 @@ fun BasicButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = modifier.fillMaxWidth(),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = SecondaryTextColor,
             disabledContentColor = SecondaryTextColor.copy(alpha = 0.5f)
@@ -36,7 +34,8 @@ fun BasicButton(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(vertical = 8.dp)
         )
     }
 }

@@ -137,7 +137,7 @@ fun AbsenceCalendarDialog(
                 modifier = Modifier.fillMaxWidth()
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             WarningButton(
                 text = "Submit Absence",

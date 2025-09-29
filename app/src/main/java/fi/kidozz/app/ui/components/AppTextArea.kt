@@ -39,11 +39,11 @@ fun AppTextArea(
         value = value,
         onValueChange = onValueChange,
         placeholder = {
-            Text(
-                text = placeholder,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
         },
         modifier = modifier
             .fillMaxWidth()
@@ -70,8 +70,8 @@ fun AppTextArea(
                 disabledPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             )
         },
-        textStyle = MaterialTheme.typography.bodyMedium.copy(
-            lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2 // Better line spacing for readability
+        textStyle = MaterialTheme.typography.bodyLarge.copy(
+            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.2 // Better line spacing for readability
         )
     )
 }
