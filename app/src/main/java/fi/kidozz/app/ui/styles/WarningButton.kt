@@ -26,8 +26,8 @@ fun WarningButton(
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFFDE9D2),
             contentColor = Color(0xFFED9738),
-            disabledContainerColor = Color(0xFFFDE9D2).copy(alpha = 0.5f),
-            disabledContentColor = Color(0xFFED9738).copy(alpha = 0.5f)
+            disabledContainerColor = Color(0xFFE0E0E0), // Light grey background
+            disabledContentColor = Color(0xFF9E9E9E) // Dark grey text
         ),
         shape = MaterialTheme.shapes.small
     ) {

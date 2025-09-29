@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.ui.components.AppTextArea
+import fi.kidozz.app.ui.components.ConfirmationDialog
 import fi.kidozz.app.ui.components.WarningSnackbar
 import fi.kidozz.app.ui.styles.BasicButton
 import fi.kidozz.app.ui.styles.WarningButton
@@ -47,6 +48,8 @@ fun AbsenceCalendarDialog(
     var selectedReason by remember { mutableStateOf("") }
     var absenceDetails by remember { mutableStateOf("") }
     var showWarning by remember { mutableStateOf(false) }
+    var showConfirmation by remember { mutableStateOf(false) }
+    var confirmationMessage by remember { mutableStateOf("") }
     
     FullScreenDialog(
         isVisible = isVisible,
@@ -141,7 +144,11 @@ fun AbsenceCalendarDialog(
                 // Warning positioned absolutely under the text field
                 WarningSnackbar(
                     isVisible = showWarning,
-                    message = "Please select reason of absence",
+                    message = if (selectedReason.isEmpty()) {
+                        "Please select reason of absence"
+                    } else {
+                        "Please select at least one day for absence"
+                    },
                     onDismiss = { showWarning = false },
                     durationMs = 3000L,
                     modifier = Modifier
@@ -165,13 +172,40 @@ fun AbsenceCalendarDialog(
             WarningButton(
                 text = "Submit Absence",
                 onClick = {
-                    onAbsenceSelected(selectedDates.sorted(), selectedReason, absenceDetails)
-                    onDismiss()
+                    if (selectedDates.isNotEmpty()) {
+                        // Calculate first day back (day after the last selected day)
+                        val sortedDates = selectedDates.sorted()
+                        val lastAbsenceDay = sortedDates.last()
+                        val firstDayBack = lastAbsenceDay.plusDays(1)
+                        
+                        // Create confirmation message
+                        confirmationMessage = formatAbsenceConfirmationMessage(kidName, firstDayBack)
+                        
+                        // Submit the absence
+                        onAbsenceSelected(sortedDates, selectedReason, absenceDetails)
+                        
+                        // Close the absence dialog
+                        onDismiss()
+                        
+                        // Show confirmation dialog
+                        showConfirmation = true
+                    } else {
+                        // Show warning for no days selected
+                        showWarning = true
+                    }
                 },
-                enabled = true,
+                enabled = selectedDates.isNotEmpty() && selectedReason.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth()
             )
         }
+    )
+    
+    // Confirmation dialog
+    ConfirmationDialog(
+        isVisible = showConfirmation,
+        message = confirmationMessage,
+        onDismiss = { showConfirmation = false },
+        durationMs = 5000L
     )
 }
 

@@ -1,6 +1,7 @@
 package fi.kidozz.app.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,14 +34,16 @@ fun FullScreenDialog(
         Dialog(
             onDismissRequest = onDismiss,
             properties = DialogProperties(
-                usePlatformDefaultWidth = false
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = true
             )
         ) {
             Card(
                 modifier = modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.9f)
-                    .padding(3.dp),
+                    .padding(3.dp)
+                    .windowInsetsPadding(WindowInsets.ime),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)

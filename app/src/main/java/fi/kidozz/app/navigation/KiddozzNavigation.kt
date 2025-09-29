@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,6 +43,7 @@ fun KiddozzAppHost(
         }
 
         composable("educator_dashboard") {
+            val context = LocalContext.current
             // Set up real API services
             val baseUrl = "http://10.0.2.2:8000" // Android emulator localhost
             val retrofit = Retrofit.Builder()
@@ -55,7 +57,8 @@ fun KiddozzAppHost(
             
             val groupsRepository = fi.kidozz.app.data.repository.GroupsRepository(groupsApiService)
             val educatorRepository = fi.kidozz.app.data.repository.EducatorRepository(educatorApiService)
-            val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService)
+            val tokenManager = remember { fi.kidozz.app.data.auth.TokenManager(context) }
+            val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService, tokenManager)
             
             val groupsViewModel = remember { GroupsViewModel(groupsRepository) }
             val educatorViewModel = remember { EducatorViewModel(educatorRepository) }
@@ -77,6 +80,7 @@ fun KiddozzAppHost(
         }
 
         composable("parent_dashboard") {
+            val context = LocalContext.current
             // Set up API services for ParentDashboardScreen
             val baseUrl = "http://10.0.2.2:8000" // Android emulator localhost
             val retrofit = Retrofit.Builder()
@@ -87,7 +91,8 @@ fun KiddozzAppHost(
             val parentsApiService = retrofit.create(fi.kidozz.app.data.api.ParentsApiService::class.java)
             val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
             val parentsRepository = fi.kidozz.app.data.repository.ParentsRepository(parentsApiService)
-            val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService)
+            val tokenManager = remember { fi.kidozz.app.data.auth.TokenManager(context) }
+            val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService, tokenManager)
             val parentsViewModel = remember { ParentsViewModel(parentsRepository) }
             val absenceReasonsViewModel = remember { AbsenceReasonsViewModel(kidsRepository) }
             
@@ -95,11 +100,13 @@ fun KiddozzAppHost(
                 parentId = "10", // Sara Johnson - first parent with kids
                 parentsViewModel = parentsViewModel,
                 absenceReasonsViewModel = absenceReasonsViewModel,
+                kidsRepository = kidsRepository,
                 modifier = modifier
             )
         }
 
         composable("kid_detail") {
+            val context = LocalContext.current
             val kid = navController.previousBackStackEntry?.savedStateHandle?.get<Kid>("selectedKid")
             if (kid != null) {
                 // Set up API services for KidDetailScreen
@@ -110,7 +117,8 @@ fun KiddozzAppHost(
                     .build()
                 
                 val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
-                val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService)
+                val tokenManager = remember { fi.kidozz.app.data.auth.TokenManager(context) }
+                val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService, tokenManager)
                 val kidsViewModel = remember { KidsViewModel(kidsRepository) }
                 
                 KidDetailScreen(

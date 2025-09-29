@@ -2,12 +2,15 @@ package fi.kidozz.app.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
@@ -47,14 +50,19 @@ fun AppTextArea(
         },
         modifier = modifier
             .fillMaxWidth()
-            .height(120.dp), // Explicit minimum height so it looks like a textarea even when empty
+            .height(120.dp) // Explicit minimum height so it looks like a textarea even when empty
+            .imePadding(), // Add padding for keyboard
         enabled = enabled,
         readOnly = false, // Explicitly allow editing
         singleLine = false, // Always multi-line for this component
         maxLines = maxLines,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Text,
-            autoCorrectEnabled = true
+            autoCorrectEnabled = true,
+            imeAction = ImeAction.Done
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = { /* Hide keyboard when done */ }
         ),
         colors = if (enabled) {
             OutlinedTextFieldDefaults.colors(

@@ -31,6 +31,7 @@ import fi.kidozz.app.ui.theme.OutColor
 import kotlinx.coroutines.launch
 import fi.kidozz.app.ui.theme.SickColor
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +39,7 @@ fun ParentDashboardScreen(
     parentId: String,
     parentsViewModel: ParentsViewModel,
     absenceReasonsViewModel: AbsenceReasonsViewModel,
+    kidsRepository: fi.kidozz.app.data.repository.KidsRepository,
     modifier: Modifier = Modifier
 ) {
     val kids by parentsViewModel.kids.collectAsState()
@@ -48,6 +50,9 @@ fun ParentDashboardScreen(
     // Calendar dialog state
     var showAbsenceCalendar by remember { mutableStateOf(false) }
     var selectedKid by remember { mutableStateOf<Kid?>(null) }
+    
+    // Coroutine scope for absence submission
+    val coroutineScope = rememberCoroutineScope()
     
     // Load kids when screen is first displayed
     LaunchedEffect(parentId) {
@@ -162,6 +167,27 @@ fun ParentDashboardScreen(
                                         status = kid.attendance,
                                         onChatClick = { /* TODO: Implement chat functionality */ },
                                         expandedContent = {
+                                            // Absence status messages
+                                            val absenceMessages = getAbsenceMessages(kid, kidsRepository)
+                                            if (absenceMessages.isNotEmpty()) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(bottom = 8.dp)
+                                                ) {
+                                                    absenceMessages.forEach { message ->
+                                                        Text(
+                                                            text = message,
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .padding(bottom = 4.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            
                                             WarningButton(
                                                 text = "Report Absence",
                                                 onClick = { 
@@ -191,10 +217,31 @@ fun ParentDashboardScreen(
                     selectedKid = null
                 },
                 onAbsenceSelected = { selectedDates, reason, details ->
-                    // TODO: Implement absence reporting API call
-                    // For now, just show a simple confirmation
-                    // In a real app, this would call the backend API
-                    // selectedDates: List<LocalDate>, reason: String, details: String
+                    // Submit absence to backend
+                    coroutineScope.launch {
+                        try {
+                            val dateStrings = selectedDates.map { it.toString() }
+                            println("ParentDashboardScreen: Submitting absence for ${kid.full_name}")
+                            println("ParentDashboardScreen: Dates: $dateStrings, Reason: $reason, Details: $details")
+                            
+                            val result = kidsRepository.submitAbsence(
+                                kidId = kid.id,
+                                dates = dateStrings,
+                                reason = reason,
+                                details = details
+                            )
+                            
+                            if (result.isSuccess) {
+                                println("ParentDashboardScreen: Successfully submitted absence")
+                                // Refresh the kids list to show updated absence messages
+                                parentsViewModel.loadKidsForParent(parentId)
+                            } else {
+                                println("ParentDashboardScreen: Failed to submit absence: ${result.exceptionOrNull()?.message}")
+                            }
+                        } catch (e: Exception) {
+                            println("ParentDashboardScreen: Exception during absence submission: ${e.message}")
+                        }
+                    }
                 },
                 kidName = kid.full_name,
                 absenceReasons = absenceReasons
@@ -203,7 +250,209 @@ fun ParentDashboardScreen(
     }
 }
 
+/**
+ * Generates multiple absence messages for a kid based on their absence records.
+ * 
+ * @param kid The kid to generate the messages for
+ * @return A list of formatted absence messages
+ */
+@Composable
+private fun getAbsenceMessages(kid: Kid, kidsRepository: fi.kidozz.app.data.repository.KidsRepository): List<String> {
+    var absenceMessages by remember { mutableStateOf<List<String>>(emptyList()) }
+    
+    LaunchedEffect(kid.id) {
+        try {
+            val result = kidsRepository.getAbsences(kid.id.toString())
+            if (result.isSuccess) {
+                val absences = result.getOrNull() ?: emptyList()
+                val today = LocalDate.now()
+                val messages = mutableListOf<String>()
+                
+                // Group absences by reason and date
+                val futureAbsences = absences.filter { absence ->
+                    val absenceDate = LocalDate.parse(absence["date"] as String)
+                    absenceDate.isAfter(today) || absenceDate.isEqual(today)
+                }.sortedBy { LocalDate.parse(it["date"] as String) }
+                
+                if (futureAbsences.isNotEmpty()) {
+                    val sickAbsences = futureAbsences.filter { it["reason"] == "sick" }
+                    val holidayAbsences = futureAbsences.filter { it["reason"] == "holiday" }
+                    
+                    // Process sick absences
+                    if (sickAbsences.isNotEmpty()) {
+                        val sickDates = sickAbsences.map { LocalDate.parse(it["date"] as String) }
+                        val sickMessage = formatAbsenceMessage(kid.full_name, sickDates, "sick")
+                        if (sickMessage.isNotEmpty()) {
+                            messages.add(sickMessage)
+                        }
+                    }
+                    
+                    // Process holiday absences
+                    if (holidayAbsences.isNotEmpty()) {
+                        val holidayDates = holidayAbsences.map { LocalDate.parse(it["date"] as String) }
+                        val holidayMessage = formatAbsenceMessage(kid.full_name, holidayDates, "holiday")
+                        if (holidayMessage.isNotEmpty()) {
+                            messages.add(holidayMessage)
+                        }
+                    }
+                }
+                
+                absenceMessages = messages
+            } else {
+                println("Failed to fetch absences for ${kid.full_name}: ${result.exceptionOrNull()?.message}")
+                absenceMessages = emptyList()
+            }
+        } catch (e: Exception) {
+            println("Exception fetching absences for ${kid.full_name}: ${e.message}")
+            absenceMessages = emptyList()
+        }
+    }
+    
+    return absenceMessages
+}
 
+/**
+ * Formats absence dates into a readable message.
+ */
+private fun formatAbsenceMessage(kidName: String, dates: List<LocalDate>, reason: String): String {
+    if (dates.isEmpty()) return ""
+    
+    val today = LocalDate.now()
+    val futureDates = dates.filter { it.isAfter(today) || it.isEqual(today) }
+    if (futureDates.isEmpty()) return ""
+    
+    val sortedDates = futureDates.sorted()
+    val formatter = DateTimeFormatter.ofPattern("MMM dd")
+    val verb = when (reason) {
+        "holiday" -> "on holiday"
+        "sick" -> "away"
+        else -> "away"
+    }
+    
+    return when {
+        // Single day absence
+        sortedDates.size == 1 -> {
+            "${kidName} is $verb on ${sortedDates[0].format(formatter)}"
+        }
+        
+        // Consecutive days - show range
+        isConsecutive(sortedDates) -> {
+            "${kidName} is $verb until ${sortedDates.last().plusDays(1).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}"
+        }
+        
+        // Non-consecutive days - list them
+        else -> {
+            val dayStrings = sortedDates.map { it.format(formatter) }
+            "${kidName} is $verb on ${dayStrings.joinToString(", ")}"
+        }
+    }
+}
+
+/**
+ * Generates an absence message for a kid based on their current absence status.
+ * 
+ * @param kid The kid to generate the message for
+ * @return A formatted absence message, or empty string if no absence
+ */
+private fun getAbsenceMessage(kid: Kid): String {
+    // For demonstration purposes, let's show absence messages for some kids
+    // In a real implementation, this would fetch actual absence data from the backend
+    
+    // Simulate some absence data for demonstration
+    val today = LocalDate.now()
+    val tomorrow = today.plusDays(1)
+    val dayAfterTomorrow = today.plusDays(2)
+    
+    // Create sample absence scenarios for different kids with different reasons
+    return when (kid.full_name) {
+        "Liam Johnson" -> {
+            // Simulate sick absence - consecutive days
+            "${kid.full_name} is away until ${tomorrow.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}"
+        }
+        "Emma Johnson" -> {
+            // Simulate sick absence - single day
+            "${kid.full_name} is away on ${today.format(DateTimeFormatter.ofPattern("MMM dd"))}"
+        }
+        "Sophia Smith" -> {
+            // Simulate holiday absence - non-consecutive days (Monday and Wednesday)
+            val monday = today.plusDays(1) // Next Monday
+            val wednesday = today.plusDays(3) // Next Wednesday
+            "${kid.full_name} is on holiday on ${monday.format(DateTimeFormatter.ofPattern("MMM dd"))}, ${wednesday.format(DateTimeFormatter.ofPattern("MMM dd"))}"
+        }
+        "Olivia Wilson" -> {
+            // Simulate holiday absence - longer period
+            "${kid.full_name} is on holiday until ${dayAfterTomorrow.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}"
+        }
+        else -> {
+            // For other kids, show message based on their attendance status
+            when (kid.attendance) {
+                "sick" -> "${kid.full_name} is away until ${tomorrow.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}"
+                "holiday" -> "${kid.full_name} is on holiday until ${tomorrow.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}"
+                else -> ""
+            }
+        }
+    }
+}
+
+/**
+ * Generates a more sophisticated absence message that handles multiple days and gaps.
+ * This would be used when we have real absence data from the backend.
+ * 
+ * @param kid The kid to generate the message for
+ * @param absenceDates List of absence dates for the kid
+ * @param reason The reason for absence ("sick" or "holiday")
+ * @return A formatted absence message, or empty string if no absence
+ */
+private fun getAdvancedAbsenceMessage(kid: Kid, absenceDates: List<LocalDate>, reason: String = "sick"): String {
+    if (absenceDates.isEmpty()) return ""
+    
+    val today = LocalDate.now()
+    val futureAbsences = absenceDates.filter { it.isAfter(today) || it.isEqual(today) }
+    
+    if (futureAbsences.isEmpty()) return ""
+    
+    val sortedAbsences = futureAbsences.sorted()
+    val formatter = DateTimeFormatter.ofPattern("MMM dd")
+    
+    // Choose the appropriate verb based on the reason
+    val verb = when (reason) {
+        "holiday" -> "on holiday"
+        "sick" -> "away"
+        else -> "away"
+    }
+    
+    return when {
+        // Single day absence
+        sortedAbsences.size == 1 -> {
+            "${kid.full_name} is $verb on ${sortedAbsences[0].format(formatter)}"
+        }
+        
+        // Consecutive days - show range
+        isConsecutive(sortedAbsences) -> {
+            "${kid.full_name} is $verb until ${sortedAbsences.last().plusDays(1).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}"
+        }
+        
+        // Non-consecutive days - list them
+        else -> {
+            val dayStrings = sortedAbsences.map { it.format(formatter) }
+            "${kid.full_name} is $verb on ${dayStrings.joinToString(", ")}"
+        }
+    }
+}
+
+/**
+ * Checks if a list of dates are consecutive (no gaps between them).
+ */
+private fun isConsecutive(dates: List<LocalDate>): Boolean {
+    if (dates.size <= 1) return true
+    
+    for (i in 1 until dates.size) {
+        if (dates[i] != dates[i-1].plusDays(1)) {
+            return false
+        }
+    }
+    return true
+}
 
 @Preview(showBackground = true, name = "Parent Dashboard Screen Preview")
 @Composable

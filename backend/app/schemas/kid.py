@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional, Union
 
 from pydantic import BaseModel
@@ -58,8 +58,8 @@ class KidAbsenceOut(BaseModel):
     kid_id: int
     date: date
     reason: AbsenceReason
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
