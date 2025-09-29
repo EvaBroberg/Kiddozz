@@ -132,25 +132,25 @@ fun AbsenceCalendarDialog(
         actions = {
             Text("DEBUG: Actions are being rendered", color = Color.Red)
             
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Test with simple buttons first
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                BasicButton(
-                    text = "Cancel",
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                WarningButton(
-                    text = "Submit Absence",
-                    onClick = {
-                        onAbsenceSelected(selectedDates.sorted(), selectedReason, absenceDetails)
-                        onDismiss()
-                    },
-                    enabled = true, // Temporarily always enabled for testing
-                    modifier = Modifier.weight(1f)
-                )
+                Text("Cancel")
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Button(
+                onClick = {
+                    onAbsenceSelected(selectedDates.sorted(), selectedReason, absenceDetails)
+                    onDismiss()
+                },
+                enabled = true,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Submit Absence")
             }
         }
     )
