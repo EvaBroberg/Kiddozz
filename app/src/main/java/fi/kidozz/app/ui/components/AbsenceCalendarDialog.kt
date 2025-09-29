@@ -113,7 +113,10 @@ fun AbsenceCalendarDialog(
                 title = "Reason for absence",
                 options = absenceReasons,
                 selectedValue = selectedReason,
-                onValueChange = { selectedReason = it }
+                onValueChange = { newReason -> 
+                    selectedReason = newReason
+                    println("DEBUG: Reason selected: $newReason")
+                }
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -122,8 +125,11 @@ fun AbsenceCalendarDialog(
             AppTextArea(
                 placeholder = "Provide details of absence",
                 value = absenceDetails,
-                onValueChange = { absenceDetails = it },
-                enabled = selectedReason.isNotEmpty(),
+                onValueChange = { newDetails -> 
+                    absenceDetails = newDetails
+                    println("DEBUG: Text field changed: $newDetails")
+                },
+                enabled = true, // Temporarily always enabled for testing
                 maxLines = 5
             )
             
