@@ -93,6 +93,17 @@ fun AbsenceCalendarDialog(
                 }
             )
             
+            // Selected dates summary
+            if (selectedDates.isNotEmpty()) {
+                Text(
+                    text = "Selected ${selectedDates.size} day(s)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFED9738), // Same yellow as warning button
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start
+                )
+            }
+            
             Spacer(modifier = Modifier.height(16.dp))
             
             // Reason for absence dropdown
@@ -177,18 +188,6 @@ fun AbsenceCalendarDialog(
             )
             
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Selected dates summary
-            if (selectedDates.isNotEmpty()) {
-                Text(
-                    text = "Selected ${selectedDates.size} day(s)",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
         },
         actions = {
             BasicButton(
