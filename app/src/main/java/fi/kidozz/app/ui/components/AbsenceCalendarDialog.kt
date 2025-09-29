@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.ui.components.AppTextArea
+import fi.kidozz.app.ui.components.WarningSnackbar
 import fi.kidozz.app.ui.styles.BasicButton
 import fi.kidozz.app.ui.styles.WarningButton
 import java.time.LocalDate
@@ -44,6 +46,7 @@ fun AbsenceCalendarDialog(
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedReason by remember { mutableStateOf("") }
     var absenceDetails by remember { mutableStateOf("") }
+    var showWarning by remember { mutableStateOf(false) }
     
     FullScreenDialog(
         isVisible = isVisible,
@@ -118,14 +121,34 @@ fun AbsenceCalendarDialog(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Absence details text field
-            AppTextArea(
-                placeholder = "Provide details of absence",
-                value = absenceDetails,
-                onValueChange = { absenceDetails = it },
-                enabled = selectedReason.isNotEmpty(),
-                maxLines = 5
-            )
+            // Absence details text field with warning
+            Box {
+                AppTextArea(
+                    placeholder = "Provide details of absence",
+                    value = absenceDetails,
+                    onValueChange = { absenceDetails = it },
+                    enabled = selectedReason.isNotEmpty(),
+                    maxLines = 5,
+                    modifier = Modifier.clickable(
+                        enabled = selectedReason.isEmpty()
+                    ) {
+                        if (selectedReason.isEmpty()) {
+                            showWarning = true
+                        }
+                    }
+                )
+                
+                // Warning positioned absolutely under the text field
+                WarningSnackbar(
+                    isVisible = showWarning,
+                    message = "Please select reason of absence",
+                    onDismiss = { showWarning = false },
+                    durationMs = 3000L,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = 120.dp) // Position under the text field
+                )
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
         },
