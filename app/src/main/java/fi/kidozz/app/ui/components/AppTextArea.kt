@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
@@ -56,7 +57,12 @@ fun AppTextArea(
             autoCorrectEnabled = true
         ),
         colors = if (enabled) {
-            OutlinedTextFieldDefaults.colors()
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFFED9738), // Same yellow as selected days
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = Color(0xFFED9738), // Same yellow as selected days
+                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
         } else {
             OutlinedTextFieldDefaults.colors(
                 disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
