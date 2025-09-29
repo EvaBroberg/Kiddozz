@@ -26,7 +26,7 @@ fun FullScreenDialog(
     onDismiss: () -> Unit,
     title: String? = null,
     content: @Composable ColumnScope.() -> Unit,
-    actions: @Composable RowScope.() -> Unit = {},
+    actions: @Composable ColumnScope.() -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     if (isVisible) {
@@ -46,7 +46,9 @@ fun FullScreenDialog(
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(20.dp)
                 ) {
                     // Optional title
                     title?.let { titleText ->
@@ -60,15 +62,16 @@ fun FullScreenDialog(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                     
-                    // Main content
-                    content()
-                    
-                    // Action buttons
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    // Main content - scrollable area
+                    Column(
+                        modifier = Modifier.weight(1f)
                     ) {
+                        content()
+                    }
+                    
+                    // Action buttons - always visible at bottom
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Column {
                         actions()
                     }
                 }
