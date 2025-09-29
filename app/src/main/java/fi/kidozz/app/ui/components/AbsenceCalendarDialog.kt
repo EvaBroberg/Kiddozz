@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -19,13 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import fi.kidozz.app.ui.styles.BasicButton
 import fi.kidozz.app.ui.styles.WarningButton
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 /**
  * A calendar dialog for selecting absence dates.
@@ -36,161 +33,179 @@ import java.time.temporal.ChronoUnit
 fun AbsenceCalendarDialog(
     isVisible: Boolean,
     onDismiss: () -> Unit,
-    onAbsenceSelected: (List<LocalDate>, String) -> Unit,
+    onAbsenceSelected: (List<LocalDate>, String, String) -> Unit,
     kidName: String,
     absenceReasons: List<String> = listOf("sick", "holiday"), // Default fallback
     modifier: Modifier = Modifier
 ) {
-    if (isVisible) {
-        var selectedDates by remember { mutableStateOf(setOf(LocalDate.now())) }
-        var currentMonth by remember { mutableStateOf(YearMonth.now()) }
-        var selectedReason by remember { mutableStateOf(absenceReasons.firstOrNull() ?: "sick") }
-        var expanded by remember { mutableStateOf(false) }
-        
-        Dialog(onDismissRequest = onDismiss) {
-            Card(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    var selectedDates by remember { mutableStateOf(setOf(LocalDate.now())) }
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+    var selectedReason by remember { mutableStateOf(absenceReasons.firstOrNull() ?: "sick") }
+    var expanded by remember { mutableStateOf(false) }
+    var absenceDetails by remember { mutableStateOf("") }
+    
+    FullScreenDialog(
+        isVisible = isVisible,
+        onDismiss = onDismiss,
+        modifier = modifier,
+        content = {
+            // Month navigation
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp)
+                IconButton(
+                    onClick = { 
+                        currentMonth = currentMonth.minusMonths(1)
+                    }
                 ) {
-                    
-                    // Month navigation
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = { 
-                                currentMonth = currentMonth.minusMonths(1)
-                            }
-                        ) {
-                            Text("‹", style = MaterialTheme.typography.headlineMedium)
-                        }
-                        
-                        Text(
-                            text = currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                        
-                        IconButton(
-                            onClick = { 
-                                currentMonth = currentMonth.plusMonths(1)
-                            }
-                        ) {
-                            Text("›", style = MaterialTheme.typography.headlineMedium)
-                        }
+                    Text("‹", style = MaterialTheme.typography.headlineMedium)
+                }
+                
+                Text(
+                    text = currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                IconButton(
+                    onClick = { 
+                        currentMonth = currentMonth.plusMonths(1)
                     }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Calendar grid
-                    AbsenceCalendarGrid(
-                        yearMonth = currentMonth,
-                        selectedDates = selectedDates,
-                        onDateSelected = { date ->
-                            selectedDates = if (date in selectedDates) {
-                                selectedDates - date
-                            } else {
-                                selectedDates + date
-                            }
-                        }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Reason for absence dropdown
-                    Text(
-                        text = "Reason for absence",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedReason.replaceFirstChar { it.uppercase() },
-                            onValueChange = { },
-                            readOnly = true,
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(),
-                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                        )
-                        
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            absenceReasons.forEach { reason ->
-                                DropdownMenuItem(
-                                    text = { 
-                                        Text(
-                                            text = reason.replaceFirstChar { it.uppercase() },
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    },
-                                    onClick = {
-                                        selectedReason = reason
-                                        expanded = false
-                                    }
+                ) {
+                    Text("›", style = MaterialTheme.typography.headlineMedium)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Calendar grid
+            AbsenceCalendarGrid(
+                yearMonth = currentMonth,
+                selectedDates = selectedDates,
+                onDateSelected = { date ->
+                    selectedDates = if (date in selectedDates) {
+                        selectedDates - date
+                    } else {
+                        selectedDates + date
+                    }
+                }
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Reason for absence dropdown
+            Text(
+                text = "Reason for absence",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = selectedReason.replaceFirstChar { it.uppercase() },
+                    onValueChange = { },
+                    readOnly = true,
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                )
+                
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    absenceReasons.forEach { reason ->
+                        DropdownMenuItem(
+                            text = { 
+                                Text(
+                                    text = reason.replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.bodyMedium
                                 )
-                            }
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Selected dates summary
-                    if (selectedDates.isNotEmpty()) {
-                        Text(
-                            text = "Selected ${selectedDates.size} day(s)",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                    
-                    // Action buttons
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        BasicButton(
-                            text = "Cancel",
-                            onClick = onDismiss
-                        )
-                        
-                        WarningButton(
-                            text = "Submit Absence",
-                            onClick = {
-                                onAbsenceSelected(selectedDates.sorted(), selectedReason)
-                                onDismiss()
                             },
-                            enabled = selectedDates.isNotEmpty()
+                            onClick = {
+                                selectedReason = reason
+                                expanded = false
+                            }
                         )
                     }
                 }
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Absence details text field
+            Text(
+                text = "Provide details of absence",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            OutlinedTextField(
+                value = absenceDetails,
+                onValueChange = { absenceDetails = it },
+                placeholder = { 
+                    Text(
+                        text = "Enter additional details about the absence...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = selectedReason.isNotEmpty(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                    disabledPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                ),
+                maxLines = 3,
+                textStyle = MaterialTheme.typography.bodyMedium
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Selected dates summary
+            if (selectedDates.isNotEmpty()) {
+                Text(
+                    text = "Selected ${selectedDates.size} day(s)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        },
+        actions = {
+            BasicButton(
+                text = "Cancel",
+                onClick = onDismiss
+            )
+            
+            WarningButton(
+                text = "Submit Absence",
+                onClick = {
+                    onAbsenceSelected(selectedDates.sorted(), selectedReason, absenceDetails)
+                    onDismiss()
+                },
+                enabled = selectedDates.isNotEmpty()
+            )
         }
-    }
+    )
 }
 
 @Composable
