@@ -7,8 +7,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,8 +38,7 @@ fun AbsenceCalendarDialog(
 ) {
     var selectedDates by remember { mutableStateOf(setOf(LocalDate.now())) }
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
-    var selectedReason by remember { mutableStateOf(absenceReasons.firstOrNull() ?: "sick") }
-    var expanded by remember { mutableStateOf(false) }
+    var selectedReason by remember { mutableStateOf("") }
     var absenceDetails by remember { mutableStateOf("") }
     
     FullScreenDialog(
@@ -108,52 +105,12 @@ fun AbsenceCalendarDialog(
             Spacer(modifier = Modifier.height(50.dp))
             
             // Reason for absence dropdown
-            Text(
-                text = "Reason for absence",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+            TitleDropdown(
+                title = "Reason for absence",
+                options = absenceReasons,
+                selectedValue = selectedReason,
+                onValueChange = { selectedReason = it }
             )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
-                OutlinedTextField(
-                    value = selectedReason.replaceFirstChar { it.uppercase() },
-                    onValueChange = { },
-                    readOnly = true,
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                )
-                
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    absenceReasons.forEach { reason ->
-                        DropdownMenuItem(
-                            text = { 
-                                Text(
-                                    text = reason.replaceFirstChar { it.uppercase() },
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            },
-                            onClick = {
-                                selectedReason = reason
-                                expanded = false
-                            }
-                        )
-                    }
-                }
-            }
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -196,14 +153,14 @@ fun AbsenceCalendarDialog(
                 onClick = onDismiss
             )
             
-            WarningButton(
-                text = "Submit Absence",
-                onClick = {
-                    onAbsenceSelected(selectedDates.sorted(), selectedReason, absenceDetails)
-                    onDismiss()
-                },
-                enabled = selectedDates.isNotEmpty()
-            )
+                WarningButton(
+                    text = "Submit Absence",
+                    onClick = {
+                        onAbsenceSelected(selectedDates.sorted(), selectedReason, absenceDetails)
+                        onDismiss()
+                    },
+                    enabled = selectedDates.isNotEmpty() && selectedReason.isNotEmpty()
+                )
         }
     )
 }
