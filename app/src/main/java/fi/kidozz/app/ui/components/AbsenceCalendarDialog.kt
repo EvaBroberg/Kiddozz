@@ -95,6 +95,7 @@ fun AbsenceCalendarDialog(
             
             // Selected dates summary
             if (selectedDates.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = "Selected ${selectedDates.size} day(s)",
                     style = MaterialTheme.typography.bodyMedium,
