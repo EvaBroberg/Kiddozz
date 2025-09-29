@@ -250,7 +250,7 @@ private fun AbsenceCalendarGrid(
         // Calendar grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
-            modifier = Modifier.height(280.dp),
+            modifier = Modifier.wrapContentHeight(),
             verticalArrangement = Arrangement.spacedBy(2.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
