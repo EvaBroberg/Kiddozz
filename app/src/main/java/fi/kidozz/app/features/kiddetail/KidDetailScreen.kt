@@ -22,6 +22,7 @@ import fi.kidozz.app.data.sample.computeAge
 import fi.kidozz.app.features.dashboard.KidsViewModel
 import fi.kidozz.app.ui.components.SectionTitle
 import fi.kidozz.app.ui.components.AccordionCard
+import fi.kidozz.app.ui.components.AppTextArea
 import fi.kidozz.app.ui.styles.AttendanceSegmentedControl
 import fi.kidozz.app.ui.theme.KiddozzTheme
 
@@ -123,6 +124,7 @@ fun KidDetailScreen(
     modifier: Modifier = Modifier
 ) {
     var currentAttendance by remember { mutableStateOf(kid.attendance) }
+    var absenceNotes by remember { mutableStateOf("") } // Example state for AppTextArea
     Scaffold(
         topBar = {
             TopAppBar(
@@ -221,6 +223,24 @@ fun KidDetailScreen(
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
+            }
+            
+            // Example usage of AppTextArea for absence notes
+            item {
+                SectionTitle(
+                    "Absence Notes",
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
+            item {
+                AppTextArea(
+                    placeholder = "Provide details of absence",
+                    value = absenceNotes,
+                    onValueChange = { absenceNotes = it },
+                    enabled = true,
+                    maxLines = 5,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
             
             item { 

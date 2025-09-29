@@ -84,6 +84,7 @@ fun EventAccordionItem(
                         value = editedTitle,
                         onValueChange = { editedTitle = it },
                         modifier = Modifier.weight(1f),
+                        readOnly = false, // Explicitly allow editing
                         singleLine = true
                     )
                 } else {
@@ -167,7 +168,8 @@ fun EventAccordionItem(
                         value = editedDescription,
                         onValueChange = { editedDescription = it },
                         label = { Text("Description") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = false // Explicitly allow editing
                     )
                     
                     Spacer(modifier = Modifier.height(8.dp))

@@ -36,7 +36,7 @@ fun TitleDropdown(
             value = if (selectedValue.isEmpty()) title else selectedValue.replaceFirstChar { it.uppercase() },
             onValueChange = { },
             readOnly = true,
-            enabled = false,
+            enabled = true,
             placeholder = {
                 Text(
                     text = title,
@@ -51,9 +51,17 @@ fun TitleDropdown(
                 .fillMaxWidth()
                 .menuAnchor(),
             colors = OutlinedTextFieldDefaults.colors(
-                disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                unfocusedTextColor = if (selectedValue.isEmpty()) {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                unfocusedBorderColor = if (selectedValue.isEmpty()) {
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                } else {
+                    MaterialTheme.colorScheme.outline
+                },
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             )
         )
         

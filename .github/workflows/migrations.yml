@@ -6,10 +6,11 @@ on:
       - main
   release:
     types: [published]
+  workflow_dispatch:   # allows you to run manually from Actions UI
 
 jobs:
   migrate-staging:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && vars.AUTO_DEPLOY == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:

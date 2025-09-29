@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import fi.kidozz.app.ui.components.AppTextArea
 import fi.kidozz.app.ui.styles.BasicButton
 import fi.kidozz.app.ui.styles.WarningButton
 import java.time.LocalDate
@@ -118,15 +119,12 @@ fun AbsenceCalendarDialog(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Absence details text field
-            TitleTextField(
+            AppTextArea(
                 placeholder = "Provide details of absence",
                 value = absenceDetails,
                 onValueChange = { absenceDetails = it },
                 enabled = selectedReason.isNotEmpty(),
-                maxLines = 15,
-                keyboardType = KeyboardType.Text,
-                capitalization = KeyboardCapitalization.Sentences,
-                imeAction = ImeAction.Done
+                maxLines = 5
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -137,14 +135,14 @@ fun AbsenceCalendarDialog(
                 onClick = onDismiss
             )
             
-                WarningButton(
-                    text = "Submit Absence",
-                    onClick = {
-                        onAbsenceSelected(selectedDates.sorted(), selectedReason, absenceDetails)
-                        onDismiss()
-                    },
-                    enabled = selectedDates.isNotEmpty() && selectedReason.isNotEmpty()
-                )
+            WarningButton(
+                text = "Submit Absence",
+                onClick = {
+                    onAbsenceSelected(selectedDates.sorted(), selectedReason, absenceDetails)
+                    onDismiss()
+                },
+                enabled = selectedDates.isNotEmpty() && selectedReason.isNotEmpty()
+            )
         }
     )
 }

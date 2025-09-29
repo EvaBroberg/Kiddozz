@@ -1,48 +1,41 @@
 package fi.kidozz.app.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 
 /**
- * A reusable text field component with title as placeholder and common editing options.
+ * A reusable single-line text field component for simple inputs like names, emails, etc.
+ * 
+ * WHY WE SPLIT INTO TWO COMPONENTS:
+ * - Single-line fields should not force height or multi-line behavior
+ * - This component wraps content height naturally and focuses on single-line input
+ * - Provides better UX for simple form fields that don't need textarea behavior
  * 
  * @param placeholder The placeholder text to show in the text field
- * @param value Current text value
- * @param onValueChange Callback when text changes
+ * @param value Current text value (state-driven - caller must provide)
+ * @param onValueChange Callback when text changes (state-driven - caller must provide)
  * @param enabled Whether the text field is enabled
- * @param modifier Modifier for the text field
- * @param maxLines Maximum number of lines (default 15)
  * @param keyboardType Type of keyboard to show (default Text)
- * @param capitalization Text capitalization (default Sentences)
  * @param imeAction Action for the IME (default Done)
  * @param onImeAction Callback for IME action
+ * @param modifier Modifier for the text field
  */
 @Composable
-fun TitleTextField(
+fun AppTextFieldSingleLine(
     placeholder: String,
     value: String,
     onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    maxLines: Int = 15,
     keyboardType: KeyboardType = KeyboardType.Text,
-    capitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
     imeAction: ImeAction = ImeAction.Done,
-    onImeAction: () -> Unit = {}
+    onImeAction: () -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     OutlinedTextField(
         value = value,
@@ -57,15 +50,27 @@ fun TitleTextField(
         modifier = modifier.fillMaxWidth(),
         enabled = enabled,
         readOnly = false, // Explicitly allow editing
-        maxLines = maxLines,
+        singleLine = true, // Always single line for this component
         keyboardOptions = KeyboardOptions(
             keyboardType = keyboardType,
-            capitalization = capitalization,
             imeAction = imeAction,
             autoCorrectEnabled = true
         ),
-        keyboardActions = KeyboardActions(onAny = { onImeAction() }),
-        textStyle = MaterialTheme.typography.bodyMedium,
-        singleLine = false
+        keyboardActions = KeyboardActions(
+            onDone = { onImeAction() },
+            onNext = { onImeAction() },
+            onSearch = { onImeAction() },
+            onSend = { onImeAction() }
+        ),
+        colors = if (enabled) {
+            OutlinedTextFieldDefaults.colors()
+        } else {
+            OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+            )
+        },
+        textStyle = MaterialTheme.typography.bodyMedium
     )
 }
