@@ -14,6 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.ui.styles.BasicButton
@@ -115,34 +118,15 @@ fun AbsenceCalendarDialog(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Absence details text field
-            Text(
-                text = "Provide details of absence",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            OutlinedTextField(
+            TitleTextField(
+                placeholder = "Provide details of absence",
                 value = absenceDetails,
                 onValueChange = { absenceDetails = it },
-                placeholder = { 
-                    Text(
-                        text = "Enter additional details about the absence...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
                 enabled = selectedReason.isNotEmpty(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                    disabledPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-                ),
-                maxLines = 3,
-                textStyle = MaterialTheme.typography.bodyMedium
+                maxLines = 15,
+                keyboardType = KeyboardType.Text,
+                capitalization = KeyboardCapitalization.Sentences,
+                imeAction = ImeAction.Done
             )
             
             Spacer(modifier = Modifier.height(16.dp))
