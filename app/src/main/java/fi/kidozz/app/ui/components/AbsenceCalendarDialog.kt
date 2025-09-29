@@ -104,8 +104,6 @@ fun AbsenceCalendarDialog(
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
             // Reason for absence dropdown
             Text(
                 text = "Reason for absence",
