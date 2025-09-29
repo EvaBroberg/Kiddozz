@@ -104,6 +104,8 @@ fun AbsenceCalendarDialog(
                 )
             }
             
+            Spacer(modifier = Modifier.height(16.dp))
+            
             // Reason for absence dropdown
             Text(
                 text = "Reason for absence",
@@ -243,13 +245,13 @@ private fun AbsenceCalendarGrid(
             }
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         
         // Calendar grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
             modifier = Modifier.height(280.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // Empty cells for days before the first day of the month
