@@ -49,7 +49,11 @@ fun TitleDropdown(
             modifier = modifier
                 .fillMaxWidth()
                 .menuAnchor(),
-            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+            )
         )
         
         ExposedDropdownMenu(
