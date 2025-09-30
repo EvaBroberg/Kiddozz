@@ -19,3 +19,7 @@ val SecondaryTextColor = Color(0xFF646464)
 val InCareColor = Color(0xFF14CD76)
 val OutColor = Color(0xFFDFE0E4)
 val SickColor = Color(0xFFD32F2F)
+
+// Absence message colors
+val AbsenceBackgroundColor = Color(0xFFFFF9F1)
+val AbsenceTextColor = Color(0xFFED9738)

@@ -19,6 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.Kid
@@ -28,6 +32,8 @@ import fi.kidozz.app.ui.styles.WarningButton
 import fi.kidozz.app.ui.theme.KiddozzTheme
 import fi.kidozz.app.ui.theme.InCareColor
 import fi.kidozz.app.ui.theme.OutColor
+import fi.kidozz.app.ui.theme.AbsenceBackgroundColor
+import fi.kidozz.app.ui.theme.AbsenceTextColor
 import kotlinx.coroutines.launch
 import fi.kidozz.app.ui.theme.SickColor
 import java.time.LocalDate
@@ -175,7 +181,7 @@ fun ParentDashboardScreen(
                                                         .fillMaxWidth()
                                                         .padding(bottom = 8.dp),
                                                     colors = CardDefaults.cardColors(
-                                                        containerColor = Color(0xFFFDE9D2) // Light yellow background
+                                                        containerColor = AbsenceBackgroundColor
                                                     ),
                                                     shape = MaterialTheme.shapes.small
                                                 ) {
@@ -185,10 +191,9 @@ fun ParentDashboardScreen(
                                                             .padding(12.dp)
                                                     ) {
                                                         absenceMessages.forEach { message ->
-                                                            Text(
+                                                            StyledAbsenceText(
                                                                 text = message.uppercase(),
                                                                 style = MaterialTheme.typography.bodyMedium,
-                                                                color = Color(0xFFED9738), // Warning yellow text color
                                                                 fontWeight = FontWeight.Medium,
                                                                 modifier = Modifier
                                                                     .fillMaxWidth()
@@ -292,7 +297,7 @@ private fun getAbsenceMessages(kid: Kid, kidsRepository: fi.kidozz.app.data.repo
                     // Process sick absences
                     if (sickAbsences.isNotEmpty()) {
                         val sickDates = sickAbsences.map { LocalDate.parse(it["date"] as String) }
-                        val sickMessage = formatAbsenceMessage(kid.full_name, sickDates, "sick")
+                        val sickMessage = createStyledAbsenceMessage(kid.full_name, "sick leave", sickDates)
                         if (sickMessage.isNotEmpty()) {
                             messages.add(sickMessage)
                         }
@@ -301,7 +306,7 @@ private fun getAbsenceMessages(kid: Kid, kidsRepository: fi.kidozz.app.data.repo
                     // Process holiday absences
                     if (holidayAbsences.isNotEmpty()) {
                         val holidayDates = holidayAbsences.map { LocalDate.parse(it["date"] as String) }
-                        val holidayMessage = formatAbsenceMessage(kid.full_name, holidayDates, "holiday")
+                        val holidayMessage = createStyledAbsenceMessage(kid.full_name, "holiday", holidayDates)
                         if (holidayMessage.isNotEmpty()) {
                             messages.add(holidayMessage)
                         }
@@ -321,6 +326,7 @@ private fun getAbsenceMessages(kid: Kid, kidsRepository: fi.kidozz.app.data.repo
     
     return absenceMessages
 }
+
 
 /**
  * Formats absence dates into a readable message with range compression.
@@ -449,6 +455,107 @@ private fun formatAbsenceMessageBulleted(
         append("$kidName is on $absenceType:\n")
         ranges.forEach { appendLine(it) }
     }
+}
+
+/**
+ * Creates styled absence message with different colors for different parts.
+ * Uses special markers for styling that can be parsed in the UI.
+ * 
+ * @param kidName The name of the child
+ * @param absenceType The type of absence (e.g., "holiday", "sick leave")
+ * @param dates Sorted list of absence dates
+ * @return String with special markers for styling
+ */
+private fun createStyledAbsenceMessage(
+    kidName: String,
+    absenceType: String,
+    dates: List<LocalDate>
+): String {
+    if (dates.isEmpty()) {
+        return "$kidName has no recorded absences."
+    }
+
+    val formatter = DateTimeFormatter.ofPattern("MMM dd")
+    val sortedDates = dates.sorted()
+
+    val ranges = mutableListOf<String>()
+    var rangeStart = sortedDates.first()
+    var prev = sortedDates.first()
+
+    for (i in 1 until sortedDates.size) {
+        val current = sortedDates[i]
+        if (current == prev.plusDays(1)) {
+            prev = current
+        } else {
+            ranges.add(
+                if (rangeStart == prev) {
+                    "• ${rangeStart.format(formatter)}"
+                } else {
+                    "• from ${rangeStart.format(formatter)} to ${prev.format(formatter)}"
+                }
+            )
+            rangeStart = current
+            prev = current
+        }
+    }
+
+    // Close last range
+    ranges.add(
+        if (rangeStart == prev) {
+            "• ${rangeStart.format(formatter)}"
+        } else {
+            "• from ${rangeStart.format(formatter)} to ${prev.format(formatter)}"
+        }
+    )
+
+    return buildString {
+        append("$kidName is on ")
+        if (absenceType == "holiday") {
+            append("YELLOW_START${absenceType}YELLOW_END")
+        } else {
+            append(absenceType)
+        }
+        append(":\n")
+        ranges.forEach { appendLine(it) }
+    }
+}
+
+/**
+ * Composable that displays styled absence text with different colors for different parts.
+ * Parses special markers in the text to apply yellow color to holiday text.
+ */
+@Composable
+private fun StyledAbsenceText(
+    text: String,
+    style: androidx.compose.ui.text.TextStyle,
+    fontWeight: FontWeight,
+    modifier: Modifier = Modifier
+) {
+    val annotatedString = buildAnnotatedString {
+        val parts = text.split("YELLOW_START", "YELLOW_END")
+        
+        for (i in parts.indices) {
+            val part = parts[i]
+            if (i == 1) {
+                // This is the part between YELLOW_START and YELLOW_END
+                withStyle(style = SpanStyle(color = AbsenceTextColor)) {
+                    append(part)
+                }
+            } else {
+                // Regular text in black
+                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
+                    append(part)
+                }
+            }
+        }
+    }
+    
+    Text(
+        text = annotatedString,
+        style = style,
+        fontWeight = fontWeight,
+        modifier = modifier
+    )
 }
 
 /**
