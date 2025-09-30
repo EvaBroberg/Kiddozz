@@ -509,10 +509,10 @@ private fun createStyledAbsenceMessage(
     )
 
     return buildString {
-        if (absenceType == "holiday") {
-            append("YELLOW_START$kidName is on $absenceType:YELLOW_END\n\n")
-        } else {
-            append("$kidName is on $absenceType:\n\n")
+        when (absenceType) {
+            "holiday" -> append("YELLOW_START$kidName is on $absenceType:YELLOW_END\n\n")
+            "sick leave" -> append("RED_START$kidName is on $absenceType:RED_END\n\n")
+            else -> append("$kidName is on $absenceType:\n\n")
         }
         ranges.forEach { appendLine(it) }
     }
@@ -530,13 +530,19 @@ private fun StyledAbsenceText(
     modifier: Modifier = Modifier
 ) {
     val annotatedString = buildAnnotatedString {
-        val parts = text.split("YELLOW_START", "YELLOW_END")
+        // Split by both yellow and red markers
+        val parts = text.split("YELLOW_START", "YELLOW_END", "RED_START", "RED_END")
         
         for (i in parts.indices) {
             val part = parts[i]
             if (i == 1) {
-                // This is the part between YELLOW_START and YELLOW_END (sentence)
+                // This is the part between YELLOW_START and YELLOW_END (holiday sentence)
                 withStyle(style = SpanStyle(color = AbsenceTextColor, fontWeight = fontWeight)) {
+                    append(part)
+                }
+            } else if (i == 3) {
+                // This is the part between RED_START and RED_END (sick leave sentence)
+                withStyle(style = SpanStyle(color = SickColor, fontWeight = fontWeight)) {
                     append(part)
                 }
             } else {
