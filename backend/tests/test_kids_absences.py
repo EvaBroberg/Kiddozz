@@ -705,3 +705,169 @@ class TestAbsenceSystem:
 
         finally:
             db.close()
+
+
+def test_duplicate_absence_returns_400():
+    """Test that submitting duplicate absence returns 400 Bad Request."""
+    db = TestingSessionLocal()
+    try:
+        # Create test data
+        daycare = Daycare(name="Test Daycare")
+        db.add(daycare)
+        db.commit()
+        db.refresh(daycare)
+
+        group = Group(name="Group A", daycare_id=daycare.id)
+        db.add(group)
+        db.commit()
+        db.refresh(group)
+
+        parent = Parent(
+            full_name="Test Parent",
+            email="test@example.com",
+            phone_num="+1234567890",
+            daycare_id=daycare.id,
+        )
+        db.add(parent)
+        db.commit()
+        db.refresh(parent)
+
+        kid = Kid(
+            full_name="Test Kid",
+            dob=date(2020, 1, 1),
+            daycare_id=daycare.id,
+            group_id=group.id,
+            attendance=AttendanceStatus.OUT,
+        )
+        db.add(kid)
+        db.commit()
+        db.refresh(kid)
+
+        # Link parent to kid
+        parent.kids.append(kid)
+        db.commit()
+
+        # Get parent JWT token
+        login_response = client.post(
+            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
+        )
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Create first absence
+        absence_data = {
+            "date": date.today().isoformat(),
+            "reason": "sick",
+        }
+
+        response1 = client.post(
+            f"/api/v1/kids/{kid.id}/absences",
+            json=absence_data,
+            headers=headers,
+        )
+        assert response1.status_code == 200
+        print("✓ First absence created successfully")
+
+        # Try to create duplicate absence
+        response2 = client.post(
+            f"/api/v1/kids/{kid.id}/absences",
+            json=absence_data,
+            headers=headers,
+        )
+        assert response2.status_code == 400
+        assert "Absence already reported for this date" in response2.json()["detail"]
+        print("✓ Duplicate absence returns 400 with proper message")
+
+        # Verify only one absence exists in database
+        absences = db.query(KidAbsence).filter(KidAbsence.kid_id == kid.id).all()
+        assert len(absences) == 1
+        print("✓ Database contains only one absence record")
+
+    finally:
+        db.close()
+
+
+def test_unique_absence_returns_200():
+    """Test that submitting unique absence returns 200 OK."""
+    db = TestingSessionLocal()
+    try:
+        # Create test data
+        daycare = Daycare(name="Test Daycare")
+        db.add(daycare)
+        db.commit()
+        db.refresh(daycare)
+
+        group = Group(name="Group A", daycare_id=daycare.id)
+        db.add(group)
+        db.commit()
+        db.refresh(group)
+
+        parent = Parent(
+            full_name="Test Parent",
+            email="test@example.com",
+            phone_num="+1234567890",
+            daycare_id=daycare.id,
+        )
+        db.add(parent)
+        db.commit()
+        db.refresh(parent)
+
+        kid = Kid(
+            full_name="Test Kid",
+            dob=date(2020, 1, 1),
+            daycare_id=daycare.id,
+            group_id=group.id,
+            attendance=AttendanceStatus.OUT,
+        )
+        db.add(kid)
+        db.commit()
+        db.refresh(kid)
+
+        # Link parent to kid
+        parent.kids.append(kid)
+        db.commit()
+
+        # Get parent JWT token
+        login_response = client.post(
+            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
+        )
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Create absence for today
+        absence_data_today = {
+            "date": date.today().isoformat(),
+            "reason": "sick",
+        }
+
+        response1 = client.post(
+            f"/api/v1/kids/{kid.id}/absences",
+            json=absence_data_today,
+            headers=headers,
+        )
+        assert response1.status_code == 200
+        print("✓ First absence created successfully")
+
+        # Create absence for tomorrow (should be unique)
+        absence_data_tomorrow = {
+            "date": (date.today() + timedelta(days=1)).isoformat(),
+            "reason": "holiday",
+        }
+
+        response2 = client.post(
+            f"/api/v1/kids/{kid.id}/absences",
+            json=absence_data_tomorrow,
+            headers=headers,
+        )
+        assert response2.status_code == 200
+        print("✓ Second absence (different date) created successfully")
+
+        # Verify both absences exist in database
+        absences = db.query(KidAbsence).filter(KidAbsence.kid_id == kid.id).all()
+        assert len(absences) == 2
+        print("✓ Database contains both absence records")
+
+    finally:
+        db.close()

@@ -2,6 +2,7 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.kid import Kid, KidAbsence
@@ -177,20 +178,33 @@ def create_kid_absence(
         .first()
     )
     if existing_absence:
-        # Update existing absence
-        existing_absence.reason = absence_data.reason
-        db.commit()
-        db.refresh(existing_absence)
-        return existing_absence
+        raise HTTPException(
+            status_code=400,
+            detail="Absence already reported for this date"
+        )
 
     # Create new absence
-    absence = KidAbsence(
-        kid_id=kid_id, date=absence_data.date, reason=absence_data.reason
-    )
-    db.add(absence)
-    db.commit()
-    db.refresh(absence)
-    return absence
+    try:
+        absence = KidAbsence(
+            kid_id=kid_id, date=absence_data.date, reason=absence_data.reason
+        )
+        db.add(absence)
+        db.commit()
+        db.refresh(absence)
+        return absence
+    except IntegrityError as e:
+        db.rollback()
+        # Check if it's a unique constraint violation
+        if "uq_kid_absence_kid_date" in str(e) or "duplicate key" in str(e).lower():
+            raise HTTPException(
+                status_code=400,
+                detail="Absence already reported for this date"
+            )
+        # Re-raise other integrity errors
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise e
 
 
 def get_kid_absences(db: Session, kid_id: int, parent_id: int) -> List[KidAbsence]:
