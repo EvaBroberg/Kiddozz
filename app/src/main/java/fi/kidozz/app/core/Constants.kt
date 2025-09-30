@@ -12,6 +12,14 @@ enum class Screen {
     KID_DETAIL
 }
 
+enum class NavigationSection(val title: String, val icon: ImageVector) {
+    KidsOverview("Kids Overview", Icons.Filled.Face),
+    Calendar("Calendar", Icons.Filled.DateRange),
+    Menu("Menu", Icons.Filled.Face),
+    Profile("Profile", Icons.Filled.Person)
+}
+
+// Keep the old enum for backward compatibility
 enum class EducatorSection(val title: String, val icon: ImageVector) {
     KidsOverview("Kids Overview", Icons.Filled.Face),
     Calendar("Calendar", Icons.Filled.DateRange),
