@@ -537,29 +537,53 @@ private fun StyledAbsenceText(
     modifier: Modifier = Modifier
 ) {
     val annotatedString = buildAnnotatedString {
-        // Split by both yellow and red markers
-        val parts = text.split("YELLOW_START", "YELLOW_END", "RED_START", "RED_END")
-        
-        for (i in parts.indices) {
-            val part = parts[i]
-            if (i == 1) {
-                // This is the part between YELLOW_START and YELLOW_END (holiday sentence)
-                withStyle(style = SpanStyle(color = AbsenceTextColor, fontWeight = fontWeight)) {
-                    append(part)
+        // Handle yellow markers first
+        if (text.contains("YELLOW_START") && text.contains("YELLOW_END")) {
+            val yellowParts = text.split("YELLOW_START", "YELLOW_END")
+            for (i in yellowParts.indices) {
+                val part = yellowParts[i]
+                if (i == 1) {
+                    // This is the part between YELLOW_START and YELLOW_END (holiday sentence)
+                    withStyle(style = SpanStyle(color = AbsenceTextColor, fontWeight = fontWeight)) {
+                        append(part)
+                    }
+                } else {
+                    // Regular text in black with lighter font weight for bullet points
+                    withStyle(style = SpanStyle(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Normal
+                    )) {
+                        append(part)
+                    }
                 }
-            } else if (i == 3) {
-                // This is the part between RED_START and RED_END (sick leave sentence)
-                withStyle(style = SpanStyle(color = AppColors.Error, fontWeight = fontWeight)) {
-                    append(part)
+            }
+        } else if (text.contains("RED_START") && text.contains("RED_END")) {
+            // Handle red markers
+            val redParts = text.split("RED_START", "RED_END")
+            for (i in redParts.indices) {
+                val part = redParts[i]
+                if (i == 1) {
+                    // This is the part between RED_START and RED_END (sick leave sentence)
+                    withStyle(style = SpanStyle(color = AppColors.Error, fontWeight = fontWeight)) {
+                        append(part)
+                    }
+                } else {
+                    // Regular text in black with lighter font weight for bullet points
+                    withStyle(style = SpanStyle(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Normal
+                    )) {
+                        append(part)
+                    }
                 }
-            } else {
-                // Regular text in black with lighter font weight for bullet points
-                withStyle(style = SpanStyle(
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Normal
-                )) {
-                    append(part)
-                }
+            }
+        } else {
+            // No markers, just regular text
+            withStyle(style = SpanStyle(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Normal
+            )) {
+                append(text)
             }
         }
     }
