@@ -170,20 +170,31 @@ fun ParentDashboardScreen(
                                             // Absence status messages
                                             val absenceMessages = getAbsenceMessages(kid, kidsRepository)
                                             if (absenceMessages.isNotEmpty()) {
-                                                Column(
+                                                Card(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .padding(bottom = 8.dp)
+                                                        .padding(bottom = 8.dp),
+                                                    colors = CardDefaults.cardColors(
+                                                        containerColor = Color(0xFFFDE9D2) // Light yellow background
+                                                    ),
+                                                    shape = MaterialTheme.shapes.small
                                                 ) {
-                                                    absenceMessages.forEach { message ->
-                                                        Text(
-                                                            text = message,
-                                                            style = MaterialTheme.typography.bodyMedium,
-                                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                                                            modifier = Modifier
-                                                                .fillMaxWidth()
-                                                                .padding(bottom = 4.dp)
-                                                        )
+                                                    Column(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(12.dp)
+                                                    ) {
+                                                        absenceMessages.forEach { message ->
+                                                            Text(
+                                                                text = message.uppercase(),
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                color = Color(0xFFED9738), // Warning yellow text color
+                                                                fontWeight = FontWeight.Medium,
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .padding(bottom = 4.dp)
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
