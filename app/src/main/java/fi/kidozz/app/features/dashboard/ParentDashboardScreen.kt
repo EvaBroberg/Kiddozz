@@ -535,13 +535,16 @@ private fun StyledAbsenceText(
         for (i in parts.indices) {
             val part = parts[i]
             if (i == 1) {
-                // This is the part between YELLOW_START and YELLOW_END
-                withStyle(style = SpanStyle(color = AbsenceTextColor)) {
+                // This is the part between YELLOW_START and YELLOW_END (sentence)
+                withStyle(style = SpanStyle(color = AbsenceTextColor, fontWeight = fontWeight)) {
                     append(part)
                 }
             } else {
-                // Regular text in black
-                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
+                // Regular text in black with lighter font weight for bullet points
+                withStyle(style = SpanStyle(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Normal
+                )) {
                     append(part)
                 }
             }
@@ -551,7 +554,6 @@ private fun StyledAbsenceText(
     Text(
         text = annotatedString,
         style = style,
-        fontWeight = fontWeight,
         lineHeight = style.fontSize * 1.2, // Slightly increased line height for better spacing
         modifier = modifier
     )
