@@ -216,7 +216,8 @@ fun ParentDashboardScreen(
                                                 onClick = { 
                                                     selectedKid = kid
                                                     showAbsenceCalendar = true
-                                                }
+                                                },
+                                                modifier = Modifier.padding(top = 16.dp)
                                             )
                                         }
                                     )
