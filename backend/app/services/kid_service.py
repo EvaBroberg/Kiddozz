@@ -179,8 +179,7 @@ def create_kid_absence(
     )
     if existing_absence:
         raise HTTPException(
-            status_code=400,
-            detail="Absence already reported for this date"
+            status_code=400, detail="Absence already reported for this date"
         )
 
     # Create new absence
@@ -197,8 +196,7 @@ def create_kid_absence(
         # Check if it's a unique constraint violation
         if "uq_kid_absence_kid_date" in str(e) or "duplicate key" in str(e).lower():
             raise HTTPException(
-                status_code=400,
-                detail="Absence already reported for this date"
+                status_code=400, detail="Absence already reported for this date"
             )
         # Re-raise other integrity errors
         raise e

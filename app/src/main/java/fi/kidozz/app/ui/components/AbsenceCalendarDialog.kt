@@ -25,6 +25,8 @@ import fi.kidozz.app.ui.components.ConfirmationDialog
 import fi.kidozz.app.ui.components.WarningSnackbar
 import fi.kidozz.app.ui.styles.BasicButton
 import fi.kidozz.app.ui.styles.WarningButton
+import fi.kidozz.app.data.repository.KidsRepository
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -40,6 +42,8 @@ fun AbsenceCalendarDialog(
     onDismiss: () -> Unit,
     onAbsenceSelected: (List<LocalDate>, String, String) -> Unit,
     kidName: String,
+    kidId: String,
+    kidsRepository: KidsRepository,
     absenceReasons: List<String> = listOf("sick", "holiday"), // Default fallback
     modifier: Modifier = Modifier
 ) {
@@ -48,8 +52,30 @@ fun AbsenceCalendarDialog(
     var selectedReason by remember { mutableStateOf("") }
     var absenceDetails by remember { mutableStateOf("") }
     var showWarning by remember { mutableStateOf(false) }
+    var existingAbsences by remember { mutableStateOf<Map<LocalDate, String>>(emptyMap()) }
     var showConfirmation by remember { mutableStateOf(false) }
     var confirmationMessage by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Fetch existing absences when dialog opens
+    LaunchedEffect(isVisible, kidId) {
+        if (isVisible) {
+            try {
+                val result = kidsRepository.getAbsences(kidId)
+                if (result.isSuccess) {
+                    val absences = result.getOrNull() ?: emptyList()
+                    existingAbsences = absences.associate { absence ->
+                        LocalDate.parse(absence["date"] as String) to (absence["reason"] as String)
+                    }
+                } else {
+                    existingAbsences = emptyMap()
+                }
+            } catch (e: Exception) {
+                // Handle error silently for now
+                existingAbsences = emptyMap()
+            }
+        }
+    }
     
     FullScreenDialog(
         isVisible = isVisible,
@@ -91,7 +117,14 @@ fun AbsenceCalendarDialog(
             AbsenceCalendarGrid(
                 yearMonth = currentMonth,
                 selectedDates = selectedDates,
+                existingAbsences = existingAbsences,
                 onDateSelected = { date ->
+                    // Check if date already has an absence
+                    if (existingAbsences.containsKey(date)) {
+                        showWarning = true
+                        return@AbsenceCalendarGrid
+                    }
+                    
                     selectedDates = if (date in selectedDates) {
                         selectedDates - date
                     } else {
@@ -147,7 +180,7 @@ fun AbsenceCalendarDialog(
                     message = if (selectedReason.isEmpty()) {
                         "Please select reason of absence"
                     } else {
-                        "Please select at least one day for absence"
+                        "Some selected days already have absences recorded"
                     },
                     onDismiss = { showWarning = false },
                     durationMs = 3000L,
@@ -173,6 +206,13 @@ fun AbsenceCalendarDialog(
                 text = "Submit Absence",
                 onClick = {
                     if (selectedDates.isNotEmpty()) {
+                        // Check if any selected dates overlap with existing absences
+                        val overlappingDates = selectedDates.filter { existingAbsences.containsKey(it) }
+                        if (overlappingDates.isNotEmpty()) {
+                            showWarning = true
+                            return@WarningButton
+                        }
+                        
                         // Calculate first day back (day after the last selected day)
                         val sortedDates = selectedDates.sorted()
                         val lastAbsenceDay = sortedDates.last()
@@ -213,6 +253,7 @@ fun AbsenceCalendarDialog(
 private fun AbsenceCalendarGrid(
     yearMonth: YearMonth,
     selectedDates: Set<LocalDate>,
+    existingAbsences: Map<LocalDate, String>,
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -266,6 +307,8 @@ private fun AbsenceCalendarGrid(
                 val isSelected = date in selectedDates
                 val isToday = date == LocalDate.now()
                 val isPast = date.isBefore(LocalDate.now())
+                val hasExistingAbsence = existingAbsences.containsKey(date)
+                val existingAbsenceReason = existingAbsences[date]
                 
                 Box(
                     modifier = Modifier
@@ -273,13 +316,18 @@ private fun AbsenceCalendarGrid(
                         .clip(CircleShape)
                         .background(
                             when {
+                                hasExistingAbsence -> when (existingAbsenceReason) {
+                                    "holiday" -> Color(0xFFED9738) // Yellow for holiday
+                                    "sick" -> Color.Red // Red for sick
+                                    else -> Color.Gray // Fallback
+                                }
                                 isSelected -> Color(0xFFED9738) // Yellow color from warning button
                                 isToday -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)
                                 else -> Color.Transparent
                             }
                         )
-                        .clickable(enabled = !isPast) {
-                            if (!isPast) {
+                        .clickable(enabled = !isPast && !hasExistingAbsence) {
+                            if (!isPast && !hasExistingAbsence) {
                                 onDateSelected(date)
                             }
                         },
@@ -289,6 +337,7 @@ private fun AbsenceCalendarGrid(
                         text = date.dayOfMonth.toString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = when {
+                            hasExistingAbsence -> Color.White
                             isSelected -> Color.White
                             isPast -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                             else -> MaterialTheme.colorScheme.onSurface

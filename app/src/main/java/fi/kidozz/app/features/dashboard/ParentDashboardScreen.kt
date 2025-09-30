@@ -268,6 +268,8 @@ fun ParentDashboardScreen(
                     }
                 },
                 kidName = kid.full_name,
+                kidId = kid.id,
+                kidsRepository = kidsRepository,
                 absenceReasons = absenceReasons
             )
         }
