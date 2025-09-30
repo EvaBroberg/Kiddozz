@@ -34,6 +34,7 @@ import fi.kidozz.app.ui.theme.InCareColor
 import fi.kidozz.app.ui.theme.OutColor
 import fi.kidozz.app.ui.theme.AbsenceBackgroundColor
 import fi.kidozz.app.ui.theme.AbsenceTextColor
+import fi.kidozz.app.ui.theme.SickAbsenceBackgroundColor
 import kotlinx.coroutines.launch
 import fi.kidozz.app.ui.theme.SickColor
 import java.time.LocalDate
@@ -176,29 +177,34 @@ fun ParentDashboardScreen(
                                             // Absence status messages
                                             val absenceMessages = getAbsenceMessages(kid, kidsRepository)
                                             if (absenceMessages.isNotEmpty()) {
-                                                Card(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(bottom = 8.dp),
-                                                    colors = CardDefaults.cardColors(
-                                                        containerColor = AbsenceBackgroundColor
-                                                    ),
-                                                    shape = MaterialTheme.shapes.small
+                                                Column(
+                                                    modifier = Modifier.fillMaxWidth()
                                                 ) {
-                                                    Column(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(12.dp)
-                                                    ) {
-                                                        absenceMessages.forEach { message ->
-                                                            StyledAbsenceText(
-                                                                text = message.uppercase(),
-                                                                style = MaterialTheme.typography.bodyLarge,
-                                                                fontWeight = FontWeight.Medium,
+                                                    absenceMessages.forEachIndexed { index, message ->
+                                                        val isSickLeave = message.contains("RED_START")
+                                                        val cardColor = if (isSickLeave) SickAbsenceBackgroundColor else AbsenceBackgroundColor
+                                                        
+                                                        Card(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .padding(bottom = if (index < absenceMessages.size - 1) 8.dp else 0.dp),
+                                                            colors = CardDefaults.cardColors(
+                                                                containerColor = cardColor
+                                                            ),
+                                                            shape = MaterialTheme.shapes.small
+                                                        ) {
+                                                            Column(
                                                                 modifier = Modifier
                                                                     .fillMaxWidth()
-                                                                    .padding(bottom = 4.dp)
-                                                            )
+                                                                    .padding(12.dp)
+                                                            ) {
+                                                                StyledAbsenceText(
+                                                                    text = message.uppercase(),
+                                                                    style = MaterialTheme.typography.bodyLarge,
+                                                                    fontWeight = FontWeight.Medium,
+                                                                    modifier = Modifier.fillMaxWidth()
+                                                                )
+                                                            }
                                                         }
                                                     }
                                                 }

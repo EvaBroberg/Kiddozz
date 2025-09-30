@@ -23,3 +23,4 @@ val SickColor = Color(0xFFD32F2F)
 // Absence message colors
 val AbsenceBackgroundColor = Color(0xFFFFF9F1)
 val AbsenceTextColor = Color(0xFFED9738)
+val SickAbsenceBackgroundColor = Color(0xFFFDE9E9)
