@@ -312,7 +312,8 @@ private fun getAbsenceMessages(kid: Kid, kidsRepository: fi.kidozz.app.data.repo
 }
 
 /**
- * Formats absence dates into a readable message.
+ * Formats absence dates into a readable message with range compression.
+ * Groups consecutive days into ranges for better readability.
  */
 private fun formatAbsenceMessage(kidName: String, dates: List<LocalDate>, reason: String): String {
     if (dates.isEmpty()) return ""
@@ -322,29 +323,120 @@ private fun formatAbsenceMessage(kidName: String, dates: List<LocalDate>, reason
     if (futureDates.isEmpty()) return ""
     
     val sortedDates = futureDates.sorted()
-    val formatter = DateTimeFormatter.ofPattern("MMM dd")
     val verb = when (reason) {
         "holiday" -> "on holiday"
-        "sick" -> "away"
+        "sick" -> "on sick leave"
         else -> "away"
     }
     
-    return when {
-        // Single day absence
-        sortedDates.size == 1 -> {
-            "${kidName} is $verb on ${sortedDates[0].format(formatter)}"
+    return formatAbsenceMessageBulleted(kidName, verb, sortedDates)
+}
+
+/**
+ * Formats absence dates with range compression for consecutive days.
+ * 
+ * @param kidName The name of the child
+ * @param absenceType The type of absence (e.g., "on holiday", "away")
+ * @param dates Sorted list of absence dates
+ * @return Formatted message with compressed ranges
+ */
+private fun formatAbsenceMessageWithRanges(
+    kidName: String,
+    absenceType: String,
+    dates: List<LocalDate>
+): String {
+    if (dates.isEmpty()) return "$kidName has no recorded absences."
+
+    val formatter = DateTimeFormatter.ofPattern("MMM dd")
+    val sortedDates = dates.sorted()
+
+    val ranges = mutableListOf<String>()
+    var rangeStart = sortedDates.first()
+    var prev = sortedDates.first()
+
+    for (i in 1 until sortedDates.size) {
+        val current = sortedDates[i]
+        if (current == prev.plusDays(1)) {
+            // still in a consecutive streak
+            prev = current
+        } else {
+            // close the range
+            ranges.add(
+                if (rangeStart == prev) {
+                    rangeStart.format(formatter)
+                } else {
+                    "from ${rangeStart.format(formatter)} to ${prev.format(formatter)}"
+                }
+            )
+            rangeStart = current
+            prev = current
         }
-        
-        // Consecutive days - show range
-        isConsecutive(sortedDates) -> {
-            "${kidName} is $verb until ${sortedDates.last().plusDays(1).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}"
+    }
+
+    // close the last range
+    ranges.add(
+        if (rangeStart == prev) {
+            rangeStart.format(formatter)
+        } else {
+            "from ${rangeStart.format(formatter)} to ${prev.format(formatter)}"
         }
-        
-        // Non-consecutive days - list them
-        else -> {
-            val dayStrings = sortedDates.map { it.format(formatter) }
-            "${kidName} is $verb on ${dayStrings.joinToString(", ")}"
+    )
+
+    val joined = ranges.joinToString(", ")
+    return "$kidName is $absenceType $joined"
+}
+
+/**
+ * Formats absence dates with range compression in a bulleted multi-line format.
+ * 
+ * @param kidName The name of the child
+ * @param absenceType The type of absence (e.g., "holiday", "sick")
+ * @param dates Sorted list of absence dates
+ * @return Formatted message with bulleted ranges
+ */
+private fun formatAbsenceMessageBulleted(
+    kidName: String,
+    absenceType: String,
+    dates: List<LocalDate>
+): String {
+    if (dates.isEmpty()) return "$kidName has no recorded absences."
+
+    val formatter = DateTimeFormatter.ofPattern("MMM dd")
+    val sortedDates = dates.sorted()
+
+    val ranges = mutableListOf<String>()
+    var rangeStart = sortedDates.first()
+    var prev = sortedDates.first()
+
+    for (i in 1 until sortedDates.size) {
+        val current = sortedDates[i]
+        if (current == prev.plusDays(1)) {
+            prev = current
+        } else {
+            ranges.add(
+                if (rangeStart == prev) {
+                    "• ${rangeStart.format(formatter)}"
+                } else {
+                    "• from ${rangeStart.format(formatter)} to ${prev.format(formatter)}"
+                }
+            )
+            rangeStart = current
+            prev = current
         }
+    }
+
+    // Close last range
+    ranges.add(
+        if (rangeStart == prev) {
+            "• ${rangeStart.format(formatter)}"
+        } else {
+            "• from ${rangeStart.format(formatter)} to ${prev.format(formatter)}"
+        }
+    )
+
+    return buildString {
+        append("$kidName is on $absenceType:\n")
+        ranges.forEach { appendLine(it) }
     }
 }
 
@@ -412,47 +504,17 @@ private fun getAdvancedAbsenceMessage(kid: Kid, absenceDates: List<LocalDate>, r
     if (futureAbsences.isEmpty()) return ""
     
     val sortedAbsences = futureAbsences.sorted()
-    val formatter = DateTimeFormatter.ofPattern("MMM dd")
     
     // Choose the appropriate verb based on the reason
     val verb = when (reason) {
         "holiday" -> "on holiday"
-        "sick" -> "away"
+        "sick" -> "on sick leave"
         else -> "away"
     }
     
-    return when {
-        // Single day absence
-        sortedAbsences.size == 1 -> {
-            "${kid.full_name} is $verb on ${sortedAbsences[0].format(formatter)}"
-        }
-        
-        // Consecutive days - show range
-        isConsecutive(sortedAbsences) -> {
-            "${kid.full_name} is $verb until ${sortedAbsences.last().plusDays(1).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}"
-        }
-        
-        // Non-consecutive days - list them
-        else -> {
-            val dayStrings = sortedAbsences.map { it.format(formatter) }
-            "${kid.full_name} is $verb on ${dayStrings.joinToString(", ")}"
-        }
-    }
+    return formatAbsenceMessageBulleted(kid.full_name, verb, sortedAbsences)
 }
 
-/**
- * Checks if a list of dates are consecutive (no gaps between them).
- */
-private fun isConsecutive(dates: List<LocalDate>): Boolean {
-    if (dates.size <= 1) return true
-    
-    for (i in 1 until dates.size) {
-        if (dates[i] != dates[i-1].plusDays(1)) {
-            return false
-        }
-    }
-    return true
-}
 
 @Preview(showBackground = true, name = "Parent Dashboard Screen Preview")
 @Composable
