@@ -193,7 +193,7 @@ fun ParentDashboardScreen(
                                                         absenceMessages.forEach { message ->
                                                             StyledAbsenceText(
                                                                 text = message.uppercase(),
-                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                style = MaterialTheme.typography.bodyLarge,
                                                                 fontWeight = FontWeight.Medium,
                                                                 modifier = Modifier
                                                                     .fillMaxWidth()
@@ -510,9 +510,9 @@ private fun createStyledAbsenceMessage(
 
     return buildString {
         if (absenceType == "holiday") {
-            append("YELLOW_START$kidName is on $absenceType:YELLOW_END\n")
+            append("YELLOW_START$kidName is on $absenceType:YELLOW_END\n\n")
         } else {
-            append("$kidName is on $absenceType:\n")
+            append("$kidName is on $absenceType:\n\n")
         }
         ranges.forEach { appendLine(it) }
     }
@@ -552,6 +552,7 @@ private fun StyledAbsenceText(
         text = annotatedString,
         style = style,
         fontWeight = fontWeight,
+        lineHeight = style.fontSize * 1.2, // Slightly increased line height for better spacing
         modifier = modifier
     )
 }
