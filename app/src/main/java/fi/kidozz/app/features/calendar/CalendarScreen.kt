@@ -74,30 +74,20 @@ fun EducatorCalendarScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Event navigation buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = { navController.navigate("upcoming_events") },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "Upcoming Events",
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
+        // Event lists integrated into calendar view
+        if (allEvents.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
             
-            Button(
-                onClick = { navController.navigate("previous_events") },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "Previous Events",
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
+            Text(
+                text = "All Events",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            EventAccordion(
+                events = allEvents.toMutableList(),
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
 

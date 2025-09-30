@@ -19,8 +19,6 @@ import fi.kidozz.app.features.dashboard.KidsViewModel
 import fi.kidozz.app.features.dashboard.ParentsViewModel
 import fi.kidozz.app.features.kiddetail.KidDetailScreen
 import fi.kidozz.app.features.role.RoleSelectionScreen
-import fi.kidozz.app.features.calendar.UpcomingEventsScreen
-import fi.kidozz.app.features.calendar.PreviousEventsScreen
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -129,19 +127,6 @@ fun KiddozzAppHost(
             }
         }
 
-        composable("upcoming_events") {
-            UpcomingEventsScreen(
-                onBackClick = { navController.popBackStack() },
-                modifier = modifier
-            )
-        }
-
-        composable("previous_events") {
-            PreviousEventsScreen(
-                onBackClick = { navController.popBackStack() },
-                modifier = modifier
-            )
-        }
     }
 }
 
