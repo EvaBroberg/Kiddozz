@@ -509,13 +509,11 @@ private fun createStyledAbsenceMessage(
     )
 
     return buildString {
-        append("$kidName is on ")
         if (absenceType == "holiday") {
-            append("YELLOW_START${absenceType}YELLOW_END")
+            append("YELLOW_START$kidName is on $absenceType:YELLOW_END\n")
         } else {
-            append(absenceType)
+            append("$kidName is on $absenceType:\n")
         }
-        append(":\n")
         ranges.forEach { appendLine(it) }
     }
 }
