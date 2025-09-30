@@ -35,6 +35,7 @@ import fi.kidozz.app.ui.theme.OutColor
 import fi.kidozz.app.ui.theme.AbsenceBackgroundColor
 import fi.kidozz.app.ui.theme.AbsenceTextColor
 import fi.kidozz.app.ui.theme.SickAbsenceBackgroundColor
+import fi.kidozz.app.ui.styles.AppColors
 import kotlinx.coroutines.launch
 import fi.kidozz.app.ui.theme.SickColor
 import java.time.LocalDate
@@ -548,7 +549,7 @@ private fun StyledAbsenceText(
                 }
             } else if (i == 3) {
                 // This is the part between RED_START and RED_END (sick leave sentence)
-                withStyle(style = SpanStyle(color = SickColor, fontWeight = fontWeight)) {
+                withStyle(style = SpanStyle(color = AppColors.Error, fontWeight = fontWeight)) {
                     append(part)
                 }
             } else {
