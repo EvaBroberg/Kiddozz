@@ -4,18 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.TrustedAdult
-
-@Composable
-fun SectionTitle(title: String, modifier: Modifier = Modifier) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium,
-        modifier = modifier.padding(top = 8.dp, bottom = 4.dp)
-    )
-}
 
 @Composable
 fun TrustedAdultInfoView(trustedAdult: TrustedAdult) {

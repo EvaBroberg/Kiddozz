@@ -38,6 +38,7 @@ import fi.kidozz.app.ui.theme.SickAbsenceBackgroundColor
 import fi.kidozz.app.ui.styles.AppColors
 import kotlinx.coroutines.launch
 import fi.kidozz.app.ui.theme.SickColor
+import fi.kidozz.app.ui.theme.HolidayColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -148,11 +149,22 @@ fun ParentDashboardScreen(
                     ) {
                         items(kids) { kid ->
                             Column {
-                                // Determine status color
-                                val statusColor = when (kid.attendance.lowercase()) {
+                                // Compute effective attendance for today, considering holiday absences
+                                val effectiveAttendance by produceState(initialValue = kid.attendance, key1 = kid.id) {
+                                    val abs = kidsRepository.getAbsences(kid.id).getOrNull()
+                                    val today = java.time.LocalDate.now().toString()
+                                    value = abs?.let {
+                                        if (it.any { a -> a["reason"] == "holiday" && a["date"] == today }) "holiday"
+                                        else kid.attendance
+                                    } ?: kid.attendance
+                                }
+
+                                // Determine status color (including holiday)
+                                val statusColor = when (effectiveAttendance.lowercase()) {
                                     "in-care" -> InCareColor
                                     "out" -> OutColor
                                     "sick" -> SickColor
+                                    "holiday" -> HolidayColor
                                     else -> OutColor // Default to out color
                                 }
                                 
@@ -172,7 +184,7 @@ fun ParentDashboardScreen(
                                     // Accordion card
                                     KidAccordionCard(
                                         kidName = kid.full_name,
-                                        status = kid.attendance,
+                                        status = effectiveAttendance,
                                         onChatClick = { /* TODO: Implement chat functionality */ },
                                         expandedContent = {
                                             // Absence status messages

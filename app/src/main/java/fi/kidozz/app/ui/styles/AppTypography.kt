@@ -88,10 +88,6 @@ object AppTypography {
         fontWeight = FontWeight.Bold
     )
     
-    @Composable
-    fun SectionTitle(): TextStyle = MaterialTheme.typography.titleLarge.copy(
-        fontWeight = FontWeight.Bold
-    )
     
     @Composable
     fun CardTitle(): TextStyle = MaterialTheme.typography.titleMedium.copy(
@@ -136,4 +132,5 @@ object AppTypography {
     
     @Composable
     fun EventDescription(): TextStyle = MaterialTheme.typography.bodyMedium
+    
 }

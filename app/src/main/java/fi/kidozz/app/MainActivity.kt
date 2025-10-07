@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
         // Log the active backend URL for debugging
         Log.d("Kiddozz", "Backend URL: " + BuildConfig.BASE_URL)
         
+        // Compose entrypoint: Initialize theme, navigation, and role-based routing
         setContent {
             KiddozzTheme {
                 val navController = rememberNavController()
