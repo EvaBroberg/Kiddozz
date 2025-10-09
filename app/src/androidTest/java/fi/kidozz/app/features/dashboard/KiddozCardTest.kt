@@ -18,7 +18,8 @@ class KiddozCardTest {
             dob = "2020-03-15",
             daycare_id = "test",
             group_id = "test",
-            trusted_adults = emptyList()
+            trusted_adults = emptyList(),
+            attendance = "out"
         )
     }
 

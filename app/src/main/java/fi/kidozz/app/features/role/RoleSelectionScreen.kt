@@ -79,6 +79,8 @@ fun RoleSelectionScreen(
                                                 Toast.LENGTH_LONG
                                             ).show()
                                             authRepository.loginWithToken(tokenResponse.access_token)
+                                            // Save the role for navigation filtering
+                                            TokenManager(context).saveRole("educator")
                                             onEducatorViewClick()
                                         },
                                         onFailure = { exception ->
@@ -110,6 +112,8 @@ fun RoleSelectionScreen(
                                                 Toast.LENGTH_LONG
                                             ).show()
                                             authRepository.loginWithToken(tokenResponse.access_token)
+                                            // Save the role for navigation filtering
+                                            TokenManager(context).saveRole("parent")
                                             onParentViewClick()
                                         },
                                         onFailure = { exception ->
@@ -141,6 +145,8 @@ fun RoleSelectionScreen(
                                                 Toast.LENGTH_LONG
                                             ).show()
                                             authRepository.loginWithToken(tokenResponse.access_token)
+                                            // Save the role for navigation filtering
+                                            TokenManager(context).saveRole("super_educator")
                                             onSuperEducatorViewClick()
                                         },
                                         onFailure = { exception ->

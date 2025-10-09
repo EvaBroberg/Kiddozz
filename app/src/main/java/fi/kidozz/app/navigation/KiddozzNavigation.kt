@@ -31,7 +31,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 @Composable
 fun KiddozzAppHost(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    role: String?,
+    tokenManager: fi.kidozz.app.data.auth.TokenManager
 ) {
     NavHost(
         navController = navController,
@@ -41,15 +43,13 @@ fun KiddozzAppHost(
             RoleSelectionScreen(
                 onEducatorViewClick = { navController.navigate("educator_dashboard") },
                 onParentViewClick = { navController.navigate("parent_dashboard") },
-                onSuperEducatorViewClick = { navController.navigate("educator_dashboard") }, // Same as educator for now
-                modifier = modifier
+                onSuperEducatorViewClick = { navController.navigate("educator_dashboard") }
             )
         }
 
         composable("educator_dashboard") {
             val context = LocalContext.current
-            // Set up real API services
-            val baseUrl = "http://10.0.2.2:8000" // Android emulator localhost
+            val baseUrl = "http://10.0.2.2:8000"
             val retrofit = Retrofit.Builder()
                 .baseUrl(baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -61,7 +61,7 @@ fun KiddozzAppHost(
             
             val groupsRepository = fi.kidozz.app.data.repository.GroupsRepository(groupsApiService)
             val educatorRepository = fi.kidozz.app.data.repository.EducatorRepository(educatorApiService)
-            val tokenManager = remember { fi.kidozz.app.data.auth.TokenManager(context) }
+            // Use the shared TokenManager instance passed from MainActivity
             val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService, tokenManager)
             
             val groupsViewModel = remember { GroupsViewModel(groupsRepository) }
@@ -85,8 +85,7 @@ fun KiddozzAppHost(
 
         composable("parent_dashboard") {
             val context = LocalContext.current
-            // Set up API services for ParentDashboardScreen
-            val baseUrl = "http://10.0.2.2:8000" // Android emulator localhost
+            val baseUrl = "http://10.0.2.2:8000"
             val retrofit = Retrofit.Builder()
                 .baseUrl(baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -95,13 +94,13 @@ fun KiddozzAppHost(
             val parentsApiService = retrofit.create(fi.kidozz.app.data.api.ParentsApiService::class.java)
             val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
             val parentsRepository = fi.kidozz.app.data.repository.ParentsRepository(parentsApiService)
-            val tokenManager = remember { fi.kidozz.app.data.auth.TokenManager(context) }
+            // Use the shared TokenManager instance passed from MainActivity
             val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService, tokenManager)
             val parentsViewModel = remember { ParentsViewModel(parentsRepository) }
             val absenceReasonsViewModel = remember { AbsenceReasonsViewModel(kidsRepository) }
             
             ParentDashboardScreen(
-                parentId = "10", // Sara Johnson - first parent with kids
+                parentId = "10",
                 parentsViewModel = parentsViewModel,
                 absenceReasonsViewModel = absenceReasonsViewModel,
                 kidsRepository = kidsRepository,
@@ -121,7 +120,7 @@ fun KiddozzAppHost(
                     .build()
                 
                 val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
-                val tokenManager = remember { fi.kidozz.app.data.auth.TokenManager(context) }
+                // Use the shared TokenManager instance passed from MainActivity
                 val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService, tokenManager)
                 val kidsViewModel = remember { KidsViewModel(kidsRepository) }
                 
@@ -134,94 +133,61 @@ fun KiddozzAppHost(
         }
 
         composable("calendar") {
-            fi.kidozz.app.features.calendar.EducatorCalendarScreen(
-                navController = navController,
-                modifier = modifier
-            )
-        }
-
-        composable("menu") {
-            // Placeholder for menu screen
-            Scaffold(
-                topBar = {
-                    @OptIn(ExperimentalMaterial3Api::class)
-                    TopAppBar(
-                        title = { Text("Menu") },
-                        navigationIcon = {
-                            IconButton(
-                                onClick = { navController.popBackStack() }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
-                        }
-                    )
-                }
-            ) { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .padding(innerPadding)
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Menu Screen",
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "This is a placeholder for the menu functionality.",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
+            if (role == "parent") {
+                ParentCalendarScreen()
+            } else {
+                fi.kidozz.app.features.calendar.EducatorCalendarScreen(
+                    navController = navController,
+                    modifier = modifier
+                )
             }
         }
 
-        composable("profile") {
-            // Placeholder for profile screen
-            Scaffold(
-                topBar = {
-                    @OptIn(ExperimentalMaterial3Api::class)
-                    TopAppBar(
-                        title = { Text("Profile") },
-                        navigationIcon = {
-                            IconButton(
-                                onClick = { navController.popBackStack() }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
-                        }
-                    )
-                }
-            ) { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .padding(innerPadding)
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Profile Screen",
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "This is a placeholder for the profile functionality.",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            }
-        }
+        composable("menu") { MenuScreen() }
 
+        composable("profile") { ProfileScreen() }
+        composable("kid_detail") { KidDetailScreen() }
+
+    }
+}
+
+@Composable
+fun ParentCalendarScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Parent calendar (placeholder)")
+    }
+}
+
+@Composable
+fun MenuScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Menu (placeholder)")
+    }
+}
+
+@Composable
+fun ProfileScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Profile (placeholder)")
+    }
+}
+
+@Composable
+fun KidDetailScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Kid Detail (placeholder)")
     }
 }
 

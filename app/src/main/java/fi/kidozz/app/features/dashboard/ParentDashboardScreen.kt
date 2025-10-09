@@ -19,6 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.filter
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -67,6 +71,16 @@ fun ParentDashboardScreen(
     LaunchedEffect(parentId) {
         parentsViewModel.loadKidsForParent(parentId)
         absenceReasonsViewModel.loadAbsenceReasons()
+    }
+    
+    // Refresh data when screen resumes (lifecycle-aware)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        snapshotFlow { lifecycleOwner.lifecycle.currentState }
+            .filter { it == Lifecycle.State.RESUMED }
+            .collect {
+                parentsViewModel.refreshKids(parentId)
+            }
     }
     
     Scaffold(

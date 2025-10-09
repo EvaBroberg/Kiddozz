@@ -48,6 +48,17 @@ class ParentsViewModel(
     }
     
     /**
+     * Refresh kids data for a specific parent.
+     * 
+     * @param parentId The ID of the parent
+     */
+    fun refreshKids(parentId: String) {
+        viewModelScope.launch {
+            loadKidsForParent(parentId)
+        }
+    }
+    
+    /**
      * Clear error state.
      */
     fun clearError() {

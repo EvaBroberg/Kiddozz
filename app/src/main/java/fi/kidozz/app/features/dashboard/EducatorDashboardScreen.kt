@@ -15,6 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.filter
 import fi.kidozz.app.data.models.CalendarEvent
 import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.data.models.Educator
@@ -50,6 +54,16 @@ fun EducatorDashboardScreen(
     LaunchedEffect(daycareId) {
         groupsViewModel.loadGroups(daycareId)
         kidsViewModel.loadKids(daycareId)
+    }
+    
+    // Refresh data when screen resumes (lifecycle-aware)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        snapshotFlow { lifecycleOwner.lifecycle.currentState }
+            .filter { it == Lifecycle.State.RESUMED }
+            .collect {
+                kidsViewModel.refreshKids(daycareId)
+            }
     }
     
     // Filter kids based on selected groups

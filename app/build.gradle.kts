@@ -38,14 +38,17 @@ android {
         create("local") {
             dimension = "environment"
             buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8000\"")
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
         create("staging") {
             dimension = "environment"
             buildConfigField("String", "BASE_URL", "\"https://kiddozz-production.up.railway.app\"")
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
         create("prod") {
             dimension = "environment"
             buildConfigField("String", "BASE_URL", "\"https://prod-api.kiddozz.com\"")
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
     }
     compileOptions {

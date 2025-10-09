@@ -42,6 +42,12 @@ class KidsViewModel(
         }
     }
     
+    fun refreshKids(daycareId: String, groupId: String? = null) {
+        viewModelScope.launch {
+            loadKids(daycareId, groupId)
+        }
+    }
+    
     fun updateAttendance(kidId: String, attendance: String) {
         viewModelScope.launch {
             if (kidsRepository != null) {
