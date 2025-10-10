@@ -463,3 +463,18 @@ class TestTestTokenEndpoint:
             assert response.status_code == 404
             data = response.json()
             assert "Endpoint not available in this environment" in data["detail"]
+
+
+def test_logout(client_fixture):
+    """Test logout endpoint returns success message."""
+    # Get a valid token first
+    switch_response = client_fixture.post("/api/v1/auth/switch-role?role=educator")
+    token = switch_response.json()["access_token"]
+    
+    # Test logout endpoint
+    headers = {"Authorization": f"Bearer {token}"}
+    response = client_fixture.post("/api/v1/auth/logout", headers=headers)
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["message"] == "Logged out successfully"

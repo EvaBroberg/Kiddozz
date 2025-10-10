@@ -16,22 +16,37 @@ class TokenManager(context: Context) {
     val tokenFlow: StateFlow<String?> = _tokenFlow
 
     fun saveToken(token: String) {
-        prefs.edit().putString("token", token).apply()
-        _tokenFlow.value = token
-        Log.d("TokenManagerDebug", "saveToken('$token')")
+        val current = _tokenFlow.value
+        if (current != token) {
+            prefs.edit().putString("token", token).apply()
+            _tokenFlow.value = token
+            Log.d("TokenManagerDebug", "saveToken('$token') – changed from '$current'")
+        } else {
+            Log.d("TokenManagerDebug", "saveToken('$token') – skipped duplicate")
+        }
     }
 
     fun saveRole(role: String) {
         val canonical = role.trim().lowercase()
-        prefs.edit().putString("role", canonical).apply()
-        _roleFlow.value = canonical
-        Log.d("TokenManagerDebug", "saveRole('$canonical')")
+        val current = _roleFlow.value
+        if (current != canonical) {
+            prefs.edit().putString("role", canonical).apply()
+            _roleFlow.value = canonical
+            Log.d("TokenManagerDebug", "saveRole('$canonical') – changed from '$current'")
+        } else {
+            Log.d("TokenManagerDebug", "saveRole('$canonical') – skipped duplicate")
+        }
     }
 
     fun getRole(): String? {
         val r = prefs.getString("role", null)
-        _roleFlow.value = r
-        Log.d("TokenManagerDebug", "getRole() -> '$r'")
+        val current = _roleFlow.value
+        if (current != r) {
+            _roleFlow.value = r
+            Log.d("TokenManagerDebug", "getRole() -> '$r' (updated from '$current')")
+        } else {
+            Log.d("TokenManagerDebug", "getRole() -> '$r' (no change)")
+        }
         return r
     }
 
@@ -41,15 +56,29 @@ class TokenManager(context: Context) {
     }
 
     fun clearAll() {
+        val hadRole = _roleFlow.value
+        val hadToken = _tokenFlow.value
         prefs.edit().clear().apply()
-        _roleFlow.value = null
-        _tokenFlow.value = null
-        Log.d("TokenManagerDebug", "clearAll() called")
+
+        if (hadRole != null) {
+            _roleFlow.value = null
+            Log.d("TokenManagerDebug", "clearAll() reset role from '$hadRole'")
+        }
+        if (hadToken != null) {
+            _tokenFlow.value = null
+            Log.d("TokenManagerDebug", "clearAll() reset token from '$hadToken'")
+        }
     }
 
     fun getToken(): String? {
         val token = prefs.getString("token", null)
-        _tokenFlow.value = token
+        val current = _tokenFlow.value
+        if (current != token) {
+            _tokenFlow.value = token
+            Log.d("TokenManagerDebug", "getToken() -> '$token' (updated from '$current')")
+        } else {
+            Log.d("TokenManagerDebug", "getToken() -> '$token' (no change)")
+        }
         return token
     }
 

@@ -184,3 +184,12 @@ def get_current_educator_info(
         raise HTTPException(status_code=404, detail="Educator not found")
 
     return educator
+
+
+@router.post("/logout")
+def logout(current_user: Dict[str, Any] = Depends(get_current_user)) -> Dict[str, str]:
+    """
+    Stateless logout endpoint.
+    Clears client-side session only.
+    """
+    return {"message": "Logged out successfully"}

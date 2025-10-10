@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,6 +19,8 @@ import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.data.sample.sampleKidsState
 import fi.kidozz.app.features.dashboard.AbsenceReasonsViewModel
 import fi.kidozz.app.features.dashboard.EducatorDashboardScreen
+import fi.kidozz.app.data.auth.TokenManager
+import fi.kidozz.app.ui.components.LogoutButton
 import fi.kidozz.app.features.dashboard.ParentDashboardScreen
 import fi.kidozz.app.features.dashboard.GroupsViewModel
 import fi.kidozz.app.features.dashboard.EducatorViewModel
@@ -41,6 +44,7 @@ fun KiddozzAppHost(
     ) {
         composable("role_selection") {
             RoleSelectionScreen(
+                tokenManager = tokenManager,
                 onEducatorViewClick = { navController.navigate("educator_dashboard") },
                 onParentViewClick = { navController.navigate("parent_dashboard") },
                 onSuperEducatorViewClick = { navController.navigate("educator_dashboard") }
@@ -145,7 +149,12 @@ fun KiddozzAppHost(
 
         composable("menu") { MenuScreen() }
 
-        composable("profile") { ProfileScreen() }
+        composable("profile") { 
+            ProfileScreen(
+                navController = navController,
+                tokenManager = tokenManager
+            ) 
+        }
         composable("kid_detail") { KidDetailScreen() }
 
     }
@@ -172,12 +181,27 @@ fun MenuScreen() {
 }
 
 @Composable
-fun ProfileScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+fun ProfileScreen(
+    navController: NavController,
+    tokenManager: TokenManager
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Text("Profile (placeholder)")
+        Text(
+            text = "Profile",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 32.dp)
+        )
+        
+        LogoutButton(
+            navController = navController,
+            tokenManager = tokenManager
+        )
     }
 }
 

@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoleSelectionScreen(
+    tokenManager: TokenManager,
     onEducatorViewClick: () -> Unit,
     onParentViewClick: () -> Unit,
     onSuperEducatorViewClick: () -> Unit,
@@ -45,10 +46,10 @@ fun RoleSelectionScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
-    val authRepository = remember {
+    val authRepository = remember(tokenManager) {
         AuthRepository(
             NetworkModule.authApiService,
-            TokenManager(context)
+            tokenManager
         )
     }
     
@@ -79,8 +80,10 @@ fun RoleSelectionScreen(
                                                 Toast.LENGTH_LONG
                                             ).show()
                                             authRepository.loginWithToken(tokenResponse.access_token)
-                                            // Save the role for navigation filtering
-                                            TokenManager(context).saveRole("educator")
+                                            // Save the role for navigation filtering (only if different)
+                                            if (tokenManager.getRole() != "educator") {
+                                                tokenManager.saveRole("educator")
+                                            }
                                             onEducatorViewClick()
                                         },
                                         onFailure = { exception ->
@@ -112,8 +115,10 @@ fun RoleSelectionScreen(
                                                 Toast.LENGTH_LONG
                                             ).show()
                                             authRepository.loginWithToken(tokenResponse.access_token)
-                                            // Save the role for navigation filtering
-                                            TokenManager(context).saveRole("parent")
+                                            // Save the role for navigation filtering (only if different)
+                                            if (tokenManager.getRole() != "parent") {
+                                                tokenManager.saveRole("parent")
+                                            }
                                             onParentViewClick()
                                         },
                                         onFailure = { exception ->
@@ -145,8 +150,10 @@ fun RoleSelectionScreen(
                                                 Toast.LENGTH_LONG
                                             ).show()
                                             authRepository.loginWithToken(tokenResponse.access_token)
-                                            // Save the role for navigation filtering
-                                            TokenManager(context).saveRole("super_educator")
+                                            // Save the role for navigation filtering (only if different)
+                                            if (tokenManager.getRole() != "super_educator") {
+                                                tokenManager.saveRole("super_educator")
+                                            }
                                             onSuperEducatorViewClick()
                                         },
                                         onFailure = { exception ->
@@ -265,6 +272,7 @@ fun RoleSelectionScreen(
 fun RoleSelectionScreenPreview() {
     KiddozzTheme {
         RoleSelectionScreen(
+            tokenManager = TokenManager(androidx.compose.ui.platform.LocalContext.current),
             onEducatorViewClick = {}, 
             onParentViewClick = {},
             onSuperEducatorViewClick = {}
