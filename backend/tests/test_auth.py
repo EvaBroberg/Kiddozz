@@ -470,11 +470,11 @@ def test_logout(client_fixture):
     # Get a valid token first
     switch_response = client_fixture.post("/api/v1/auth/switch-role?role=educator")
     token = switch_response.json()["access_token"]
-    
+
     # Test logout endpoint
     headers = {"Authorization": f"Bearer {token}"}
     response = client_fixture.post("/api/v1/auth/logout", headers=headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Logged out successfully"
