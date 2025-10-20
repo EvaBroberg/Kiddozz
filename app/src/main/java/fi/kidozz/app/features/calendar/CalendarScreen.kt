@@ -1,11 +1,6 @@
 package fi.kidozz.app.features.calendar
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -15,20 +10,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import android.util.Log
 import fi.kidozz.app.data.models.CalendarEvent
-import androidx.compose.foundation.shape.CircleShape
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import fi.kidozz.app.data.sample.sampleUpcomingEvents
 import fi.kidozz.app.data.sample.samplePastEvents
 import fi.kidozz.app.ui.components.EventAccordion
+import fi.kidozz.app.ui.components.KiddozzCalendarGrid
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
@@ -41,7 +34,13 @@ fun EducatorCalendarScreen(
 ) {
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     var showAddEventDialog by remember { mutableStateOf(false) }
+    var currentMonth by rememberSaveable { mutableStateOf(YearMonth.now()) }
     val context = LocalContext.current
+    
+    // Add logging for diagnostics
+    LaunchedEffect(currentMonth) {
+        Log.d("CalendarHeader", "CalendarHeader: month=${currentMonth}")
+    }
     val viewModel: EventViewModel = viewModel(
         factory = EventViewModelFactory(context.applicationContext as Application)
     )
@@ -60,16 +59,13 @@ fun EducatorCalendarScreen(
             .padding(top = 24.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text(
-            text = "Educator Calendar",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
 
-        BasicCalendarView(
-            currentMonth = java.time.YearMonth.now(),
-            events = allEvents,
-            onDateSelected = { selectedDate = it }
+        KiddozzCalendarGrid(
+            currentMonth = currentMonth,
+            selectedDate = selectedDate,
+            onDateClick = { selectedDate = it },
+            events = allEvents.map { it.date },
+            onVisibleMonthChanged = { currentMonth = it }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -146,61 +142,3 @@ fun EducatorCalendarScreen(
 }
 
 
-@Composable
-fun BasicCalendarView(
-    currentMonth: java.time.YearMonth,
-    events: List<CalendarEvent>,
-    onDateSelected: (LocalDate) -> Unit
-) {
-    val daysInMonth = currentMonth.lengthOfMonth()
-    val firstDayOfMonth = currentMonth.atDay(1)
-    val dayOfWeekOffset = (firstDayOfMonth.dayOfWeek.value % 7) 
-    val days = (1..daysInMonth).map { currentMonth.atDay(it) }
-
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            listOf("S", "M", "T", "W", "T", "F", "S").forEach {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
-        LazyVerticalGrid(columns = GridCells.Fixed(7)) {
-            items(dayOfWeekOffset) { Spacer(modifier = Modifier.size(40.dp)) } // Fill blank days
-            items(days) { date ->
-                val hasEvent = events.any { it.date == date.toString() }
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clickable { onDateSelected(date) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = date.dayOfMonth.toString(),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        if (hasEvent) {
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}

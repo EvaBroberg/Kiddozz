@@ -155,7 +155,6 @@ fun KiddozzAppHost(
                 tokenManager = tokenManager
             ) 
         }
-        composable("kid_detail") { KidDetailScreen() }
 
     }
 }
@@ -204,15 +203,3 @@ fun ProfileScreen(
         )
     }
 }
-
-@Composable
-fun KidDetailScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Kid Detail (placeholder)")
-    }
-}
-
-
