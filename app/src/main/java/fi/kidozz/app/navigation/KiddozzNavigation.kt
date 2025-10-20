@@ -147,6 +147,20 @@ fun KiddozzAppHost(
             }
         }
 
+        composable("calendar_upcoming") {
+            fi.kidozz.app.features.calendar.UpcomingEventsScreen(
+                navController = navController,
+                modifier = modifier
+            )
+        }
+
+        composable("calendar_past") {
+            fi.kidozz.app.features.calendar.PastEventsScreen(
+                navController = navController,
+                modifier = modifier
+            )
+        }
+
         composable("menu") { MenuScreen() }
 
         composable("profile") { 
