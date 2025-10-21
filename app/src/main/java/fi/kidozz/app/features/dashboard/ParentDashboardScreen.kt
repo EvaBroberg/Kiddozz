@@ -43,6 +43,7 @@ import fi.kidozz.app.ui.styles.AppColors
 import kotlinx.coroutines.launch
 import fi.kidozz.app.ui.theme.SickColor
 import fi.kidozz.app.ui.theme.HolidayColor
+import fi.kidozz.app.ui.components.ScrollablePage
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -88,12 +89,9 @@ fun ParentDashboardScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(top = 24.dp)
-        ) {
+                ScrollablePage(
+                    innerPadding = innerPadding
+                ) {
             when {
                 isLoading -> {
                     Box(
@@ -155,13 +153,11 @@ fun ParentDashboardScreen(
                 }
                 
                 else -> {
-                    LazyColumn(
+                    Column(
                         modifier = Modifier
-                            .fillMaxSize(),
-                        contentPadding = PaddingValues(0.dp),
-                        verticalArrangement = Arrangement.spacedBy(0.dp)
+                            .fillMaxSize()
                     ) {
-                        items(kids) { kid ->
+                        kids.forEach { kid ->
                             Column {
                                 // Compute effective attendance for today, considering holiday absences
                                 val effectiveAttendance by produceState(initialValue = kid.attendance, key1 = kid.id) {

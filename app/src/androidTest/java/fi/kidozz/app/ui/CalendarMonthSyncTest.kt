@@ -8,6 +8,8 @@ import fi.kidozz.app.ui.components.KiddozzCalendarGrid
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import java.time.LocalDate
 import java.time.YearMonth
 

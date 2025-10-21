@@ -17,6 +17,7 @@ import fi.kidozz.app.ui.components.AppTextArea
 import fi.kidozz.app.ui.components.ConfirmationDialog
 import fi.kidozz.app.ui.components.WarningSnackbar
 import fi.kidozz.app.ui.components.KiddozzCalendarGrid
+import fi.kidozz.app.ui.components.ScrollableDialogContent
 import fi.kidozz.app.ui.styles.BasicButton
 import fi.kidozz.app.ui.styles.WarningButton
 import fi.kidozz.app.data.repository.KidsRepository
@@ -81,12 +82,13 @@ fun AbsenceCalendarDialog(
         onDismiss = onDismiss,
         modifier = modifier,
         content = {
-            // Month navigation
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            ScrollableDialogContent {
+                // Month navigation
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 IconButton(
                     onClick = { 
                         currentMonth = currentMonth.minusMonths(1)
@@ -195,6 +197,7 @@ fun AbsenceCalendarDialog(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
+            }
         },
         actions = {
             // Use your custom button components

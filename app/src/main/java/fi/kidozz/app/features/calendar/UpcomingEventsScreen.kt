@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import android.app.Application
 import androidx.navigation.NavController
 import fi.kidozz.app.ui.components.EventAccordion
+import fi.kidozz.app.ui.components.ScrollablePage
 import java.time.LocalDate
 
 @Composable
@@ -41,11 +42,8 @@ fun UpcomingEventsScreen(
         }
     }
 
-    Column(
+    ScrollablePage(
         modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
     ) {
         // Header with back button
         Row(

@@ -25,6 +25,7 @@ import fi.kidozz.app.data.models.Educator
 import fi.kidozz.app.data.models.Group
 import fi.kidozz.app.data.sample.sampleUpcomingEvents
 import fi.kidozz.app.data.sample.samplePastEvents
+import fi.kidozz.app.ui.components.LazyPage
 import java.time.format.DateTimeFormatter
 import androidx.navigation.NavController
 import androidx.compose.runtime.LaunchedEffect
@@ -128,11 +129,14 @@ fun EducatorDashboardScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) { innerPadding ->
-        // Show the kids grid directly since navigation is now handled globally
-        KidsGrid(
-            filteredKids = filteredKids,
-            onKidClick = onKidClick,
-            modifier = Modifier.padding(innerPadding).padding(top = 24.dp).fillMaxSize()
-        )
+        LazyPage(
+            innerPadding = innerPadding
+        ) {
+            // Show the kids grid directly since navigation is now handled globally
+            KidsGrid(
+                filteredKids = filteredKids,
+                onKidClick = onKidClick
+            )
+        }
     }
 }

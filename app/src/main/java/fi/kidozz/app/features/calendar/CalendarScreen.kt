@@ -25,6 +25,7 @@ import fi.kidozz.app.data.sample.sampleUpcomingEvents
 import fi.kidozz.app.data.sample.samplePastEvents
 import fi.kidozz.app.ui.components.EventAccordion
 import fi.kidozz.app.ui.components.KiddozzCalendarGrid
+import fi.kidozz.app.ui.components.ScrollablePage
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
@@ -55,12 +56,8 @@ fun EducatorCalendarScreen(
         upcomingEvents + pastEvents 
     }
 
-    Column(
+    ScrollablePage(
         modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .padding(top = 24.dp)
-            .verticalScroll(rememberScrollState())
     ) {
         // Month navigation
         Row(

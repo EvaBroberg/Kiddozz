@@ -1,6 +1,7 @@
 package fi.kidozz.app.features.dashboard
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -17,7 +18,7 @@ fun KidsGrid(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         contentPadding = EducatorDashboardStyles.GridPadding,
         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(EducatorDashboardStyles.GridSpacing),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(EducatorDashboardStyles.GridSpacing)
