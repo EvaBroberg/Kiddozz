@@ -159,14 +159,28 @@ fun ParentDashboardScreen(
                     ) {
                         kids.forEach { kid ->
                             Column {
-                                // Compute effective attendance for today, considering holiday absences
+                                // Compute effective attendance for today, prioritizing today's absence reason
                                 val effectiveAttendance by produceState(initialValue = kid.attendance, key1 = kid.id) {
-                                    val abs = kidsRepository.getAbsences(kid.id).getOrNull()
                                     val today = java.time.LocalDate.now().toString()
-                                    value = abs?.let {
-                                        if (it.any { a -> a["reason"] == "holiday" && a["date"] == today }) "holiday"
-                                        else kid.attendance
-                                    } ?: kid.attendance
+                                    val abs = kidsRepository.getAbsences(kid.id).getOrNull()
+
+                                    // Default
+                                    var derived = kid.attendance
+
+                                    if (abs != null) {
+                                        // Find any absence for today
+                                        val todays = abs.firstOrNull { (it["date"] as? String) == today }
+                                        val reason = todays?.get("reason") as? String
+
+                                        derived = when (reason?.lowercase()) {
+                                            "sick" -> "sick"          // highest priority
+                                            "holiday" -> "holiday"
+                                            else -> kid.attendance
+                                        }
+                                    }
+
+                                    value = derived
+                                    println("ParentDashboard: ${kid.full_name} today=$today → $derived (was ${kid.attendance})")
                                 }
 
                                 // Determine status color (including holiday)
