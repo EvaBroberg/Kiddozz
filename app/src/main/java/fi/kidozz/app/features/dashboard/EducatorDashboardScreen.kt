@@ -82,48 +82,13 @@ fun EducatorDashboardScreen(
     val availableGroups = groups.map { it.name }.distinct().sorted()
     
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Kids Overview") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    // Always show filter for kids overview
-                    Box {
-                        IconButton(onClick = { filterMenuExpanded = true }) {
-                            Icon(Icons.Default.FilterList, contentDescription = "Filter by group")
-                        }
-                        DropdownMenu(
-                            expanded = filterMenuExpanded,
-                            onDismissRequest = { filterMenuExpanded = false }
-                        ) {
-                            availableGroups.forEach { groupName ->
-                                DropdownMenuItem(
-                                    text = { Text(groupName) },
-                                    onClick = {
-                                        selectedGroups = if (groupName in selectedGroups) {
-                                            selectedGroups - groupName
-                                        } else {
-                                            selectedGroups + groupName
-                                        }
-                                    },
-                                    trailingIcon = {
-                                        if (groupName in selectedGroups) {
-                                            Checkbox(
-                                                checked = true,
-                                                onCheckedChange = null
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            )
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { filterMenuExpanded = true },
+                modifier = Modifier
+            ) {
+                Icon(Icons.Default.FilterList, contentDescription = "Filter by group")
+            }
         },
         modifier = modifier
             .fillMaxSize()
@@ -137,6 +102,40 @@ fun EducatorDashboardScreen(
                 filteredKids = filteredKids,
                 onKidClick = onKidClick
             )
+        }
+        
+        // Filter dropdown menu
+        if (filterMenuExpanded) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                DropdownMenu(
+                    expanded = filterMenuExpanded,
+                    onDismissRequest = { filterMenuExpanded = false }
+                ) {
+                    availableGroups.forEach { groupName ->
+                        DropdownMenuItem(
+                            text = { Text(groupName) },
+                            onClick = {
+                                selectedGroups = if (groupName in selectedGroups) {
+                                    selectedGroups - groupName
+                                } else {
+                                    selectedGroups + groupName
+                                }
+                            },
+                            trailingIcon = {
+                                if (groupName in selectedGroups) {
+                                    Checkbox(
+                                        checked = true,
+                                        onCheckedChange = null
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }
