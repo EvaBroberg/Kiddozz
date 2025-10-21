@@ -82,54 +82,69 @@ fun EducatorDashboardScreen(
     val availableGroups = groups.map { it.name }.distinct().sorted()
     
     Scaffold(
-        floatingActionButton = {
-            Box {
-                FloatingActionButton(
-                    onClick = { filterMenuExpanded = true },
-                    modifier = Modifier
-                ) {
-                    Icon(Icons.Default.FilterList, contentDescription = "Filter by group")
-                }
-                
-                DropdownMenu(
-                    expanded = filterMenuExpanded,
-                    onDismissRequest = { filterMenuExpanded = false }
-                ) {
-                    availableGroups.forEach { groupName ->
-                        DropdownMenuItem(
-                            text = { Text(groupName) },
-                            onClick = {
-                                selectedGroups = if (groupName in selectedGroups) {
-                                    selectedGroups - groupName
-                                } else {
-                                    selectedGroups + groupName
-                                }
-                            },
-                            trailingIcon = {
-                                if (groupName in selectedGroups) {
-                                    Checkbox(
-                                        checked = true,
-                                        onCheckedChange = null
-                                    )
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-        },
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) { innerPadding ->
-        LazyPage(
-            innerPadding = innerPadding
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Show the kids grid directly since navigation is now handled globally
-            KidsGrid(
-                filteredKids = filteredKids,
-                onKidClick = onKidClick
-            )
+            LazyPage(
+                innerPadding = innerPadding
+            ) {
+                // Show the kids grid directly since navigation is now handled globally
+                KidsGrid(
+                    filteredKids = filteredKids,
+                    onKidClick = onKidClick
+                )
+            }
+            
+            // Sticky filter bar at top
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .align(Alignment.TopEnd)
+            ) {
+                Box {
+                    IconButton(
+                        onClick = { filterMenuExpanded = true }
+                    ) {
+                        Icon(
+                            Icons.Default.FilterList, 
+                            contentDescription = "Filter by group",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                    
+                    DropdownMenu(
+                        expanded = filterMenuExpanded,
+                        onDismissRequest = { filterMenuExpanded = false }
+                    ) {
+                        availableGroups.forEach { groupName ->
+                            DropdownMenuItem(
+                                text = { Text(groupName) },
+                                onClick = {
+                                    selectedGroups = if (groupName in selectedGroups) {
+                                        selectedGroups - groupName
+                                    } else {
+                                        selectedGroups + groupName
+                                    }
+                                },
+                                trailingIcon = {
+                                    if (groupName in selectedGroups) {
+                                        Checkbox(
+                                            checked = true,
+                                            onCheckedChange = null
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
