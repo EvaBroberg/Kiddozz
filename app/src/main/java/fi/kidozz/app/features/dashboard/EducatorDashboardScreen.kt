@@ -83,33 +83,14 @@ fun EducatorDashboardScreen(
     
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { filterMenuExpanded = true },
-                modifier = Modifier
-            ) {
-                Icon(Icons.Default.FilterList, contentDescription = "Filter by group")
-            }
-        },
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) { innerPadding ->
-        LazyPage(
-            innerPadding = innerPadding
-        ) {
-            // Show the kids grid directly since navigation is now handled globally
-            KidsGrid(
-                filteredKids = filteredKids,
-                onKidClick = onKidClick
-            )
-        }
-        
-        // Filter dropdown menu
-        if (filterMenuExpanded) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.TopEnd
-            ) {
+            Box {
+                FloatingActionButton(
+                    onClick = { filterMenuExpanded = true },
+                    modifier = Modifier
+                ) {
+                    Icon(Icons.Default.FilterList, contentDescription = "Filter by group")
+                }
+                
                 DropdownMenu(
                     expanded = filterMenuExpanded,
                     onDismissRequest = { filterMenuExpanded = false }
@@ -136,6 +117,19 @@ fun EducatorDashboardScreen(
                     }
                 }
             }
+        },
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) { innerPadding ->
+        LazyPage(
+            innerPadding = innerPadding
+        ) {
+            // Show the kids grid directly since navigation is now handled globally
+            KidsGrid(
+                filteredKids = filteredKids,
+                onKidClick = onKidClick
+            )
         }
     }
 }
