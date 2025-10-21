@@ -32,6 +32,9 @@ class EducatorViewModel(
                     // Fetch Jessica directly via repository
                     val educator = educatorRepository.getEducatorByName(daycareId, "Jessica")
                     _currentEducator.value = educator
+                    educator?.let {
+                        android.util.Log.d("EducatorFilter", "educator loaded: ${it.full_name} with groups: ${it.groups.map { group -> "${group.id}(${group.name})" }}")
+                    }
                 } else {
                     _currentEducator.value = null
                 }

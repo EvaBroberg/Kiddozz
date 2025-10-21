@@ -31,6 +31,7 @@ class GroupsViewModel(
                 if (groupsRepository != null) {
                     val groupsList = groupsRepository.getGroups(daycareId)
                     _groups.value = groupsList
+                    android.util.Log.d("EducatorFilter", "groups loaded: ${groupsList.map { "${it.id}(${it.name})" }}")
                 } else {
                     // Fallback to empty list if no repository
                     _groups.value = emptyList()

@@ -50,11 +50,24 @@ fun EducatorDashboardScreen(
     // Load data from ViewModels
     val groups by groupsViewModel.groups.collectAsState()
     val kids by kidsViewModel.kids.collectAsState()
+    val currentEducator by educatorViewModel.currentEducator.collectAsState()
     
     // Load data when screen is first displayed
     LaunchedEffect(daycareId) {
         groupsViewModel.loadGroups(daycareId)
         kidsViewModel.loadKids(daycareId)
+        educatorViewModel.loadCurrentEducatorByDaycare(daycareId)
+    }
+    
+    // Initialize selectedGroups with educator's assigned groups (only when empty)
+    LaunchedEffect(currentEducator) {
+        val educator = currentEducator
+        if (educator != null && selectedGroups.isEmpty()) {
+            val educatorGroupIds = educator.groups.map { it.id }.toSet()
+            selectedGroups = educatorGroupIds
+            android.util.Log.d("EducatorFilter", "educator=${educator.full_name} groupIds=${educatorGroupIds}")
+            android.util.Log.d("EducatorFilter", "selectedGroups(default)=${selectedGroups}")
+        }
     }
     
     // Refresh data when screen resumes (lifecycle-aware)
@@ -69,6 +82,7 @@ fun EducatorDashboardScreen(
     
     // Filter kids based on selected groups
     val filteredKids = remember(kids, selectedGroups) {
+        android.util.Log.d("EducatorFilter", "filtering with ids=${selectedGroups}, kids=${kids.size}")
         if (selectedGroups.isEmpty()) {
             kids
         } else {
@@ -78,8 +92,8 @@ fun EducatorDashboardScreen(
         }
     }
     
-    // Get available groups for filter dropdown
-    val availableGroups = groups.map { it.name }.distinct().sorted()
+    // Get available groups for filter dropdown (keep full Group objects)
+    val availableGroups = groups.sortedBy { it.name }
     
     Scaffold(
         modifier = modifier
@@ -122,18 +136,20 @@ fun EducatorDashboardScreen(
                         expanded = filterMenuExpanded,
                         onDismissRequest = { filterMenuExpanded = false }
                     ) {
-                        availableGroups.forEach { groupName ->
+                        availableGroups.forEach { group ->
                             DropdownMenuItem(
-                                text = { Text(groupName) },
+                                text = { Text(group.name) },
                                 onClick = {
-                                    selectedGroups = if (groupName in selectedGroups) {
-                                        selectedGroups - groupName
+                                    val wasSelected = group.id in selectedGroups
+                                    selectedGroups = if (wasSelected) {
+                                        selectedGroups - group.id
                                     } else {
-                                        selectedGroups + groupName
+                                        selectedGroups + group.id
                                     }
+                                    android.util.Log.d("EducatorFilter", "toggled ${group.id}(${group.name}) => now ${selectedGroups}")
                                 },
                                 trailingIcon = {
-                                    if (groupName in selectedGroups) {
+                                    if (group.id in selectedGroups) {
                                         Checkbox(
                                             checked = true,
                                             onCheckedChange = null
