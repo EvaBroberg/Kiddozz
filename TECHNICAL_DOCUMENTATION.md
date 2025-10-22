@@ -18,6 +18,15 @@ Kiddozz is a mobile application designed for kindergartens in Finland, aiming to
 *   **Navigation**: Jetpack Navigation Compose
 *   **Asynchronous Operations**: Kotlin Coroutines & Flow
 *   **Networking**: Retrofit (if using a custom backend) or Firebase SDKs
+
+## 4. Database Partitioning
+
+The `kid_absences` table is partitioned by year for performance and archival purposes. See [backend/docs/absences_partitioning.md](backend/docs/absences_partitioning.md) for detailed information about:
+
+- How partitioning works
+- Archival procedures
+- Performance benefits
+- Troubleshooting guide
 *   **Image Loading**: Coil or Glide
 *   **Local Storage**: Room (for caching or offline data), Android SharedPreferences (for settings)
 *   **Calendar Integration**: Google Calendar API
