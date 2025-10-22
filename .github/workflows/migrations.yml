@@ -4,14 +4,27 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'backend/**'
+    paths-ignore:
+      - 'app/**'
+      - '.github/workflows/android-build.yml'
+      - '**/*.md'
+      - '**/.DS_Store'
+      - '**/.editorconfig'
+      - '.gitignore'
   release:
     types: [published]
   workflow_dispatch:   # allows you to run manually from Actions UI
 
 jobs:
   migrate-staging:
-    if: github.event_name == 'push' && vars.AUTO_DEPLOY == 'true'
+    if: github.event_name == 'push'
+    name: Alembic Upgrade → STAGING
     runs-on: ubuntu-latest
+    concurrency:
+      group: alembic-staging-${{ github.ref }}
+      cancel-in-progress: false
     defaults:
       run:
         working-directory: backend
@@ -24,20 +37,46 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install Poetry
         run: pip install poetry
 
       - name: Install dependencies
         run: poetry install
 
-      - name: Run Alembic migrations on Staging
-        run: poetry run alembic upgrade head
+      - name: Show Alembic current head (pre)
         env:
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          poetry run alembic current || true
+
+      - name: Upgrade to head (staging)
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          echo "Upgrading Alembic to head against STAGING…"
+          poetry run alembic upgrade head
+
+      - name: Show Alembic current head (post)
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          poetry run alembic current || true
 
   migrate-prod:
-    if: github.event_name == 'release'
+    if: github.event_name == 'workflow_dispatch'
+    name: Alembic Upgrade → PRODUCTION
     runs-on: ubuntu-latest
+    concurrency:
+      group: alembic-prod-${{ github.ref }}
+      cancel-in-progress: false
     defaults:
       run:
         working-directory: backend
@@ -50,13 +89,35 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install Poetry
         run: pip install poetry
 
       - name: Install dependencies
         run: poetry install
 
-      - name: Run Alembic migrations on Production
-        run: poetry run alembic upgrade head
+      - name: Show Alembic current head (pre)
         env:
           DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          poetry run alembic current || true
+
+      - name: Upgrade to head (production)
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          echo "Upgrading Alembic to head against PRODUCTION…"
+          poetry run alembic upgrade head
+
+      - name: Show Alembic current head (post)
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          poetry run alembic current || true

@@ -51,6 +51,7 @@ class KidOut(KidBase):
 class KidAbsenceCreate(BaseModel):
     date: date
     reason: AbsenceReason
+    note: Optional[str] = None
 
 
 class KidAbsenceOut(BaseModel):
@@ -58,6 +59,7 @@ class KidAbsenceOut(BaseModel):
     kid_id: int
     date: date
     reason: AbsenceReason
+    note: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

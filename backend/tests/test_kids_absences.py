@@ -871,3 +871,223 @@ def test_unique_absence_returns_200():
 
     finally:
         db.close()
+
+
+def test_create_absence_with_note():
+    """Test creating absence with note field."""
+    db = TestingSessionLocal()
+    try:
+        # Create test data
+        daycare = Daycare(name="Test Daycare")
+        db.add(daycare)
+        db.commit()
+        db.refresh(daycare)
+
+        group = Group(name="Group A", daycare_id=daycare.id)
+        db.add(group)
+        db.commit()
+        db.refresh(group)
+
+        parent = Parent(
+            full_name="Test Parent",
+            email="test@example.com",
+            phone_num="+1234567890",
+            daycare_id=daycare.id,
+        )
+        db.add(parent)
+        db.commit()
+        db.refresh(parent)
+
+        kid = Kid(
+            full_name="Test Kid",
+            dob=date(2020, 1, 1),
+            daycare_id=daycare.id,
+            group_id=group.id,
+            attendance=AttendanceStatus.OUT,
+        )
+        db.add(kid)
+        db.commit()
+        db.refresh(kid)
+
+        # Link parent to kid
+        parent.kids.append(kid)
+        db.commit()
+
+        # Get parent JWT token
+        login_response = client.post(
+            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
+        )
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Create absence with note
+        absence_data = {
+            "date": date.today().isoformat(),
+            "reason": "sick",
+            "note": "High fever, visiting GP"
+        }
+
+        response = client.post(
+            f"/api/v1/kids/{kid.id}/absences",
+            json=absence_data,
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        # Verify response contains note
+        response_data = response.json()
+        assert response_data["note"] == "High fever, visiting GP"
+        assert response_data["reason"] == "sick"
+        assert response_data["date"] == date.today().isoformat()
+        print("✓ Absence with note created successfully")
+
+    finally:
+        db.close()
+
+
+def test_list_absences_includes_note():
+    """Test that listing absences includes note field."""
+    db = TestingSessionLocal()
+    try:
+        # Create test data
+        daycare = Daycare(name="Test Daycare")
+        db.add(daycare)
+        db.commit()
+        db.refresh(daycare)
+
+        group = Group(name="Group A", daycare_id=daycare.id)
+        db.add(group)
+        db.commit()
+        db.refresh(group)
+
+        parent = Parent(
+            full_name="Test Parent",
+            email="test@example.com",
+            phone_num="+1234567890",
+            daycare_id=daycare.id,
+        )
+        db.add(parent)
+        db.commit()
+        db.refresh(parent)
+
+        kid = Kid(
+            full_name="Test Kid",
+            dob=date(2020, 1, 1),
+            daycare_id=daycare.id,
+            group_id=group.id,
+            attendance=AttendanceStatus.OUT,
+        )
+        db.add(kid)
+        db.commit()
+        db.refresh(kid)
+
+        # Link parent to kid
+        parent.kids.append(kid)
+        db.commit()
+
+        # Create absence directly in database with note
+        absence = KidAbsence(
+            kid_id=kid.id,
+            date=date.today(),
+            reason=AbsenceReason.SICK,
+            note="Doctor appointment"
+        )
+        db.add(absence)
+        db.commit()
+        db.refresh(absence)
+
+        # Get parent JWT token
+        login_response = client.post(
+            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
+        )
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # List absences
+        response = client.get(
+            f"/api/v1/kids/{kid.id}/absences",
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        # Verify response includes note
+        absences = response.json()
+        assert len(absences) == 1
+        assert absences[0]["note"] == "Doctor appointment"
+        print("✓ Absence listing includes note field")
+
+    finally:
+        db.close()
+
+
+def test_create_absence_without_note():
+    """Test creating absence without note (note should be null)."""
+    db = TestingSessionLocal()
+    try:
+        # Create test data
+        daycare = Daycare(name="Test Daycare")
+        db.add(daycare)
+        db.commit()
+        db.refresh(daycare)
+
+        group = Group(name="Group A", daycare_id=daycare.id)
+        db.add(group)
+        db.commit()
+        db.refresh(group)
+
+        parent = Parent(
+            full_name="Test Parent",
+            email="test@example.com",
+            phone_num="+1234567890",
+            daycare_id=daycare.id,
+        )
+        db.add(parent)
+        db.commit()
+        db.refresh(parent)
+
+        kid = Kid(
+            full_name="Test Kid",
+            dob=date(2020, 1, 1),
+            daycare_id=daycare.id,
+            group_id=group.id,
+            attendance=AttendanceStatus.OUT,
+        )
+        db.add(kid)
+        db.commit()
+        db.refresh(kid)
+
+        # Link parent to kid
+        parent.kids.append(kid)
+        db.commit()
+
+        # Get parent JWT token
+        login_response = client.post(
+            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
+        )
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Create absence without note
+        absence_data = {
+            "date": date.today().isoformat(),
+            "reason": "holiday"
+        }
+
+        response = client.post(
+            f"/api/v1/kids/{kid.id}/absences",
+            json=absence_data,
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        # Verify response has null note
+        response_data = response.json()
+        assert response_data["note"] is None
+        assert response_data["reason"] == "holiday"
+        print("✓ Absence without note created successfully (note is null)")
+
+    finally:
+        db.close()
