@@ -21,6 +21,7 @@ import fi.kidozz.app.ui.components.ScrollableDialogContent
 import fi.kidozz.app.ui.styles.BasicButton
 import fi.kidozz.app.ui.styles.WarningButton
 import fi.kidozz.app.data.repository.KidsRepository
+import fi.kidozz.app.features.dashboard.computeNewAbsenceDates
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
@@ -42,7 +43,7 @@ fun AbsenceCalendarDialog(
     absenceReasons: List<String> = listOf("sick", "holiday"), // Default fallback
     modifier: Modifier = Modifier
 ) {
-    var selectedDates by remember { mutableStateOf(setOf(LocalDate.now())) }
+    var selectedDates by remember { mutableStateOf(emptySet<LocalDate>()) }
     var currentMonth by rememberSaveable { mutableStateOf(YearMonth.now()) }
     var selectedReason by remember { mutableStateOf("") }
     
@@ -53,6 +54,7 @@ fun AbsenceCalendarDialog(
     var absenceDetails by remember { mutableStateOf("") }
     var showWarning by remember { mutableStateOf(false) }
     var existingAbsences by remember { mutableStateOf<Map<LocalDate, String>>(emptyMap()) }
+    val existingDates: Set<LocalDate> = remember(existingAbsences) { existingAbsences.keys }
     var showConfirmation by remember { mutableStateOf(false) }
     var confirmationMessage by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
@@ -124,17 +126,11 @@ fun AbsenceCalendarDialog(
                 isMultiSelect = true,
                 showMonthHeader = false, // Disable grid's month header since we have our own
                 onDateSelected = { date ->
-                    // Check if date already has an absence
-                    if (existingAbsences.containsKey(date)) {
+                    if (date in existingDates) {
                         showWarning = true
                         return@KiddozzCalendarGrid
                     }
-                    
-                    selectedDates = if (date in selectedDates) {
-                        selectedDates - date
-                    } else {
-                        selectedDates + date
-                    }
+                    selectedDates = if (date in selectedDates) selectedDates - date else selectedDates + date
                 },
                 onVisibleMonthChanged = { currentMonth = it }
             )
@@ -212,34 +208,36 @@ fun AbsenceCalendarDialog(
             WarningButton(
                 text = "Submit Absence",
                 onClick = {
-                    if (selectedDates.isNotEmpty()) {
-                        // Check if any selected dates overlap with existing absences
-                        val overlappingDates = selectedDates.filter { existingAbsences.containsKey(it) }
-                        if (overlappingDates.isNotEmpty()) {
-                            showWarning = true
-                            return@WarningButton
-                        }
-                        
-                        // Calculate first day back (day after the last selected day)
-                        val sortedDates = selectedDates.sorted()
-                        val lastAbsenceDay = sortedDates.last()
-                        val firstDayBack = lastAbsenceDay.plusDays(1)
-                        
-                        // Create confirmation message
-                        confirmationMessage = formatAbsenceConfirmationMessage(kidName, firstDayBack)
-                        
-                        // Submit the absence
-                        onAbsenceSelected(sortedDates, selectedReason, absenceDetails)
-                        
-                        // Close the absence dialog
-                        onDismiss()
-                        
-                        // Show confirmation dialog
-                        showConfirmation = true
-                    } else {
-                        // Show warning for no days selected
+                    val newDates = computeNewAbsenceDates(selectedDates, existingDates)
+
+                    if (newDates.isEmpty()) {
+                        // Nothing new to submit
                         showWarning = true
+                        return@WarningButton
                     }
+
+                    // Optionally inform user if some were skipped
+                    if (newDates.size < selectedDates.size) {
+                        // You can set a non-blocking banner/toast here; keep it simple for now
+                        // e.g., confirmationMessage = "Some selected days already existed and were skipped"
+                    }
+
+                    // Calculate first day back (day after the last selected day)
+                    val sortedDates = newDates.sorted()
+                    val lastAbsenceDay = sortedDates.last()
+                    val firstDayBack = lastAbsenceDay.plusDays(1)
+                    
+                    // Create confirmation message
+                    confirmationMessage = formatAbsenceConfirmationMessage(kidName, firstDayBack)
+                    
+                    // Submit only the new dates
+                    onAbsenceSelected(sortedDates, selectedReason, absenceDetails)
+                    
+                    // Close the absence dialog
+                    onDismiss()
+                    
+                    // Show confirmation dialog
+                    showConfirmation = true
                 },
                 enabled = selectedDates.isNotEmpty() && selectedReason.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth()

@@ -277,6 +277,12 @@ fun ParentDashboardScreen(
                     selectedKid = null
                 },
                 onAbsenceSelected = { selectedDates, reason, details ->
+                    if (selectedDates.isEmpty()) {
+                        // optional mild feedback; do not crash
+                        println("Absence submit skipped: no new dates")
+                        return@AbsenceCalendarDialog
+                    }
+                    
                     // Submit absence to backend
                     coroutineScope.launch {
                         try {
