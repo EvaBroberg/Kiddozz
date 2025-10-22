@@ -185,10 +185,10 @@ def create_kid_absence(
     # Create new absence
     try:
         absence = KidAbsence(
-            kid_id=kid_id, 
-            date=absence_data.date, 
+            kid_id=kid_id,
+            date=absence_data.date,
             reason=absence_data.reason,
-            note=absence_data.note
+            note=absence_data.note,
         )
         db.add(absence)
         db.commit()

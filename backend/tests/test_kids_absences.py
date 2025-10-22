@@ -925,7 +925,7 @@ def test_create_absence_with_note():
         absence_data = {
             "date": date.today().isoformat(),
             "reason": "sick",
-            "note": "High fever, visiting GP"
+            "note": "High fever, visiting GP",
         }
 
         response = client.post(
@@ -934,7 +934,7 @@ def test_create_absence_with_note():
             headers=headers,
         )
         assert response.status_code == 200
-        
+
         # Verify response contains note
         response_data = response.json()
         assert response_data["note"] == "High fever, visiting GP"
@@ -991,7 +991,7 @@ def test_list_absences_includes_note():
             kid_id=kid.id,
             date=date.today(),
             reason=AbsenceReason.SICK,
-            note="Doctor appointment"
+            note="Doctor appointment",
         )
         db.add(absence)
         db.commit()
@@ -1011,7 +1011,7 @@ def test_list_absences_includes_note():
             headers=headers,
         )
         assert response.status_code == 200
-        
+
         # Verify response includes note
         absences = response.json()
         assert len(absences) == 1
@@ -1071,10 +1071,7 @@ def test_create_absence_without_note():
         headers = {"Authorization": f"Bearer {token}"}
 
         # Create absence without note
-        absence_data = {
-            "date": date.today().isoformat(),
-            "reason": "holiday"
-        }
+        absence_data = {"date": date.today().isoformat(), "reason": "holiday"}
 
         response = client.post(
             f"/api/v1/kids/{kid.id}/absences",
@@ -1082,7 +1079,7 @@ def test_create_absence_without_note():
             headers=headers,
         )
         assert response.status_code == 200
-        
+
         # Verify response has null note
         response_data = response.json()
         assert response_data["note"] is None
