@@ -112,6 +112,7 @@ class KidAbsence(Base):
         ),
         nullable=False,
     )
+    note: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), nullable=False
     )
