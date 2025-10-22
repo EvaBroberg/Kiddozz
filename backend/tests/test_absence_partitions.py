@@ -2,18 +2,22 @@
 Tests for kid_absences partitioning functionality.
 """
 
-import pytest
-from datetime import date, datetime
-from sqlalchemy import text
-from fastapi.testclient import TestClient
 import os
+from datetime import date, datetime
 
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import text
+
+from app.db.partitioning import (
+    ensure_absence_partition_for_year,
+    get_existing_partition_years,
+)
 from app.main import app
 from app.models.daycare import Daycare
 from app.models.group import Group
 from app.models.kid import AbsenceReason, AttendanceStatus, Kid, KidAbsence
 from app.models.parent import Parent
-from app.db.partitioning import ensure_absence_partition_for_year, get_existing_partition_years
 from tests.conftest import TestingSessionLocal
 
 client = TestClient(app)
@@ -79,7 +83,7 @@ class TestAbsencePartitions:
             absence_data_2025 = {
                 "date": "2025-12-31",
                 "reason": "sick",
-                "note": "End of year absence"
+                "note": "End of year absence",
             }
 
             response_2025 = client.post(
@@ -93,7 +97,7 @@ class TestAbsencePartitions:
             absence_data_2026 = {
                 "date": "2026-01-01",
                 "reason": "holiday",
-                "note": "New year absence"
+                "note": "New year absence",
             }
 
             response_2026 = client.post(
@@ -108,15 +112,19 @@ class TestAbsencePartitions:
             assert len(absences) == 2
 
             # Check that partitions exist
-            result = db.execute(text("""
+            result = db.execute(
+                text(
+                    """
                 SELECT tablename
                 FROM pg_tables
                 WHERE tablename LIKE 'kid_absences_%'
                 AND schemaname = 'public'
                 ORDER BY tablename
-            """))
+            """
+                )
+            )
             partition_tables = [row[0] for row in result.fetchall()]
-            
+
             # Should have partitions for 2025 and 2026
             assert "kid_absences_2025" in partition_tables
             assert "kid_absences_2026" in partition_tables
@@ -179,7 +187,7 @@ class TestAbsencePartitions:
             absence_data = {
                 "date": "2025-05-10",
                 "reason": "sick",
-                "note": "First absence"
+                "note": "First absence",
             }
 
             response1 = client.post(
@@ -250,7 +258,7 @@ class TestAbsencePartitions:
                 kid_id=kid.id,
                 date=date(last_year, 6, 15),
                 reason=AbsenceReason.SICK,
-                note="Archived absence"
+                note="Archived absence",
             )
             db.add(absence)
             db.commit()
@@ -258,29 +266,42 @@ class TestAbsencePartitions:
 
             # Simulate archive process
             from app.core.database import engine
-            
+
             # Create archive schema
             with engine.connect() as conn:
                 conn.execute(text("CREATE SCHEMA IF NOT EXISTS archive"))
                 conn.commit()
 
                 # Detach partition
-                conn.execute(text(f"""
+                conn.execute(
+                    text(
+                        f"""
                     ALTER TABLE kid_absences DETACH PARTITION kid_absences_{last_year}
-                """))
-                
+                """
+                    )
+                )
+
                 # Move to archive
-                conn.execute(text(f"""
+                conn.execute(
+                    text(
+                        f"""
                     ALTER TABLE kid_absences_{last_year} SET SCHEMA archive
-                """))
+                """
+                    )
+                )
                 conn.commit()
 
             # Verify data is accessible in archive
-            result = db.execute(text(f"""
+            result = db.execute(
+                text(
+                    f"""
                 SELECT * FROM archive.kid_absences_{last_year}
                 WHERE kid_id = :kid_id
-            """), {"kid_id": kid.id})
-            
+            """
+                ),
+                {"kid_id": kid.id},
+            )
+
             archived_absences = result.fetchall()
             assert len(archived_absences) == 1
             assert archived_absences[0][4] == "Archived absence"  # note field
@@ -294,28 +315,32 @@ class TestAbsencePartitions:
     def test_startup_helper_creates_current_next(self, clean_db):
         """Test that startup helper creates current and next year partitions."""
         from app.core.database import engine
-        
+
         current_year = datetime.now().year
         next_year = current_year + 1
-        
+
         # Call the startup helper
         success = ensure_absence_partition_for_year(engine, current_year)
         assert success
-        
+
         success = ensure_absence_partition_for_year(engine, next_year)
         assert success
-        
+
         # Verify partitions exist
         with engine.connect() as conn:
-            result = conn.execute(text("""
+            result = conn.execute(
+                text(
+                    """
                 SELECT tablename
                 FROM pg_tables
                 WHERE tablename LIKE 'kid_absences_%'
                 AND schemaname = 'public'
                 ORDER BY tablename
-            """))
+            """
+                )
+            )
             partition_tables = [row[0] for row in result.fetchall()]
-            
+
             assert f"kid_absences_{current_year}" in partition_tables
             assert f"kid_absences_{next_year}" in partition_tables
 
@@ -325,16 +350,16 @@ class TestAbsencePartitions:
     def test_get_existing_partition_years(self, clean_db):
         """Test getting existing partition years."""
         from app.core.database import engine
-        
+
         # Create some partitions
         current_year = datetime.now().year
         ensure_absence_partition_for_year(engine, current_year)
         ensure_absence_partition_for_year(engine, current_year + 1)
-        
+
         # Get existing years
         years = get_existing_partition_years(engine)
-        
+
         assert current_year in years
         assert (current_year + 1) in years
-        
+
         print("✅ Get existing partition years works correctly")

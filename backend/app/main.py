@@ -53,9 +53,9 @@ def startup_event():
     try:
         if os.getenv("ENABLE_ABSENCE_PARTITIONS", "true").lower() == "true":
             print("🔄 Ensuring absence partitions...")
-            from app.db.partitioning import ensure_current_and_next_year_partitions
             from app.core.database import engine
-            
+            from app.db.partitioning import ensure_current_and_next_year_partitions
+
             success = ensure_current_and_next_year_partitions(engine)
             if success:
                 print("✅ Absence partitions ensured successfully")
