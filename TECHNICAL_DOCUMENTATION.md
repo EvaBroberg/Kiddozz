@@ -27,6 +27,16 @@ The `kid_absences` table is partitioned by year for performance and archival pur
 - Archival procedures
 - Performance benefits
 - Troubleshooting guide
+
+## 5. Testing Database Policy
+
+- **CI (GitHub Actions)** always runs backend tests against **PostgreSQL** by starting a PG service and setting `DATABASE_URL` accordingly; migrations run before pytest.
+- **Local developers** may run tests on SQLite (default local `DATABASE_URL`) for speed.
+- Tests that depend on PG-only features (partitions, `pg_tables`, `ALTER ... PARTITION`) must be guarded with:
+  - `if engine.dialect.name != "postgresql": pytest.skip(...)`
+- A session-scoped fixture prints the active test DB: see `tests/conftest.py`.
+
+This policy prevents flaky results and keeps Postgres-specific features validated in CI. See [backend/docs/TESTING.md](backend/docs/TESTING.md) for more details.
 *   **Image Loading**: Coil or Glide
 *   **Local Storage**: Room (for caching or offline data), Android SharedPreferences (for settings)
 *   **Calendar Integration**: Google Calendar API

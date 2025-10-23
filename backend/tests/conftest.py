@@ -10,7 +10,7 @@ os.environ["APP_ENV"] = "test"
 os.environ["ENVIRONMENT"] = "test"
 os.environ["SECRET_KEY"] = "test-secret-key"
 
-from app.core.database import Base, get_db
+from app.core.database import Base, get_db, engine
 from app.core.security import create_access_token
 from app.main import app
 
@@ -33,6 +33,12 @@ def override_get_db():
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _print_active_db():
+    """Print the active database dialect and URL at test session start."""
+    print(f"\n[TEST DB] dialect={engine.dialect.name} url={engine.url}")
 
 
 @pytest.fixture(scope="session", autouse=True)

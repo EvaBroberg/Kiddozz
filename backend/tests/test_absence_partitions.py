@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
+from app.core.database import engine
 from app.db.partitioning import (
     ensure_absence_partition_for_year,
     get_existing_partition_years,
@@ -19,6 +20,9 @@ from app.models.group import Group
 from app.models.kid import AbsenceReason, AttendanceStatus, Kid, KidAbsence
 from app.models.parent import Parent
 from tests.conftest import TestingSessionLocal
+
+# Detect the active backend
+ACTIVE_BACKEND = engine.dialect.name
 
 client = TestClient(app)
 
@@ -47,9 +51,8 @@ class TestAbsencePartitions:
 
     def test_insert_routes_to_correct_partition(self, clean_db):
         """Test that inserts route to correct partition."""
-        # Skip if not PostgreSQL
-        if get_database_type() != "postgresql":
-            pytest.skip("Partitioning requires PostgreSQL")
+        if ACTIVE_BACKEND != "postgresql":
+            pytest.skip("Partition introspection requires PostgreSQL")
 
         db = TestingSessionLocal()
         try:
@@ -144,7 +147,7 @@ class TestAbsencePartitions:
                     )
                 )
                 partition_tables = [row[0] for row in result.fetchall()]
-                
+
                 # Should have partitions for 2025 and 2026
                 assert "kid_absences_2025" in partition_tables
                 assert "kid_absences_2026" in partition_tables
@@ -156,9 +159,8 @@ class TestAbsencePartitions:
 
     def test_unique_constraint_enforced_across_partitions(self, clean_db):
         """Test that unique constraint is enforced across partitions."""
-        # Skip if not PostgreSQL
-        if get_database_type() != "postgresql":
-            pytest.skip("Partitioning requires PostgreSQL")
+        if ACTIVE_BACKEND != "postgresql":
+            pytest.skip("Partition introspection requires PostgreSQL")
 
         db = TestingSessionLocal()
         try:
@@ -236,9 +238,8 @@ class TestAbsencePartitions:
 
     def test_archive_last_year_keeps_data_accessible(self, clean_db):
         """Test that archiving last year keeps data accessible via manual query."""
-        # Skip if not PostgreSQL
-        if get_database_type() != "postgresql":
-            pytest.skip("Partitioning requires PostgreSQL")
+        if ACTIVE_BACKEND != "postgresql":
+            pytest.skip("Partition introspection requires PostgreSQL")
 
         db = TestingSessionLocal()
         try:
@@ -340,9 +341,8 @@ class TestAbsencePartitions:
 
     def test_startup_helper_creates_current_next(self, clean_db):
         """Test that startup helper creates current and next year partitions."""
-        # Skip if not PostgreSQL
-        if get_database_type() != "postgresql":
-            pytest.skip("Partitioning requires PostgreSQL")
+        if ACTIVE_BACKEND != "postgresql":
+            pytest.skip("Partition introspection requires PostgreSQL")
 
         from app.core.database import engine
 
@@ -379,9 +379,8 @@ class TestAbsencePartitions:
 
     def test_get_existing_partition_years(self, clean_db):
         """Test getting existing partition years."""
-        # Skip if not PostgreSQL
-        if get_database_type() != "postgresql":
-            pytest.skip("Partitioning requires PostgreSQL")
+        if ACTIVE_BACKEND != "postgresql":
+            pytest.skip("Partition introspection requires PostgreSQL")
 
         from app.core.database import engine
 
