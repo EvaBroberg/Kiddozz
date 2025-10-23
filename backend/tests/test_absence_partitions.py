@@ -27,6 +27,33 @@ ACTIVE_BACKEND = engine.dialect.name
 client = TestClient(app)
 
 
+def _ensure_year_partition(conn, year: int):
+    """Create the yearly partition if missing (PostgreSQL only)."""
+    if ACTIVE_BACKEND != "postgresql":
+        return
+    start = f"{year}-01-01"
+    end = f"{year+1}-01-01"
+    # Create child table if not exists, then attach as partition if needed.
+    # We first try ATTACH; if it fails (child missing), we create and attach.
+    try:
+        conn.execute(text(
+            f"ALTER TABLE kid_absences ATTACH PARTITION kid_absences_{year} "
+            f"FOR VALUES FROM ('{start}') TO ('{end}')"
+        ))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        # Create the child table and attach
+        conn.execute(text(
+            f"CREATE TABLE IF NOT EXISTS kid_absences_{year} (LIKE kid_absences INCLUDING ALL)"
+        ))
+        conn.execute(text(
+            f"ALTER TABLE kid_absences ATTACH PARTITION kid_absences_{year} "
+            f"FOR VALUES FROM ('{start}') TO ('{end}')"
+        ))
+        conn.commit()
+
+
 # Skip partitioning tests if not using PostgreSQL
 def is_postgres():
     """Check if we're using PostgreSQL database."""
@@ -133,24 +160,28 @@ class TestAbsencePartitions:
             absences = db.query(KidAbsence).filter(KidAbsence.kid_id == kid.id).all()
             assert len(absences) == 2
 
-            # Check that partitions exist (PostgreSQL only)
-            if get_database_type() == "postgresql":
-                result = db.execute(
-                    text(
-                        """
-                    SELECT tablename
-                    FROM pg_tables
-                    WHERE tablename LIKE 'kid_absences_%'
-                    AND schemaname = 'public'
-                    ORDER BY tablename
-                """
-                    )
-                )
-                partition_tables = [row[0] for row in result.fetchall()]
+            # Guard PG-only introspection
+            if ACTIVE_BACKEND != "postgresql":
+                # On SQLite we cannot introspect partitions; the functional asserts above are enough.
+                return
 
-                # Should have partitions for 2025 and 2026
-                assert "kid_absences_2025" in partition_tables
-                assert "kid_absences_2026" in partition_tables
+            # Check that partitions exist (PostgreSQL only)
+            result = db.execute(
+                text(
+                    """
+                SELECT tablename
+                FROM pg_tables
+                WHERE tablename LIKE 'kid_absences_%'
+                AND schemaname = 'public'
+                ORDER BY tablename
+            """
+                )
+            )
+            partition_tables = [row[0] for row in result.fetchall()]
+            
+            # Should have partitions for 2025 and 2026
+            assert "kid_absences_2025" in partition_tables
+            assert "kid_absences_2026" in partition_tables
 
             print("✅ Partitions created and data routed correctly")
 
@@ -294,11 +325,17 @@ class TestAbsencePartitions:
             # Simulate archive process
             from app.core.database import engine
 
+            # Guard PG-only operations
+            if ACTIVE_BACKEND != "postgresql":
+                pytest.skip("Archive/partition detach is PostgreSQL-specific")
+
             # Create archive schema (PostgreSQL only)
             with engine.connect() as conn:
-                if get_database_type() == "postgresql":
-                    conn.execute(text("CREATE SCHEMA IF NOT EXISTS archive"))
-                    conn.commit()
+                conn.execute(text("CREATE SCHEMA IF NOT EXISTS archive"))
+                conn.commit()
+
+                # Ensure the partition exists before detaching
+                _ensure_year_partition(conn, last_year)
 
                 # Detach partition
                 conn.execute(
