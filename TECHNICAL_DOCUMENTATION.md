@@ -18,6 +18,25 @@ Kiddozz is a mobile application designed for kindergartens in Finland, aiming to
 *   **Navigation**: Jetpack Navigation Compose
 *   **Asynchronous Operations**: Kotlin Coroutines & Flow
 *   **Networking**: Retrofit (if using a custom backend) or Firebase SDKs
+
+## 4. Database Partitioning
+
+The `kid_absences` table is partitioned by year for performance and archival purposes. See [backend/docs/absences_partitioning.md](backend/docs/absences_partitioning.md) for detailed information about:
+
+- How partitioning works
+- Archival procedures
+- Performance benefits
+- Troubleshooting guide
+
+## 5. Testing Database Policy
+
+- **CI (GitHub Actions)** always runs backend tests against **PostgreSQL** by starting a PG service and setting `DATABASE_URL` accordingly; migrations run before pytest.
+- **Local developers** may run tests on SQLite (default local `DATABASE_URL`) for speed.
+- Tests that depend on PG-only features (partitions, `pg_tables`, `ALTER ... PARTITION`) must be guarded with:
+  - `if engine.dialect.name != "postgresql": pytest.skip(...)`
+- A session-scoped fixture prints the active test DB: see `tests/conftest.py`.
+
+This policy prevents flaky results and keeps Postgres-specific features validated in CI. See [backend/docs/TESTING.md](backend/docs/TESTING.md) for more details.
 *   **Image Loading**: Coil or Glide
 *   **Local Storage**: Room (for caching or offline data), Android SharedPreferences (for settings)
 *   **Calendar Integration**: Google Calendar API

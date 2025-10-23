@@ -8,6 +8,10 @@ Welcome to Kiddozz! This guide will help you understand how to use the app, whet
 *   Creating an Account (Educators, Parents)
 *   Logging In
 
+## 1.1 Data Retention and Archival
+
+Older absence records (from previous years) may not appear in the main app interface but are preserved in the system for administrative purposes. If you need access to historical absence data, please contact your daycare administrator who can provide export reports.
+
 ## 2. For Educators
 
 *   **Dashboard Overview**

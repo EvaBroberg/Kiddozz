@@ -11,15 +11,16 @@ os.environ["ENVIRONMENT"] = "test"
 os.environ["SECRET_KEY"] = "test-secret-key"
 
 from app.core.database import Base, get_db
+from app.core.database import engine as app_engine
 from app.core.security import create_access_token
 from app.main import app
 
 # Create test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(
+test_engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 
 def override_get_db():
@@ -36,11 +37,17 @@ client = TestClient(app)
 
 
 @pytest.fixture(scope="session", autouse=True)
+def _print_active_db():
+    """Print the active database dialect and URL at test session start."""
+    print(f"\n[TEST DB] dialect={app_engine.dialect.name} url={app_engine.url}")
+
+
+@pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
     """Set up test database schema using SQLAlchemy metadata (SQLite-compatible)"""
     # Create all tables using SQLAlchemy metadata
     # This is more reliable for SQLite than running PostgreSQL-specific migrations
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=test_engine)
     yield
     # Clean up test database after all tests
     if os.path.exists("test.db"):
@@ -51,7 +58,7 @@ def setup_test_db():
 def clean_db():
     """Clean database data before each test - automatically used by all tests"""
     # Clear all data but keep schema
-    with engine.connect() as conn:
+    with test_engine.connect() as conn:
         # Get all table names
         result = conn.execute(
             text(

@@ -49,6 +49,24 @@ def startup_event():
         print(f"⚠️  Could not run migrations: {e}")
         # Don't exit here, let the app start and handle DB errors gracefully
 
+    # Ensure absence partitions exist
+    try:
+        if os.getenv("ENABLE_ABSENCE_PARTITIONS", "true").lower() == "true":
+            print("🔄 Ensuring absence partitions...")
+            from app.core.database import engine
+            from app.db.partitioning import ensure_current_and_next_year_partitions
+
+            success = ensure_current_and_next_year_partitions(engine)
+            if success:
+                print("✅ Absence partitions ensured successfully")
+            else:
+                print("⚠️  Could not ensure absence partitions")
+        else:
+            print("ℹ️  Absence partitions disabled via ENABLE_ABSENCE_PARTITIONS=false")
+    except Exception as e:
+        print(f"⚠️  Could not ensure absence partitions: {e}")
+        # Don't exit here, let the app start and handle DB errors gracefully
+
     print(
         "ℹ️  No automatic seeding performed. Use test fixtures or manual scripts for dummy data."
     )

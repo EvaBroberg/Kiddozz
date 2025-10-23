@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:14
+        image: postgres:15
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -48,13 +48,13 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
+          --health-interval=5s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=20
 
     env:
       APP_ENV: test
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kiddozz_test
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/kiddozz_test
 
     steps:
       - name: Checkout repository
@@ -74,10 +74,17 @@ jobs:
           poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-root
 
+      - name: Wait for Postgres
+        run: |
+          for i in {1..60}; do
+            pg_isready -h localhost -U postgres && break
+            sleep 1
+          done
+
       - name: Run database migrations
         working-directory: backend
         run: poetry run alembic upgrade head
 
       - name: Run tests
         working-directory: backend
-        run: poetry run make test
+        run: poetry run pytest -vv --tb=long --disable-warnings
