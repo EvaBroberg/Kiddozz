@@ -23,15 +23,28 @@ from tests.conftest import TestingSessionLocal
 client = TestClient(app)
 
 # Skip partitioning tests if not using PostgreSQL
-IS_POSTGRES = os.getenv("DATABASE_URL", "").startswith("postgresql://")
+def is_postgres():
+    """Check if we're using PostgreSQL database."""
+    database_url = os.getenv("DATABASE_URL", "")
+    return database_url.startswith("postgresql://") or "postgresql" in database_url.lower()
+
+IS_POSTGRES = is_postgres()
+
+def get_database_type():
+    """Get the database type from the engine."""
+    from app.core.database import engine
+    return engine.dialect.name
 
 
 class TestAbsencePartitions:
     """Test absence partitioning functionality."""
 
-    @pytest.mark.skipif(not IS_POSTGRES, reason="Partitioning requires PostgreSQL")
     def test_insert_routes_to_correct_partition(self, clean_db):
         """Test that inserts route to correct partition."""
+        # Skip if not PostgreSQL
+        if get_database_type() != "postgresql":
+            pytest.skip("Partitioning requires PostgreSQL")
+            
         db = TestingSessionLocal()
         try:
             # Create test data
@@ -134,9 +147,12 @@ class TestAbsencePartitions:
         finally:
             db.close()
 
-    @pytest.mark.skipif(not IS_POSTGRES, reason="Partitioning requires PostgreSQL")
     def test_unique_constraint_enforced_across_partitions(self, clean_db):
         """Test that unique constraint is enforced across partitions."""
+        # Skip if not PostgreSQL
+        if get_database_type() != "postgresql":
+            pytest.skip("Partitioning requires PostgreSQL")
+            
         db = TestingSessionLocal()
         try:
             # Create test data
@@ -211,9 +227,12 @@ class TestAbsencePartitions:
         finally:
             db.close()
 
-    @pytest.mark.skipif(not IS_POSTGRES, reason="Partitioning requires PostgreSQL")
     def test_archive_last_year_keeps_data_accessible(self, clean_db):
         """Test that archiving last year keeps data accessible via manual query."""
+        # Skip if not PostgreSQL
+        if get_database_type() != "postgresql":
+            pytest.skip("Partitioning requires PostgreSQL")
+            
         db = TestingSessionLocal()
         try:
             # Create test data
@@ -311,9 +330,12 @@ class TestAbsencePartitions:
         finally:
             db.close()
 
-    @pytest.mark.skipif(not IS_POSTGRES, reason="Partitioning requires PostgreSQL")
     def test_startup_helper_creates_current_next(self, clean_db):
         """Test that startup helper creates current and next year partitions."""
+        # Skip if not PostgreSQL
+        if get_database_type() != "postgresql":
+            pytest.skip("Partitioning requires PostgreSQL")
+            
         from app.core.database import engine
 
         current_year = datetime.now().year
@@ -346,9 +368,12 @@ class TestAbsencePartitions:
 
         print("✅ Startup helper creates partitions correctly")
 
-    @pytest.mark.skipif(not IS_POSTGRES, reason="Partitioning requires PostgreSQL")
     def test_get_existing_partition_years(self, clean_db):
         """Test getting existing partition years."""
+        # Skip if not PostgreSQL
+        if get_database_type() != "postgresql":
+            pytest.skip("Partitioning requires PostgreSQL")
+            
         from app.core.database import engine
 
         # Create some partitions
