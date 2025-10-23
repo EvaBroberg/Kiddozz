@@ -22,17 +22,23 @@ from tests.conftest import TestingSessionLocal
 
 client = TestClient(app)
 
+
 # Skip partitioning tests if not using PostgreSQL
 def is_postgres():
     """Check if we're using PostgreSQL database."""
     database_url = os.getenv("DATABASE_URL", "")
-    return database_url.startswith("postgresql://") or "postgresql" in database_url.lower()
+    return (
+        database_url.startswith("postgresql://") or "postgresql" in database_url.lower()
+    )
+
 
 IS_POSTGRES = is_postgres()
+
 
 def get_database_type():
     """Get the database type from the engine."""
     from app.core.database import engine
+
     return engine.dialect.name
 
 
@@ -44,7 +50,7 @@ class TestAbsencePartitions:
         # Skip if not PostgreSQL
         if get_database_type() != "postgresql":
             pytest.skip("Partitioning requires PostgreSQL")
-            
+
         db = TestingSessionLocal()
         try:
             # Create test data
@@ -124,23 +130,24 @@ class TestAbsencePartitions:
             absences = db.query(KidAbsence).filter(KidAbsence.kid_id == kid.id).all()
             assert len(absences) == 2
 
-            # Check that partitions exist
-            result = db.execute(
-                text(
-                    """
-                SELECT tablename
-                FROM pg_tables
-                WHERE tablename LIKE 'kid_absences_%'
-                AND schemaname = 'public'
-                ORDER BY tablename
-            """
+            # Check that partitions exist (PostgreSQL only)
+            if get_database_type() == "postgresql":
+                result = db.execute(
+                    text(
+                        """
+                    SELECT tablename
+                    FROM pg_tables
+                    WHERE tablename LIKE 'kid_absences_%'
+                    AND schemaname = 'public'
+                    ORDER BY tablename
+                """
+                    )
                 )
-            )
-            partition_tables = [row[0] for row in result.fetchall()]
-
-            # Should have partitions for 2025 and 2026
-            assert "kid_absences_2025" in partition_tables
-            assert "kid_absences_2026" in partition_tables
+                partition_tables = [row[0] for row in result.fetchall()]
+                
+                # Should have partitions for 2025 and 2026
+                assert "kid_absences_2025" in partition_tables
+                assert "kid_absences_2026" in partition_tables
 
             print("✅ Partitions created and data routed correctly")
 
@@ -152,7 +159,7 @@ class TestAbsencePartitions:
         # Skip if not PostgreSQL
         if get_database_type() != "postgresql":
             pytest.skip("Partitioning requires PostgreSQL")
-            
+
         db = TestingSessionLocal()
         try:
             # Create test data
@@ -232,7 +239,7 @@ class TestAbsencePartitions:
         # Skip if not PostgreSQL
         if get_database_type() != "postgresql":
             pytest.skip("Partitioning requires PostgreSQL")
-            
+
         db = TestingSessionLocal()
         try:
             # Create test data
@@ -286,10 +293,11 @@ class TestAbsencePartitions:
             # Simulate archive process
             from app.core.database import engine
 
-            # Create archive schema
+            # Create archive schema (PostgreSQL only)
             with engine.connect() as conn:
-                conn.execute(text("CREATE SCHEMA IF NOT EXISTS archive"))
-                conn.commit()
+                if get_database_type() == "postgresql":
+                    conn.execute(text("CREATE SCHEMA IF NOT EXISTS archive"))
+                    conn.commit()
 
                 # Detach partition
                 conn.execute(
@@ -335,7 +343,7 @@ class TestAbsencePartitions:
         # Skip if not PostgreSQL
         if get_database_type() != "postgresql":
             pytest.skip("Partitioning requires PostgreSQL")
-            
+
         from app.core.database import engine
 
         current_year = datetime.now().year
@@ -350,21 +358,22 @@ class TestAbsencePartitions:
 
         # Verify partitions exist
         with engine.connect() as conn:
-            result = conn.execute(
-                text(
-                    """
-                SELECT tablename
-                FROM pg_tables
-                WHERE tablename LIKE 'kid_absences_%'
-                AND schemaname = 'public'
-                ORDER BY tablename
-            """
+            if get_database_type() == "postgresql":
+                result = conn.execute(
+                    text(
+                        """
+                    SELECT tablename
+                    FROM pg_tables
+                    WHERE tablename LIKE 'kid_absences_%'
+                    AND schemaname = 'public'
+                    ORDER BY tablename
+                """
+                    )
                 )
-            )
-            partition_tables = [row[0] for row in result.fetchall()]
+                partition_tables = [row[0] for row in result.fetchall()]
 
-            assert f"kid_absences_{current_year}" in partition_tables
-            assert f"kid_absences_{next_year}" in partition_tables
+                assert f"kid_absences_{current_year}" in partition_tables
+                assert f"kid_absences_{next_year}" in partition_tables
 
         print("✅ Startup helper creates partitions correctly")
 
@@ -373,7 +382,7 @@ class TestAbsencePartitions:
         # Skip if not PostgreSQL
         if get_database_type() != "postgresql":
             pytest.skip("Partitioning requires PostgreSQL")
-            
+
         from app.core.database import engine
 
         # Create some partitions
