@@ -87,6 +87,30 @@ class MainActivity : ComponentActivity() {
                     SessionState(isLoggedIn = loggedIn, role = role)
                 }
 
+                // Hoist ViewModels and repositories at the top level for shared state
+                val baseUrl = "http://10.0.2.2:8000"
+                val retrofit = Retrofit.Builder()
+                    .baseUrl(baseUrl)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                
+                val groupsApiService = retrofit.create(fi.kidozz.app.data.api.GroupsApiService::class.java)
+                val educatorApiService = retrofit.create(fi.kidozz.app.data.api.EducatorApiService::class.java)
+                val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
+                val parentsApiService = retrofit.create(fi.kidozz.app.data.api.ParentsApiService::class.java)
+                
+                val groupsRepository = fi.kidozz.app.data.repository.GroupsRepository(groupsApiService)
+                val educatorRepository = fi.kidozz.app.data.repository.EducatorRepository(educatorApiService)
+                val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService, tokenManager)
+                val parentsRepository = fi.kidozz.app.data.repository.ParentsRepository(parentsApiService)
+                
+                // Single instances for the whole NavHost lifetime
+                val groupsViewModel = remember { fi.kidozz.app.features.dashboard.GroupsViewModel(groupsRepository) }
+                val educatorViewModel = remember { fi.kidozz.app.features.dashboard.EducatorViewModel(educatorRepository) }
+                val kidsViewModel = remember { fi.kidozz.app.features.dashboard.KidsViewModel(kidsRepository) }
+                val parentsViewModel = remember { fi.kidozz.app.features.dashboard.ParentsViewModel(parentsRepository) }
+                val absenceReasonsViewModel = remember { fi.kidozz.app.features.dashboard.AbsenceReasonsViewModel(kidsRepository) }
+
                 // Add this debugging log block:
                 LaunchedEffect(session.role) {
                     Log.d("KiddozzSession", "Session updated: logged=${session.isLoggedIn} role='${session.role}'")
@@ -165,24 +189,6 @@ class MainActivity : ComponentActivity() {
                                     route = Routes.EDU_GRAPH
                                 ) {
                                     composable(Routes.KIDS_OVERVIEW) {
-                                        val baseUrl = "http://10.0.2.2:8000"
-                                        val retrofit = Retrofit.Builder()
-                                            .baseUrl(baseUrl)
-                                            .addConverterFactory(GsonConverterFactory.create())
-                                            .build()
-                                        
-                                        val groupsApiService = retrofit.create(fi.kidozz.app.data.api.GroupsApiService::class.java)
-                                        val educatorApiService = retrofit.create(fi.kidozz.app.data.api.EducatorApiService::class.java)
-                                        val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
-                                        
-                                        val groupsRepository = fi.kidozz.app.data.repository.GroupsRepository(groupsApiService)
-                                        val educatorRepository = fi.kidozz.app.data.repository.EducatorRepository(educatorApiService)
-                                        val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService, tokenManager)
-                                        
-                                        val groupsViewModel = remember { fi.kidozz.app.features.dashboard.GroupsViewModel(groupsRepository) }
-                                        val educatorViewModel = remember { fi.kidozz.app.features.dashboard.EducatorViewModel(educatorRepository) }
-                                        val kidsViewModel = remember { fi.kidozz.app.features.dashboard.KidsViewModel(kidsRepository) }
-                                        
                                         fi.kidozz.app.features.dashboard.EducatorDashboardScreen(
                                             onSelectKidsOverview = { navController.navigateToKidsOverview() },
                                             onSelectCalendar = { navController.navigateToCalendar() },
@@ -210,7 +216,11 @@ class MainActivity : ComponentActivity() {
                                                 fi.kidozz.app.features.calendar.EducatorCalendarScreen(
                                                     navController = navController
                                                 )
-                                            }
+                                            },
+                                            groupsViewModel = groupsViewModel,
+                                            educatorViewModel = educatorViewModel,
+                                            kidsViewModel = kidsViewModel,
+                                            daycareId = "default-daycare-id"
                                         )
                                     }
                                 }
@@ -222,24 +232,12 @@ class MainActivity : ComponentActivity() {
                                     val kidId = backStackEntry.arguments?.getString("kidId").orEmpty()
                                     fi.kidozz.app.features.kiddetail.KidDetailScreen(
                                         kidId = kidId,
-                                        onBack = { navController.popBackStack() }
+                                        onBack = { navController.popBackStack() },
+                                        kidsViewModel = kidsViewModel
                                     )
                                 }
 
                                 composable("parent_dashboard") {
-                                    val baseUrl = "http://10.0.2.2:8000"
-                                    val retrofit = Retrofit.Builder()
-                                        .baseUrl(baseUrl)
-                                        .addConverterFactory(GsonConverterFactory.create())
-                                        .build()
-                                    
-                                    val parentsApiService = retrofit.create(fi.kidozz.app.data.api.ParentsApiService::class.java)
-                                    val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
-                                    val parentsRepository = fi.kidozz.app.data.repository.ParentsRepository(parentsApiService)
-                                    val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService, tokenManager)
-                                    val parentsViewModel = remember { fi.kidozz.app.features.dashboard.ParentsViewModel(parentsRepository) }
-                                    val absenceReasonsViewModel = remember { fi.kidozz.app.features.dashboard.AbsenceReasonsViewModel(kidsRepository) }
-                                    
                                     fi.kidozz.app.features.dashboard.ParentDashboardScreen(
                                         parentId = "10",
                                         parentsViewModel = parentsViewModel,

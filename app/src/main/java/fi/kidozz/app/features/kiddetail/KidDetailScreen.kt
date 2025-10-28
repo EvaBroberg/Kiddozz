@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -17,8 +18,8 @@ import androidx.compose.ui.unit.dp
 import fi.kidozz.app.data.models.Kid
 import fi.kidozz.app.data.models.Parent
 import fi.kidozz.app.data.models.TrustedAdult
-import fi.kidozz.app.data.sample.sampleKidsState
 import fi.kidozz.app.data.sample.computeAge
+import fi.kidozz.app.data.sample.sampleKidsState
 import fi.kidozz.app.features.dashboard.KidsViewModel
 import fi.kidozz.app.ui.components.SectionTitle
 import fi.kidozz.app.ui.components.AccordionCard
@@ -120,15 +121,37 @@ fun GuardianInfoRow(label: String, value: String, modifier: Modifier = Modifier)
 fun KidDetailScreen(
     kidId: String,
     onBack: () -> Unit,
+    kidsViewModel: KidsViewModel,
     modifier: Modifier = Modifier
 ) {
-    // For now, we'll use sample data. In a real app, you'd fetch the kid by ID
-    val kid = remember(kidId) {
-        fi.kidozz.app.data.sample.sampleKidsState.find { it.id == kidId }
-            ?: fi.kidozz.app.data.sample.sampleKidsState.first() // Fallback
+    // Observe the shared kids state
+    val kids by kidsViewModel.kids.collectAsState()
+    val kid = kids.firstOrNull { it.id == kidId }
+
+    // Simple empty state if kid not found yet
+    if (kid == null) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Kid") },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            }
+        ) { inner ->
+            Box(Modifier.fillMaxSize().padding(inner), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        return
     }
+
+    // Derive current selection from the source of truth
+    val currentAttendance = kid.attendance
     
-    var currentAttendance by remember { mutableStateOf(kid.attendance) }
     var absenceNotes by remember { mutableStateOf("") } // Example state for AppTextArea
     Scaffold(
         topBar = {
@@ -176,8 +199,8 @@ fun KidDetailScreen(
                 AttendanceSegmentedControl(
                     selectedAttendance = currentAttendance,
                     onAttendanceChange = { newAttendance ->
-                        currentAttendance = newAttendance
-                        // TODO: Update attendance via API
+                        // WRITE THROUGH to ViewModel -> Repository -> update local list
+                        kidsViewModel.updateAttendance(kidId = kid.id, attendance = newAttendance)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -280,10 +303,62 @@ fun KidDetailScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true, name = "Kid Detail Screen Preview")
 @Composable
 fun KidDetailScreenPreview() { 
     KiddozzTheme { 
-        KidDetailScreen(kidId = sampleKidsState.first().id, onBack = {}) 
+        // For preview, we'll just show the UI with sample data
+        val sampleKid = fi.kidozz.app.data.sample.sampleKidsState.first()
+        
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(sampleKid.full_name) },
+                    navigationIcon = { 
+                        IconButton(onClick = {}) { 
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") 
+                        } 
+                    }
+                )
+            }
+        ) { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding).padding(top = 24.dp).fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Kid's image and name
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            Icons.Filled.Face, 
+                            contentDescription = "Kid's Profile Picture", 
+                            modifier = Modifier.size(120.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = sampleKid.full_name, 
+                            style = MaterialTheme.typography.headlineSmall, 
+                            textAlign = TextAlign.Center, 
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                
+                // Attendance toggle
+                item {
+                    AttendanceSegmentedControl(
+                        selectedAttendance = sampleKid.attendance,
+                        onAttendanceChange = { },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
     } 
 }
