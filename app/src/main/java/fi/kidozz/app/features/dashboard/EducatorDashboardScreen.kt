@@ -43,13 +43,11 @@ fun EducatorDashboardScreen(
     kidsViewModel: KidsViewModel? = null,
     daycareId: String = "default-daycare-id"
 ) {
-    // Filter state for group filtering
-    var selectedGroups by remember { mutableStateOf(setOf<String>()) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
     
     // Load data from ViewModels
     val groups by groupsViewModel?.groups?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
-    val kids by kidsViewModel?.kids?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
+    val selectedGroupIds by kidsViewModel?.selectedGroupIds?.collectAsState() ?: remember { mutableStateOf(emptySet()) }
     val currentEducator by educatorViewModel?.currentEducator?.collectAsState() ?: remember { mutableStateOf(null) }
     
     // Load data when screen is first displayed
@@ -59,14 +57,17 @@ fun EducatorDashboardScreen(
         educatorViewModel?.loadCurrentEducatorByDaycare(daycareId)
     }
     
-    // Initialize selectedGroups with educator's assigned groups (only when empty)
+    // Initialize selectedGroupIds with educator's assigned groups (only when empty)
     LaunchedEffect(currentEducator) {
         val educator = currentEducator
-        if (educator != null && selectedGroups.isEmpty()) {
+        if (educator != null && kidsViewModel != null) {
             val educatorGroupIds = educator.groups.map { it.id }.toSet()
-            selectedGroups = educatorGroupIds
-            android.util.Log.d("EducatorFilter", "educator=${educator.full_name} groupIds=${educatorGroupIds}")
-            android.util.Log.d("EducatorFilter", "selectedGroups(default)=${selectedGroups}")
+            val currentSelected = kidsViewModel.selectedGroupIds.value
+            if (currentSelected.isEmpty()) {
+                kidsViewModel.setSelectedGroupIds(educatorGroupIds)
+                android.util.Log.d("EducatorFilter", "educator=${educator.full_name} groupIds=${educatorGroupIds}")
+                android.util.Log.d("EducatorFilter", "selectedGroups(default)=${educatorGroupIds}")
+            }
         }
     }
     
@@ -78,18 +79,6 @@ fun EducatorDashboardScreen(
             .collect {
                 kidsViewModel?.refreshKids(daycareId)
             }
-    }
-    
-    // Filter kids based on selected groups
-    val filteredKids = remember(kids, selectedGroups) {
-        android.util.Log.d("EducatorFilter", "filtering with ids=${selectedGroups}, kids=${kids.size}")
-        if (selectedGroups.isEmpty()) {
-            kids
-        } else {
-            kids.filter { kid ->
-                kid.group_id in selectedGroups
-            }
-        }
     }
     
     // Get available groups for filter dropdown (keep full Group objects)
@@ -138,16 +127,11 @@ fun EducatorDashboardScreen(
                                 DropdownMenuItem(
                                     text = { Text(group.name) },
                                     onClick = {
-                                        val wasSelected = group.id in selectedGroups
-                                        selectedGroups = if (wasSelected) {
-                                            selectedGroups - group.id
-                                        } else {
-                                            selectedGroups + group.id
-                                        }
-                                        android.util.Log.d("EducatorFilter", "toggled ${group.id}(${group.name}) => now ${selectedGroups}")
+                                        kidsViewModel?.toggleGroup(group.id)
+                                        android.util.Log.d("EducatorFilter", "toggled ${group.id}(${group.name})")
                                     },
                                     trailingIcon = {
-                                        if (group.id in selectedGroups) {
+                                        if (group.id in selectedGroupIds) {
                                             Checkbox(
                                                 checked = true,
                                                 onCheckedChange = null
@@ -172,12 +156,9 @@ fun EducatorDashboardContent(
     daycareId: String,
     onKidClick: (String) -> Unit
 ) {
-    // Filter state for group filtering
-    var selectedGroups by remember { mutableStateOf(setOf<String>()) }
-    
     // Load data from ViewModels
     val groups by groupsViewModel.groups.collectAsState()
-    val kids by kidsViewModel.kids.collectAsState()
+    val filteredKids by kidsViewModel.filteredKids.collectAsState()
     val currentEducator by educatorViewModel.currentEducator.collectAsState()
     
     // Load data when screen is first displayed
@@ -187,25 +168,16 @@ fun EducatorDashboardContent(
         educatorViewModel.loadCurrentEducatorByDaycare(daycareId)
     }
     
-    // Initialize selectedGroups with educator's assigned groups (only when empty)
+    // Initialize selectedGroupIds with educator's assigned groups (only when empty)
     LaunchedEffect(currentEducator) {
         val educator = currentEducator
-        if (educator != null && selectedGroups.isEmpty()) {
+        if (educator != null) {
             val educatorGroupIds = educator.groups.map { it.id }.toSet()
-            selectedGroups = educatorGroupIds
-            android.util.Log.d("EducatorFilter", "educator=${educator.full_name} groupIds=${educatorGroupIds}")
-            android.util.Log.d("EducatorFilter", "selectedGroups(default)=${selectedGroups}")
-        }
-    }
-    
-    // Filter kids based on selected groups
-    val filteredKids = remember(kids, selectedGroups) {
-        android.util.Log.d("EducatorFilter", "filtering with ids=${selectedGroups}, kids=${kids.size}")
-        if (selectedGroups.isEmpty()) {
-            kids
-        } else {
-            kids.filter { kid ->
-                kid.group_id in selectedGroups
+            val currentSelected = kidsViewModel.selectedGroupIds.value
+            if (currentSelected.isEmpty()) {
+                kidsViewModel.setSelectedGroupIds(educatorGroupIds)
+                android.util.Log.d("EducatorFilter", "educator=${educator.full_name} groupIds=${educatorGroupIds}")
+                android.util.Log.d("EducatorFilter", "selectedGroups(default)=${educatorGroupIds}")
             }
         }
     }
