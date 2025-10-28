@@ -36,21 +36,27 @@ def _ensure_year_partition(conn, year: int):
     # Create child table if not exists, then attach as partition if needed.
     # We first try ATTACH; if it fails (child missing), we create and attach.
     try:
-        conn.execute(text(
-            f"ALTER TABLE kid_absences ATTACH PARTITION kid_absences_{year} "
-            f"FOR VALUES FROM ('{start}') TO ('{end}')"
-        ))
+        conn.execute(
+            text(
+                f"ALTER TABLE kid_absences ATTACH PARTITION kid_absences_{year} "
+                f"FOR VALUES FROM ('{start}') TO ('{end}')"
+            )
+        )
         conn.commit()
     except Exception:
         conn.rollback()
         # Create the child table and attach
-        conn.execute(text(
-            f"CREATE TABLE IF NOT EXISTS kid_absences_{year} (LIKE kid_absences INCLUDING ALL)"
-        ))
-        conn.execute(text(
-            f"ALTER TABLE kid_absences ATTACH PARTITION kid_absences_{year} "
-            f"FOR VALUES FROM ('{start}') TO ('{end}')"
-        ))
+        conn.execute(
+            text(
+                f"CREATE TABLE IF NOT EXISTS kid_absences_{year} (LIKE kid_absences INCLUDING ALL)"
+            )
+        )
+        conn.execute(
+            text(
+                f"ALTER TABLE kid_absences ATTACH PARTITION kid_absences_{year} "
+                f"FOR VALUES FROM ('{start}') TO ('{end}')"
+            )
+        )
         conn.commit()
 
 
@@ -178,7 +184,7 @@ class TestAbsencePartitions:
                 )
             )
             partition_tables = [row[0] for row in result.fetchall()]
-            
+
             # Should have partitions for 2025 and 2026
             assert "kid_absences_2025" in partition_tables
             assert "kid_absences_2026" in partition_tables

@@ -118,11 +118,16 @@ fun GuardianInfoRow(label: String, value: String, modifier: Modifier = Modifier)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KidDetailScreen(
-    kid: Kid,
-    onBackClick: () -> Unit,
-    kidsViewModel: KidsViewModel? = null,
+    kidId: String,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // For now, we'll use sample data. In a real app, you'd fetch the kid by ID
+    val kid = remember(kidId) {
+        fi.kidozz.app.data.sample.sampleKidsState.find { it.id == kidId }
+            ?: fi.kidozz.app.data.sample.sampleKidsState.first() // Fallback
+    }
+    
     var currentAttendance by remember { mutableStateOf(kid.attendance) }
     var absenceNotes by remember { mutableStateOf("") } // Example state for AppTextArea
     Scaffold(
@@ -130,7 +135,7 @@ fun KidDetailScreen(
             TopAppBar(
                 title = { Text(kid.full_name) },
                 navigationIcon = { 
-                    IconButton(onClick = onBackClick) { 
+                    IconButton(onClick = onBack) { 
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") 
                     } 
                 }
@@ -172,7 +177,7 @@ fun KidDetailScreen(
                     selectedAttendance = currentAttendance,
                     onAttendanceChange = { newAttendance ->
                         currentAttendance = newAttendance
-                        kidsViewModel?.updateAttendance(kid.id, newAttendance)
+                        // TODO: Update attendance via API
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -279,6 +284,6 @@ fun KidDetailScreen(
 @Composable
 fun KidDetailScreenPreview() { 
     KiddozzTheme { 
-        KidDetailScreen(sampleKidsState.first(), {}) 
+        KidDetailScreen(kidId = sampleKidsState.first().id, onBack = {}) 
     } 
 }

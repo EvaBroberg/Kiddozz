@@ -34,29 +34,29 @@ import androidx.compose.runtime.collectAsState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EducatorDashboardScreen(
-    navController: NavController,
-    onBackClick: () -> Unit,
-    onKidClick: (Kid) -> Unit,
+    onSelectKidsOverview: () -> Unit,
+    onSelectCalendar: () -> Unit,
+    content: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    groupsViewModel: GroupsViewModel,
-    educatorViewModel: EducatorViewModel,
-    kidsViewModel: KidsViewModel,
-    daycareId: String
+    groupsViewModel: GroupsViewModel? = null,
+    educatorViewModel: EducatorViewModel? = null,
+    kidsViewModel: KidsViewModel? = null,
+    daycareId: String = "default-daycare-id"
 ) {
     // Filter state for group filtering
     var selectedGroups by remember { mutableStateOf(setOf<String>()) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
     
     // Load data from ViewModels
-    val groups by groupsViewModel.groups.collectAsState()
-    val kids by kidsViewModel.kids.collectAsState()
-    val currentEducator by educatorViewModel.currentEducator.collectAsState()
+    val groups by groupsViewModel?.groups?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
+    val kids by kidsViewModel?.kids?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
+    val currentEducator by educatorViewModel?.currentEducator?.collectAsState() ?: remember { mutableStateOf(null) }
     
     // Load data when screen is first displayed
     LaunchedEffect(daycareId) {
-        groupsViewModel.loadGroups(daycareId)
-        kidsViewModel.loadKids(daycareId)
-        educatorViewModel.loadCurrentEducatorByDaycare(daycareId)
+        groupsViewModel?.loadGroups(daycareId)
+        kidsViewModel?.loadKids(daycareId)
+        educatorViewModel?.loadCurrentEducatorByDaycare(daycareId)
     }
     
     // Initialize selectedGroups with educator's assigned groups (only when empty)
@@ -76,7 +76,7 @@ fun EducatorDashboardScreen(
         snapshotFlow { lifecycleOwner.lifecycle.currentState }
             .filter { it == Lifecycle.State.RESUMED }
             .collect {
-                kidsViewModel.refreshKids(daycareId)
+                kidsViewModel?.refreshKids(daycareId)
             }
     }
     
@@ -103,64 +103,118 @@ fun EducatorDashboardScreen(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            LazyPage(
-                innerPadding = innerPadding
+            // Use the content parameter instead of hardcoded KidsGrid
+            Box(
+                modifier = Modifier.padding(innerPadding)
             ) {
-                // Show the kids grid directly since navigation is now handled globally
-                KidsGrid(
-                    filteredKids = filteredKids,
-                    onKidClick = onKidClick
-                )
+                content()
             }
             
-            // Sticky filter bar at top
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .align(Alignment.TopEnd)
-            ) {
-                Box {
-                    IconButton(
-                        onClick = { filterMenuExpanded = true }
-                    ) {
-                        Icon(
-                            Icons.Default.FilterList, 
-                            contentDescription = "Filter by group",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                    
-                    DropdownMenu(
-                        expanded = filterMenuExpanded,
-                        onDismissRequest = { filterMenuExpanded = false }
-                    ) {
-                        availableGroups.forEach { group ->
-                            DropdownMenuItem(
-                                text = { Text(group.name) },
-                                onClick = {
-                                    val wasSelected = group.id in selectedGroups
-                                    selectedGroups = if (wasSelected) {
-                                        selectedGroups - group.id
-                                    } else {
-                                        selectedGroups + group.id
-                                    }
-                                    android.util.Log.d("EducatorFilter", "toggled ${group.id}(${group.name}) => now ${selectedGroups}")
-                                },
-                                trailingIcon = {
-                                    if (group.id in selectedGroups) {
-                                        Checkbox(
-                                            checked = true,
-                                            onCheckedChange = null
-                                        )
-                                    }
-                                }
+            // Sticky filter bar at top (only show for kids overview)
+            if (groupsViewModel != null && educatorViewModel != null && kidsViewModel != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .align(Alignment.TopEnd)
+                ) {
+                    Box {
+                        IconButton(
+                            onClick = { filterMenuExpanded = true }
+                        ) {
+                            Icon(
+                                Icons.Default.FilterList, 
+                                contentDescription = "Filter by group",
+                                tint = MaterialTheme.colorScheme.onBackground
                             )
+                        }
+                        
+                        DropdownMenu(
+                            expanded = filterMenuExpanded,
+                            onDismissRequest = { filterMenuExpanded = false }
+                        ) {
+                            availableGroups.forEach { group ->
+                                DropdownMenuItem(
+                                    text = { Text(group.name) },
+                                    onClick = {
+                                        val wasSelected = group.id in selectedGroups
+                                        selectedGroups = if (wasSelected) {
+                                            selectedGroups - group.id
+                                        } else {
+                                            selectedGroups + group.id
+                                        }
+                                        android.util.Log.d("EducatorFilter", "toggled ${group.id}(${group.name}) => now ${selectedGroups}")
+                                    },
+                                    trailingIcon = {
+                                        if (group.id in selectedGroups) {
+                                            Checkbox(
+                                                checked = true,
+                                                onCheckedChange = null
+                                            )
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun EducatorDashboardContent(
+    groupsViewModel: GroupsViewModel,
+    educatorViewModel: EducatorViewModel,
+    kidsViewModel: KidsViewModel,
+    daycareId: String,
+    onKidClick: (String) -> Unit
+) {
+    // Filter state for group filtering
+    var selectedGroups by remember { mutableStateOf(setOf<String>()) }
+    
+    // Load data from ViewModels
+    val groups by groupsViewModel.groups.collectAsState()
+    val kids by kidsViewModel.kids.collectAsState()
+    val currentEducator by educatorViewModel.currentEducator.collectAsState()
+    
+    // Load data when screen is first displayed
+    LaunchedEffect(daycareId) {
+        groupsViewModel.loadGroups(daycareId)
+        kidsViewModel.loadKids(daycareId)
+        educatorViewModel.loadCurrentEducatorByDaycare(daycareId)
+    }
+    
+    // Initialize selectedGroups with educator's assigned groups (only when empty)
+    LaunchedEffect(currentEducator) {
+        val educator = currentEducator
+        if (educator != null && selectedGroups.isEmpty()) {
+            val educatorGroupIds = educator.groups.map { it.id }.toSet()
+            selectedGroups = educatorGroupIds
+            android.util.Log.d("EducatorFilter", "educator=${educator.full_name} groupIds=${educatorGroupIds}")
+            android.util.Log.d("EducatorFilter", "selectedGroups(default)=${selectedGroups}")
+        }
+    }
+    
+    // Filter kids based on selected groups
+    val filteredKids = remember(kids, selectedGroups) {
+        android.util.Log.d("EducatorFilter", "filtering with ids=${selectedGroups}, kids=${kids.size}")
+        if (selectedGroups.isEmpty()) {
+            kids
+        } else {
+            kids.filter { kid ->
+                kid.group_id in selectedGroups
+            }
+        }
+    }
+    
+    // Show the kids grid
+    fi.kidozz.app.ui.components.LazyPage {
+        KidsGrid(
+            kids = filteredKids,
+            onKidClick = onKidClick
+        )
     }
 }
