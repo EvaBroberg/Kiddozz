@@ -109,21 +109,78 @@ class MainActivity : ComponentActivity() {
                 val messagingDatabase = fi.kidozz.app.features.messaging.data.db.MessagingDatabase.getDatabase(context)
                 val messagingDao = messagingDatabase.messagingDao()
                 val messagingWebSocketClient = fi.kidozz.app.features.messaging.data.ws.MessagingWebSocketClient()
-                val messagingRepository = fi.kidozz.app.features.messaging.data.repo.MessagingRepositoryImpl(
-                    messagingApiService, messagingDao, messagingWebSocketClient
-                )
+                
+                // Create UserSessionManager - will be updated when educator data loads
+                val sessionManager = remember {
+                    fi.kidozz.app.core.session.UserSessionManager(
+                        fi.kidozz.app.core.session.UserSession(
+                            userId = "current_user", // TODO: Get from auth
+                            role = if (session.role in listOf("educator", "super_educator")) 
+                                fi.kidozz.app.core.session.UserRole.EDUCATOR 
+                            else 
+                                fi.kidozz.app.core.session.UserRole.PARENT,
+                            groupIds = emptySet() // Will be updated when educator loads
+                        )
+                    )
+                }
                 
                 // Single instances for the whole NavHost lifetime
                 val groupsViewModel = remember { fi.kidozz.app.features.dashboard.GroupsViewModel(groupsRepository) }
                 val educatorViewModel = remember { fi.kidozz.app.features.dashboard.EducatorViewModel(educatorRepository) }
+                val educatorsListViewModel = remember { fi.kidozz.app.features.dashboard.EducatorsListViewModel(educatorRepository) }
                 val kidsViewModel = remember { fi.kidozz.app.features.dashboard.KidsViewModel(kidsRepository) }
                 val parentsViewModel = remember { fi.kidozz.app.features.dashboard.ParentsViewModel(parentsRepository) }
                 val absenceReasonsViewModel = remember { fi.kidozz.app.features.dashboard.AbsenceReasonsViewModel(kidsRepository) }
-                val messagingViewModel = remember { fi.kidozz.app.features.messaging.ui.MessagingViewModel(messagingRepository) }
+                
+                val messagingRepository = fi.kidozz.app.features.messaging.data.repo.MessagingRepositoryImpl(
+                    messagingApiService, messagingDao, messagingWebSocketClient,
+                    kidsViewModel.kids, educatorsListViewModel.educators
+                )
+                
+                val messagingViewModel = remember { fi.kidozz.app.features.messaging.ui.MessagingViewModel(messagingRepository, sessionManager) }
+
+                // Load educators for current daycare
+                val daycareId = "default-daycare-id"
+                LaunchedEffect(daycareId) {
+                    if (daycareId.isNotBlank()) {
+                        educatorsListViewModel.load(daycareId)
+                        educatorViewModel.loadCurrentEducatorByDaycare(daycareId)
+                        kidsViewModel.loadKids(daycareId)
+                    }
+                }
+                
+                // Update session with educator's group IDs when educator loads
+                LaunchedEffect(educatorViewModel.currentEducator.value) {
+                    val educator = educatorViewModel.currentEducator.value
+                    if (educator != null && session.role in listOf("educator", "super_educator")) {
+                        val educatorGroupIds = educator.groups.map { it.id }.toSet()
+                        sessionManager.update(
+                            sessionManager.session.value.copy(groupIds = educatorGroupIds)
+                        )
+                        Log.d("UserSession", "Updated session with educator groups: $educatorGroupIds")
+                    }
+                }
+                
+                // Update session with parent's group IDs when kids load (for parents)
+                LaunchedEffect(kidsViewModel.kids.value) {
+                    if (session.role == "parent") {
+                        val kids = kidsViewModel.kids.value
+                        val parentGroupIds = kids.map { it.group_id }.toSet()
+                        sessionManager.update(
+                            sessionManager.session.value.copy(groupIds = parentGroupIds)
+                        )
+                        Log.d("UserSession", "Updated session with parent groups: $parentGroupIds")
+                    }
+                }
 
                 // Add this debugging log block:
                 LaunchedEffect(session.role) {
                     Log.d("KiddozzSession", "Session updated: logged=${session.isLoggedIn} role='${session.role}'")
+                }
+                
+                // Debug session group IDs
+                LaunchedEffect(sessionManager.session.value.groupIds) {
+                    Log.d("KiddozzSession", "Session group IDs: ${sessionManager.session.value.groupIds}")
                 }
 
                 when {

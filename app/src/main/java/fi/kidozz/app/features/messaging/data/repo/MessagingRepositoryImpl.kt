@@ -8,10 +8,15 @@ import fi.kidozz.app.features.messaging.data.db.ConversationEntity
 import fi.kidozz.app.features.messaging.data.ws.MessagingWebSocketClient
 import fi.kidozz.app.features.messaging.domain.model.*
 import fi.kidozz.app.features.messaging.domain.repo.MessagingRepository
+import fi.kidozz.app.data.models.Kid
+import fi.kidozz.app.data.models.Educator
+import fi.kidozz.app.data.models.Parent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -19,7 +24,9 @@ import java.util.*
 class MessagingRepositoryImpl(
     private val apiService: MessagingApiService,
     private val dao: MessagingDao,
-    private val webSocketClient: MessagingWebSocketClient
+    private val webSocketClient: MessagingWebSocketClient,
+    private val kidsCache: kotlinx.coroutines.flow.StateFlow<List<Kid>>,
+    private val educatorsCache: kotlinx.coroutines.flow.StateFlow<List<Educator>>
 ) : MessagingRepository {
 
     override fun observeInbox(filter: ConversationType?): Flow<List<Conversation>> {
@@ -88,6 +95,119 @@ class MessagingRepositoryImpl(
         } catch (e: Exception) {
             // Handle error
         }
+    }
+
+    override fun observeContactsInMyGroups(
+        type: ContactType,
+        myGroupIds: Set<String>,
+        myUserId: String
+    ): Flow<List<Contact>> = flow {
+        val contacts: List<Contact> = when (type) {
+            ContactType.PARENT -> {
+                // Get kids in my groups and collect their guardians/parents
+                val kidsInMyGroups = kidsCache.value.filter { kid ->
+                    val groupIds = listOfNotNull(kid.group_id)
+                    groupIds.any { it in myGroupIds }
+                }
+                kidsInMyGroups
+                    .flatMap { kid -> kid.parents }
+                    .map { parent -> 
+                        Contact(
+                            id = parent.id, 
+                            name = parent.full_name, 
+                            avatarUrl = null, // Parent model doesn't have avatar_url
+                            type = ContactType.PARENT
+                        ) 
+                    }
+                    .filter { it.id != myUserId }
+                    .distinctBy { it.id }
+                    .sortedBy { it.name }
+            }
+            ContactType.EDUCATOR -> {
+                // Get educators assigned to my groups
+                val allEducators = educatorsCache.value
+                val filteredEducators = allEducators.filter { educator -> 
+                    educator.groups.any { group -> group.id in myGroupIds } 
+                }
+                
+                // Debug logging
+                android.util.Log.d("MessagingRepo", "All educators: ${allEducators.size}")
+                android.util.Log.d("MessagingRepo", "My group IDs: $myGroupIds")
+                android.util.Log.d("MessagingRepo", "Filtered educators: ${filteredEducators.size}")
+                
+                filteredEducators
+                    .map { educator -> 
+                        Contact(
+                            id = educator.id, 
+                            name = educator.full_name, 
+                            avatarUrl = null, // Educator model doesn't have avatar_url
+                            type = ContactType.EDUCATOR
+                        ) 
+                    }
+                    .filter { it.id != myUserId }
+                    .distinctBy { it.id }
+                    .sortedBy { it.name }
+            }
+        }
+        emit(contacts)
+    }.distinctUntilChanged()
+
+    override suspend fun createOrGetDirectConversation(contactId: String): String {
+        // Try to find existing 1:1 conversation with that participant
+        val existing = dao.findDirectConversationWith(contactId)
+        if (existing != null) return existing.id
+
+        // Create new conversation
+        val conversationId = UUID.randomUUID().toString()
+        
+        // Upsert to Room
+        dao.insertConversation(
+            ConversationEntity(
+                id = conversationId,
+                title = resolveContactName(contactId),
+                lastMessagePreview = null,
+                lastTimestamp = System.currentTimeMillis(),
+                unreadCount = 0,
+                type = "direct", // Direct conversation
+                participantsJson = buildParticipantsJson(contactId)
+            )
+        )
+        return conversationId
+    }
+
+    private fun resolveContactName(contactId: String): String {
+        // Try to find the contact name from caches
+        val educator = educatorsCache.value.find { it.id == contactId }
+        if (educator != null) return educator.full_name
+        
+        val parent = kidsCache.value
+            .flatMap { it.parents }
+            .find { it.id == contactId }
+        if (parent != null) return parent.full_name
+        
+        return "Contact" // Fallback
+    }
+
+    private fun buildParticipantsJson(contactId: String): String {
+        val participants = JSONArray()
+        
+        // Add current user (we'll need to get this from session)
+        val currentUser = JSONObject().apply {
+            put("id", "current_user") // TODO: Get from session
+            put("name", "Me")
+            put("role", "current")
+        }
+        participants.put(currentUser)
+        
+        // Add contact
+        val contact = JSONObject().apply {
+            put("id", contactId)
+            put("name", resolveContactName(contactId))
+            put("role", "contact")
+        }
+        participants.put(contact)
+        
+        return participants.toString()
     }
 
     // Extension functions for mapping between domain and data models

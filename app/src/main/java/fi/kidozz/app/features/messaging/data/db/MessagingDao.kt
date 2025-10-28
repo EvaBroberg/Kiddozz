@@ -25,4 +25,7 @@ interface MessagingDao {
 
     @Query("UPDATE messages SET status = :status WHERE id = :messageId")
     suspend fun updateMessageStatus(messageId: String, status: String)
+
+    @Query("SELECT * FROM conversations WHERE participantsJson LIKE '%' || :contactId || '%' LIMIT 1")
+    suspend fun findDirectConversationWith(contactId: String): ConversationEntity?
 }
