@@ -98,11 +98,20 @@ class MainActivity : ComponentActivity() {
                 val educatorApiService = retrofit.create(fi.kidozz.app.data.api.EducatorApiService::class.java)
                 val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
                 val parentsApiService = retrofit.create(fi.kidozz.app.data.api.ParentsApiService::class.java)
+                val messagingApiService = retrofit.create(fi.kidozz.app.features.messaging.data.api.MessagingApiService::class.java)
                 
                 val groupsRepository = fi.kidozz.app.data.repository.GroupsRepository(groupsApiService)
                 val educatorRepository = fi.kidozz.app.data.repository.EducatorRepository(educatorApiService)
                 val kidsRepository = fi.kidozz.app.data.repository.KidsRepository(kidsApiService, tokenManager)
                 val parentsRepository = fi.kidozz.app.data.repository.ParentsRepository(parentsApiService)
+                
+                // Messaging dependencies
+                val messagingDatabase = fi.kidozz.app.features.messaging.data.db.MessagingDatabase.getDatabase(context)
+                val messagingDao = messagingDatabase.messagingDao()
+                val messagingWebSocketClient = fi.kidozz.app.features.messaging.data.ws.MessagingWebSocketClient()
+                val messagingRepository = fi.kidozz.app.features.messaging.data.repo.MessagingRepositoryImpl(
+                    messagingApiService, messagingDao, messagingWebSocketClient
+                )
                 
                 // Single instances for the whole NavHost lifetime
                 val groupsViewModel = remember { fi.kidozz.app.features.dashboard.GroupsViewModel(groupsRepository) }
@@ -110,6 +119,7 @@ class MainActivity : ComponentActivity() {
                 val kidsViewModel = remember { fi.kidozz.app.features.dashboard.KidsViewModel(kidsRepository) }
                 val parentsViewModel = remember { fi.kidozz.app.features.dashboard.ParentsViewModel(parentsRepository) }
                 val absenceReasonsViewModel = remember { fi.kidozz.app.features.dashboard.AbsenceReasonsViewModel(kidsRepository) }
+                val messagingViewModel = remember { fi.kidozz.app.features.messaging.ui.MessagingViewModel(messagingRepository) }
 
                 // Add this debugging log block:
                 LaunchedEffect(session.role) {
@@ -225,6 +235,32 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
 
+                                navigation(
+                                    startDestination = fi.kidozz.app.features.messaging.nav.MessagingRoutes.MESSAGES_LIST,
+                                    route = fi.kidozz.app.features.messaging.nav.MessagingRoutes.MESSAGES_GRAPH
+                                ) {
+                                    composable(fi.kidozz.app.features.messaging.nav.MessagingRoutes.MESSAGES_LIST) {
+                                        fi.kidozz.app.features.messaging.ui.MessagesListScreen(
+                                            onOpenConversation = { id ->
+                                                navController.navigate(fi.kidozz.app.features.messaging.nav.MessagingRoutes.conversation(id))
+                                            },
+                                            onBack = { navController.popBackStack() },
+                                            viewModel = messagingViewModel
+                                        )
+                                    }
+                                    composable(
+                                        route = fi.kidozz.app.features.messaging.nav.MessagingRoutes.CONVERSATION_ROUTE,
+                                        arguments = listOf(navArgument("conversationId") { type = NavType.StringType })
+                                    ) { backStackEntry ->
+                                        val conversationId = backStackEntry.arguments?.getString("conversationId").orEmpty()
+                                        fi.kidozz.app.features.messaging.ui.ConversationScreen(
+                                            conversationId = conversationId,
+                                            onBack = { navController.popBackStack() },
+                                            viewModel = messagingViewModel
+                                        )
+                                    }
+                                }
+
                                 composable(
                                     route = Routes.KID_DETAIL_ROUTE,
                                     arguments = listOf(navArgument("kidId") { type = NavType.StringType })
@@ -247,7 +283,7 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 composable("menu") { 
-                                    fi.kidozz.app.navigation.MenuScreen() 
+                                    fi.kidozz.app.navigation.MenuScreen(navController = navController) 
                                 }
 
                                 composable("profile") { 

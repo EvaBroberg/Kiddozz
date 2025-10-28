@@ -29,6 +29,7 @@ fun GlobalBottomNavigationBase(
             val targetRoute = when (section) {
                 NavigationSection.KidsOverview -> Routes.KIDS_OVERVIEW
                 NavigationSection.Calendar -> Routes.CALENDAR
+                NavigationSection.Messages -> fi.kidozz.app.features.messaging.nav.MessagingRoutes.MESSAGES_GRAPH
                 NavigationSection.Menu -> Routes.MENU
                 NavigationSection.Profile -> Routes.PROFILE
             }
@@ -56,6 +57,7 @@ fun GlobalBottomNavigationBase(
 fun ParentBottomNavigation(navController: NavController) {
     val sections = listOf(
         NavigationSection.Calendar,
+        NavigationSection.Messages,
         NavigationSection.Menu,
         NavigationSection.Profile
     )
@@ -67,6 +69,7 @@ fun EducatorBottomNavigation(navController: NavController) {
     val sections = listOf(
         NavigationSection.KidsOverview,
         NavigationSection.Calendar,
+        NavigationSection.Messages,
         NavigationSection.Menu,
         NavigationSection.Profile
     )
