@@ -149,27 +149,65 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 
-                // Update session with educator's group IDs when educator loads
-                LaunchedEffect(educatorViewModel.currentEducator.value) {
-                    val educator = educatorViewModel.currentEducator.value
+                // Update session with educator's group IDs when educator loads (reactive)
+                val currentEducator by educatorViewModel.currentEducator.collectAsState()
+                LaunchedEffect(currentEducator, session.role) {
+                    val educator = currentEducator
                     if (educator != null && session.role in listOf("educator", "super_educator")) {
-                        val educatorGroupIds = educator.groups.map { it.id }.toSet()
+                        val educatorGroupIds = educator.groups.map { it.id.toString() }.toSet()
                         sessionManager.update(
                             sessionManager.session.value.copy(groupIds = educatorGroupIds)
                         )
-                        Log.d("UserSession", "Updated session with educator groups: $educatorGroupIds")
+                        Log.d("UserSession", "Updated session with educator groups: $educatorGroupIds (from educator ${educator.full_name})")
                     }
                 }
                 
-                // Update session with parent's group IDs when kids load (for parents)
-                LaunchedEffect(kidsViewModel.kids.value) {
+                // Update session with parent's user ID and group IDs when kids load (for parents, reactive)
+                val kids by kidsViewModel.kids.collectAsState()
+                
+                // TODO: Get from TokenManager claims or /me endpoint - for now accept from manual flow
+                // For testing: parent ID 10 (from the scenario)
+                val currentParentId = "10" // TODO: Extract from JWT token or auth flow
+                
+                LaunchedEffect(kids, session.role, currentParentId) {
                     if (session.role == "parent") {
-                        val kids = kidsViewModel.kids.value
-                        val parentGroupIds = kids.map { it.group_id }.toSet()
-                        sessionManager.update(
-                            sessionManager.session.value.copy(groupIds = parentGroupIds)
-                        )
-                        Log.d("UserSession", "Updated session with parent groups: $parentGroupIds")
+                        // Filter kids to only those belonging to the logged-in parent
+                        val myKids = kids.filter { kid ->
+                            kid.parents.any { parent -> parent.id == currentParentId }
+                        }
+                        
+                        Log.d("UserSession", "Parent $currentParentId: found ${myKids.size} kids out of ${kids.size} total kids")
+                        
+                        // Extract group IDs from only this parent's kids
+                        val parentGroupIds = myKids.mapNotNull { it.group_id?.toString() }.toSet()
+                        
+                        // Guardrail: warn if parent ID is a placeholder
+                        if (currentParentId == "current_user" || currentParentId == "unknown_parent") {
+                            Log.w("UserSession", "WARNING: Using placeholder parent ID: $currentParentId. Session may be incorrect.")
+                            sessionManager.update(
+                                sessionManager.session.value.copy(
+                                    userId = currentParentId,
+                                    groupIds = emptySet() // Empty to prevent showing everyone
+                                )
+                            )
+                        } else if (parentGroupIds.isNotEmpty()) {
+                            sessionManager.update(
+                                sessionManager.session.value.copy(
+                                    userId = currentParentId,
+                                    groupIds = parentGroupIds
+                                )
+                            )
+                            Log.d("UserSession", "Updated session: userId=$currentParentId, groups=$parentGroupIds (from ${myKids.size} kids: ${myKids.map { "${it.full_name}(g${it.group_id})" }})")
+                        } else {
+                            Log.w("UserSession", "No group IDs found for parent $currentParentId from ${myKids.size} kids!")
+                            // Keep session with empty groupIds to show empty state (not everyone)
+                            sessionManager.update(
+                                sessionManager.session.value.copy(
+                                    userId = currentParentId,
+                                    groupIds = emptySet()
+                                )
+                            )
+                        }
                     }
                 }
 

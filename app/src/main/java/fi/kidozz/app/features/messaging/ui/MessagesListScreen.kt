@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +34,16 @@ fun MessagesListScreen(
     val contacts by viewModel.contacts.collectAsState()
     val filter by viewModel.filter.collectAsState()
     val scope = rememberCoroutineScope()
+    
+    // Log session info when Messages screen opens
+    LaunchedEffect(Unit) {
+        android.util.Log.d("MessagesScreen", "Messages screen opened. Filter: $filter, Contacts count: ${contacts.size}")
+    }
+    
+    // Log when filter changes
+    LaunchedEffect(filter) {
+        android.util.Log.d("MessagesScreen", "Filter changed to: $filter")
+    }
 
     Scaffold(
         topBar = {
@@ -67,11 +78,6 @@ fun MessagesListScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilterChip(
-                    selected = filter == null,
-                    onClick = { viewModel.setFilter(null) },
-                    label = { Text("All") }
-                )
                 FilterChip(
                     selected = filter == ConversationType.PARENT,
                     onClick = { viewModel.setFilter(ConversationType.PARENT) },
@@ -122,17 +128,30 @@ fun MessagesListScreen(
                         }
                     }
                 }
-                else -> {
-                    // Messages list for All and Groups
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(1.dp)
-                    ) {
-                        items(inbox) { conversation ->
-                            MessageListItem(
-                                conversation = conversation,
-                                onClick = { onOpenConversation(conversation.id) }
+                ConversationType.GROUP -> {
+                    // Messages list for Groups
+                    if (inbox.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No group conversations.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(1.dp)
+                        ) {
+                            items(inbox) { conversation ->
+                                MessageListItem(
+                                    conversation = conversation,
+                                    onClick = { onOpenConversation(conversation.id) }
+                                )
+                            }
                         }
                     }
                 }

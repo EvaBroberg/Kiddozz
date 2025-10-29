@@ -19,26 +19,52 @@ class MessagingViewModel(
     private val sessionManager: UserSessionManager
 ) : ViewModel() {
 
-    private val _filter = MutableStateFlow<ConversationType?>(null) // null = all
-    val filter: StateFlow<ConversationType?> = _filter
+    private val _filter = MutableStateFlow<ConversationType>(ConversationType.PARENT)
+    val filter: StateFlow<ConversationType> = _filter
 
     private val session = sessionManager.session
 
     val inbox: StateFlow<List<Conversation>> =
-        _filter.flatMapLatest { repository.observeInbox(it) }
+        _filter.flatMapLatest { filter ->
+            when (filter) {
+                ConversationType.GROUP -> repository.observeInbox(ConversationType.GROUP)
+                else -> flowOf(emptyList())
+            }
+        }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val contacts: StateFlow<List<Contact>> =
         combine(_filter, session) { filter, session ->
-            when (filter) {
-                ConversationType.PARENT -> repository.observeContactsInMyGroups(ContactType.PARENT, session.groupIds, session.userId)
-                ConversationType.EDUCATOR -> repository.observeContactsInMyGroups(ContactType.EDUCATOR, session.groupIds, session.userId)
-                else -> emptyFlow()
+            android.util.Log.d("MessagingViewModel", "Filter=$filter, role=${session.role}, userId=${session.userId}, groupIds=${session.groupIds} (size=${session.groupIds.size})")
+
+            // Guardrail: check for placeholder user IDs
+            if (session.userId == "current_user" || session.userId == "unknown_parent") {
+                android.util.Log.w("MessagingViewModel", "WARNING: Using placeholder userId '${session.userId}'. Returning empty contacts list to prevent showing everyone.")
+                emptyFlow<List<Contact>>()
+            } else {
+                when (filter) {
+                    ConversationType.PARENT -> {
+                        if (session.groupIds.isEmpty()) {
+                            android.util.Log.w("MessagingViewModel", "Parent filter selected but session.groupIds is empty!")
+                        }
+                        repository.observeContactsInMyGroups(ContactType.PARENT, session.groupIds, session.userId)
+                    }
+                    ConversationType.EDUCATOR -> {
+                        // Educators can reach ALL educators across the daycare (except themselves),
+                        // but parents should only see educators from their own groups.
+                        repository.observeContactsInMyGroups(ContactType.EDUCATOR, session.groupIds, session.userId)
+                    }
+                    ConversationType.GROUP -> emptyFlow<List<Contact>>() // Groups use inbox, not contacts
+                }
             }
-        }.flatMapLatest { it }
+        }.flatMapLatest { flow ->
+            flow.onEach { contacts ->
+                android.util.Log.d("MessagingViewModel", "Contacts flow emitted ${contacts.size} contacts: ${contacts.map { "${it.name} (${it.id})" }}")
+            }
+        }
          .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun setFilter(type: ConversationType?) {
+    fun setFilter(type: ConversationType) {
         _filter.value = type
     }
 
