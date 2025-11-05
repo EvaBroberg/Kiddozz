@@ -17,6 +17,9 @@ interface MessagingRepository {
     // NEW: contacts in my groups
     fun observeContactsInMyGroups(type: ContactType, myGroupIds: Set<String>, myUserId: String): Flow<List<Contact>>
 
+    // NEW: all educators except myself (for educator role in Educators tab)
+    fun observeAllEducatorsExcept(myUserId: String): Flow<List<Contact>>
+
     // NEW: create or reuse a direct conversation with a contact
     suspend fun createOrGetDirectConversation(contactId: String): String // returns conversationId
 }

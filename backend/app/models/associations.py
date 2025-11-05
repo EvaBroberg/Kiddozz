@@ -10,8 +10,15 @@ from app.core.database import Base
 educator_groups = Table(
     "educator_groups",
     Base.metadata,
-    Column("educator_id", Integer, ForeignKey("educators.id", ondelete="CASCADE"), nullable=False),
-    Column("group_id", Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False),
+    Column(
+        "educator_id",
+        Integer,
+        ForeignKey("educators.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "group_id", Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False
+    ),
     UniqueConstraint("educator_id", "group_id", name="uq_educator_groups_pair"),
 )
 

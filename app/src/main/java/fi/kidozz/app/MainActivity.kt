@@ -81,6 +81,8 @@ class MainActivity : ComponentActivity() {
                 val tokenManager = remember { TokenManager(context) }
                 val role by tokenManager.roleFlow.collectAsState(initial = tokenManager.getRole())
                 val token by tokenManager.tokenFlow.collectAsState(initial = tokenManager.getToken())
+                val authUserId by tokenManager.userIdFlow.collectAsState()
+                val authDaycareId by tokenManager.daycareIdFlow.collectAsState()
                 val loggedIn = !token.isNullOrEmpty()
 
                 val session = remember(role, loggedIn) {
@@ -110,16 +112,16 @@ class MainActivity : ComponentActivity() {
                 val messagingDao = messagingDatabase.messagingDao()
                 val messagingWebSocketClient = fi.kidozz.app.features.messaging.data.ws.MessagingWebSocketClient()
                 
-                // Create UserSessionManager - will be updated when educator data loads
+                // Create UserSessionManager - will be updated when educator/parent data loads
                 val sessionManager = remember {
                     fi.kidozz.app.core.session.UserSessionManager(
                         fi.kidozz.app.core.session.UserSession(
-                            userId = "current_user", // TODO: Get from auth
+                            userId = authUserId ?: "unknown", // Will be updated from token or educator/parent data
                             role = if (session.role in listOf("educator", "super_educator")) 
                                 fi.kidozz.app.core.session.UserRole.EDUCATOR 
                             else 
                                 fi.kidozz.app.core.session.UserRole.PARENT,
-                            groupIds = emptySet() // Will be updated when educator loads
+                            groupIds = emptySet() // Will be updated when educator/parent loads
                         )
                     )
                 }
@@ -139,38 +141,52 @@ class MainActivity : ComponentActivity() {
                 
                 val messagingViewModel = remember { fi.kidozz.app.features.messaging.ui.MessagingViewModel(messagingRepository, sessionManager) }
 
-                // Load educators for current daycare
-                val daycareId = "default-daycare-id"
+                // Load educators for current daycare (from auth token)
+                val daycareId = authDaycareId ?: run {
+                    Log.w("MainActivity", "Daycare ID not found in token, using fallback")
+                    null
+                }
                 LaunchedEffect(daycareId) {
-                    if (daycareId.isNotBlank()) {
+                    if (daycareId != null && daycareId.isNotBlank()) {
+                        Log.d("MainActivity", "Loading data for daycare: $daycareId")
                         educatorsListViewModel.load(daycareId)
-                        educatorViewModel.loadCurrentEducatorByDaycare(daycareId)
+                        // Load current educator from token userId if available
+                        if (authUserId != null && session.role in listOf("educator", "super_educator")) {
+                            // Load educator by ID from token
+                            educatorViewModel.loadCurrentEducatorById(daycareId, authUserId)
+                        }
                         kidsViewModel.loadKids(daycareId)
+                    } else {
+                        Log.w("MainActivity", "Cannot load data: daycare ID is null or empty")
                     }
                 }
                 
-                // Update session with educator's group IDs when educator loads (reactive)
+                // Update session with educator's user ID and group IDs when educator loads (reactive)
                 val currentEducator by educatorViewModel.currentEducator.collectAsState()
-                LaunchedEffect(currentEducator, session.role) {
+                LaunchedEffect(currentEducator, session.role, authUserId) {
                     val educator = currentEducator
                     if (educator != null && session.role in listOf("educator", "super_educator")) {
+                        // Use educator.id from DB (not from token, as token may have different format)
+                        val educatorUserId = educator.id
                         val educatorGroupIds = educator.groups.map { it.id.toString() }.toSet()
                         sessionManager.update(
-                            sessionManager.session.value.copy(groupIds = educatorGroupIds)
+                            sessionManager.session.value.copy(
+                                userId = educatorUserId, // ✅ Set userId from educator.id
+                                groupIds = educatorGroupIds
+                            )
                         )
-                        Log.d("UserSession", "Updated session with educator groups: $educatorGroupIds (from educator ${educator.full_name})")
+                        Log.d("SessionUpdate", "role=EDUCATOR, userId=$educatorUserId, groupIds=$educatorGroupIds, daycareId=$daycareId")
                     }
                 }
                 
                 // Update session with parent's user ID and group IDs when kids load (for parents, reactive)
                 val kids by kidsViewModel.kids.collectAsState()
                 
-                // TODO: Get from TokenManager claims or /me endpoint - for now accept from manual flow
-                // For testing: parent ID 10 (from the scenario)
-                val currentParentId = "10" // TODO: Extract from JWT token or auth flow
+                // Get parent ID from JWT token (sub claim)
+                val currentParentId = authUserId
                 
                 LaunchedEffect(kids, session.role, currentParentId) {
-                    if (session.role == "parent") {
+                    if (session.role == "parent" && currentParentId != null) {
                         // Filter kids to only those belonging to the logged-in parent
                         val myKids = kids.filter { kid ->
                             kid.parents.any { parent -> parent.id == currentParentId }
@@ -179,7 +195,7 @@ class MainActivity : ComponentActivity() {
                         Log.d("UserSession", "Parent $currentParentId: found ${myKids.size} kids out of ${kids.size} total kids")
                         
                         // Extract group IDs from only this parent's kids
-                        val parentGroupIds = myKids.mapNotNull { it.group_id?.toString() }.toSet()
+                        val parentGroupIds = myKids.map { it.group_id }.toSet() // group_id is String, not nullable
                         
                         // Guardrail: warn if parent ID is a placeholder
                         if (currentParentId == "current_user" || currentParentId == "unknown_parent") {
@@ -193,11 +209,11 @@ class MainActivity : ComponentActivity() {
                         } else if (parentGroupIds.isNotEmpty()) {
                             sessionManager.update(
                                 sessionManager.session.value.copy(
-                                    userId = currentParentId,
+                                    userId = currentParentId, // ✅ Set userId from JWT token
                                     groupIds = parentGroupIds
                                 )
                             )
-                            Log.d("UserSession", "Updated session: userId=$currentParentId, groups=$parentGroupIds (from ${myKids.size} kids: ${myKids.map { "${it.full_name}(g${it.group_id})" }})")
+                            Log.d("SessionUpdate", "role=PARENT, userId=$currentParentId, groupIds=$parentGroupIds, daycareId=$daycareId (from ${myKids.size} kids: ${myKids.map { "${it.full_name}(g${it.group_id})" }})")
                         } else {
                             Log.w("UserSession", "No group IDs found for parent $currentParentId from ${myKids.size} kids!")
                             // Keep session with empty groupIds to show empty state (not everyone)
@@ -207,6 +223,7 @@ class MainActivity : ComponentActivity() {
                                     groupIds = emptySet()
                                 )
                             )
+                            Log.d("SessionUpdate", "role=PARENT, userId=$currentParentId, groupIds=empty, daycareId=$daycareId")
                         }
                     }
                 }
@@ -370,7 +387,7 @@ class MainActivity : ComponentActivity() {
 
                                 composable("parent_dashboard") {
                                     fi.kidozz.app.features.dashboard.ParentDashboardScreen(
-                                        parentId = "10",
+                                        parentId = authUserId ?: "unknown",
                                         parentsViewModel = parentsViewModel,
                                         absenceReasonsViewModel = absenceReasonsViewModel,
                                         kidsRepository = kidsRepository

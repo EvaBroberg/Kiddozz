@@ -100,21 +100,22 @@ def insert_dummy_educators(db: Session) -> None:
 
 class EducatorGroupAssignmentError(Exception):
     """Raised when an educator group assignment operation violates business rules."""
+
     pass
 
 
 def assign_educator_to_group(db: Session, educator_id: int, group_id: int) -> None:
     """
     Assign an educator to a group (idempotent).
-    
+
     If the educator is already assigned to the group, this is a no-op.
     Raises ValueError if educator or group doesn't exist.
-    
+
     Args:
         db: Database session
         educator_id: ID of the educator
         group_id: ID of the group
-        
+
     Raises:
         ValueError: If educator or group doesn't exist
         IntegrityError: If database constraint is violated (shouldn't happen with UNIQUE)
@@ -123,16 +124,16 @@ def assign_educator_to_group(db: Session, educator_id: int, group_id: int) -> No
     educator = db.query(Educator).filter(Educator.id == educator_id).first()
     if not educator:
         raise ValueError(f"Educator with id {educator_id} not found")
-    
+
     # Verify group exists
     group = db.query(Group).filter(Group.id == group_id).first()
     if not group:
         raise ValueError(f"Group with id {group_id} not found")
-    
+
     # Check if already assigned (idempotent)
     if group in educator.groups:
         return  # Already assigned, no-op
-    
+
     # Assign (UNIQUE constraint will prevent duplicates)
     educator.groups.append(group)
     try:
@@ -140,21 +141,23 @@ def assign_educator_to_group(db: Session, educator_id: int, group_id: int) -> No
     except IntegrityError as e:
         db.rollback()
         # UNIQUE constraint violation means duplicate (shouldn't happen if check above works)
-        raise ValueError(f"Educator {educator_id} is already assigned to group {group_id}") from e
+        raise ValueError(
+            f"Educator {educator_id} is already assigned to group {group_id}"
+        ) from e
 
 
 def unassign_educator_from_group(db: Session, educator_id: int, group_id: int) -> None:
     """
     Unassign an educator from a group.
-    
+
     Raises EducatorGroupAssignmentError if this would leave the educator with zero groups.
     This matches the database trigger error message.
-    
+
     Args:
         db: Database session
         educator_id: ID of the educator
         group_id: ID of the group
-        
+
     Raises:
         ValueError: If educator or group doesn't exist
         EducatorGroupAssignmentError: If unassigning would leave educator with zero groups
@@ -163,22 +166,22 @@ def unassign_educator_from_group(db: Session, educator_id: int, group_id: int) -
     educator = db.query(Educator).filter(Educator.id == educator_id).first()
     if not educator:
         raise ValueError(f"Educator with id {educator_id} not found")
-    
+
     # Verify group exists
     group = db.query(Group).filter(Group.id == group_id).first()
     if not group:
         raise ValueError(f"Group with id {group_id} not found")
-    
+
     # Check if assigned
     if group not in educator.groups:
         return  # Not assigned, no-op
-    
+
     # Check if this would leave educator with zero groups
     if len(educator.groups) == 1:
         raise EducatorGroupAssignmentError(
             f"Educator {educator_id} must belong to at least one group. Cannot delete the last group assignment."
         )
-    
+
     # Unassign
     educator.groups.remove(group)
     try:
@@ -197,16 +200,16 @@ def move_educator_between_groups(
 ) -> None:
     """
     Move an educator from one group to another in a single transaction.
-    
+
     This ensures the database trigger never fires because the educator always has
     at least one group assignment at commit time.
-    
+
     Args:
         db: Database session
         educator_id: ID of the educator
         from_group_id: ID of the group to remove
         to_group_id: ID of the group to add
-        
+
     Raises:
         ValueError: If educator or groups don't exist, or if educator isn't in from_group
         IntegrityError: If database constraint is violated
@@ -215,22 +218,22 @@ def move_educator_between_groups(
     educator = db.query(Educator).filter(Educator.id == educator_id).first()
     if not educator:
         raise ValueError(f"Educator with id {educator_id} not found")
-    
+
     # Verify groups exist
     from_group = db.query(Group).filter(Group.id == from_group_id).first()
     if not from_group:
         raise ValueError(f"Group with id {from_group_id} not found")
-    
+
     to_group = db.query(Group).filter(Group.id == to_group_id).first()
     if not to_group:
         raise ValueError(f"Group with id {to_group_id} not found")
-    
+
     # Check if educator is in from_group
     if from_group not in educator.groups:
         raise ValueError(
             f"Educator {educator_id} is not assigned to group {from_group_id}"
         )
-    
+
     # Check if already in to_group (move to same group is no-op)
     if to_group in educator.groups:
         # If only one group, this would be a duplicate, so just return
@@ -243,12 +246,17 @@ def move_educator_between_groups(
         # This ensures the educator always has at least one group at commit time
         educator.groups.append(to_group)
         educator.groups.remove(from_group)
-    
+
     try:
         db.commit()
     except IntegrityError as e:
         db.rollback()
         error_msg = str(e)
-        if "uq_educator_groups_pair" in error_msg or "unique constraint" in error_msg.lower():
-            raise ValueError(f"Educator {educator_id} is already assigned to group {to_group_id}") from e
+        if (
+            "uq_educator_groups_pair" in error_msg
+            or "unique constraint" in error_msg.lower()
+        ):
+            raise ValueError(
+                f"Educator {educator_id} is already assigned to group {to_group_id}"
+            ) from e
         raise

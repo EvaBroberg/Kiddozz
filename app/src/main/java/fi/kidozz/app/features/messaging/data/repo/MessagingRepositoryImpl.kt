@@ -27,8 +27,8 @@ class MessagingRepositoryImpl(
     private val apiService: MessagingApiService,
     private val dao: MessagingDao,
     private val webSocketClient: MessagingWebSocketClient,
-    private val kidsCache: kotlinx.coroutines.flow.StateFlow<List<Kid>>,
-    private val educatorsCache: kotlinx.coroutines.flow.StateFlow<List<Educator>>
+    val kidsCache: kotlinx.coroutines.flow.StateFlow<List<Kid>>, // Made internal for logging
+    val educatorsCache: kotlinx.coroutines.flow.StateFlow<List<Educator>> // Made internal for logging
 ) : MessagingRepository {
 
     override fun observeInbox(filter: ConversationType?): Flow<List<Conversation>> {
@@ -90,7 +90,7 @@ class MessagingRepositoryImpl(
         try {
             val response = apiService.getConversations()
             if (response.isSuccessful) {
-                val conversations = response.body() ?: emptyList()
+                response.body() ?: emptyList()
                 // Convert and insert conversations
                 // This is a simplified implementation
             }
@@ -105,6 +105,7 @@ class MessagingRepositoryImpl(
         myUserId: String
     ): Flow<List<Contact>> = combine(kidsCache, educatorsCache) { kids, educators ->
         android.util.Log.d("MessagingRepo", "observeContactsInMyGroups: type=$type, myGroupIds=$myGroupIds (size=${myGroupIds.size}), myUserId=$myUserId")
+        android.util.Log.d("MessagingRepo", "Source sizes: kidsCache.size=${kids.size}, educatorsCache.size=${educators.size}")
         
         // If no group IDs, return empty (don't show all contacts)
         if (myGroupIds.isEmpty()) {
@@ -112,24 +113,26 @@ class MessagingRepositoryImpl(
             return@combine emptyList<Contact>()
         }
         
-        android.util.Log.d("MessagingRepo", "kidsCache.size=${kids.size}, educatorsCache.size=${educators.size}")
-        
         when (type) {
             ContactType.PARENT -> {
                 // Kids who are in any of my groups
                 val kidsInMyGroups = kids.filter { kid -> 
-                    val kidGroupId = kid.group_id?.toString()
-                    val matches = kidGroupId != null && kidGroupId in myGroupIds
+                    val kidGroupId = kid.group_id.toString() // group_id is String, no need for ?.
+                    val matches = kidGroupId in myGroupIds
                     android.util.Log.d("MessagingRepo", "Kid ${kid.full_name}: group_id=$kidGroupId, in myGroupIds=$matches")
                     matches
                 }
                 android.util.Log.d("MessagingRepo", "Kids in my groups: ${kidsInMyGroups.size}")
 
                 // All parents of those kids, excluding myself
-                kidsInMyGroups
-                    .flatMap { k -> k.parents }
-                    .filter { p -> p.id != myUserId }
-                    .distinctBy { it.id }
+                val extractedParents = kidsInMyGroups.flatMap { k -> k.parents }
+                val filteredParents = extractedParents.filter { p -> p.id != myUserId }
+                val distinctParents = filteredParents.distinctBy { it.id }
+                
+                android.util.Log.d("MessagingRepo", "Parents extraction: kidsInMyGroups=${kidsInMyGroups.size}, extractedParents=${extractedParents.size}, after self-exclusion=${filteredParents.size}, distinct=${distinctParents.size}")
+                android.util.Log.d("MessagingRepo", "Final parent IDs: ${distinctParents.map { "${it.full_name}(${it.id})" }}")
+                
+                distinctParents
                     .map { p ->
                         Contact(
                             id = p.id,
@@ -156,6 +159,7 @@ class MessagingRepositoryImpl(
                     .filter { e -> e.id != myUserId }
                 
                 android.util.Log.d("MessagingRepo", "Filtered educators: ${filteredEducators.size}")
+                android.util.Log.d("MessagingRepo", "Final educator IDs: ${filteredEducators.map { "${it.full_name}(${it.id})" }}")
                 
                 filteredEducators
                     .distinctBy { it.id }
@@ -171,6 +175,31 @@ class MessagingRepositoryImpl(
             }
         }
     }.distinctUntilChanged()
+
+    override fun observeAllEducatorsExcept(myUserId: String): Flow<List<Contact>> {
+        return educatorsCache.map { educators ->
+            android.util.Log.d("MessagingRepo", "observeAllEducatorsExcept: myUserId=$myUserId, educatorsCache.size=${educators.size}")
+            android.util.Log.d("MessagingRepo", "All educator IDs in cache: ${educators.map { "${it.full_name}(${it.id})" }}")
+            
+            val filteredEducators = educators
+                .filter { e -> e.id != myUserId } // Exclude self
+            
+            android.util.Log.d("MessagingRepo", "Filtered educators (excluding self): ${filteredEducators.size}")
+            android.util.Log.d("MessagingRepo", "Final educator IDs: ${filteredEducators.map { "${it.full_name}(${it.id})" }}")
+            
+            filteredEducators
+                .distinctBy { it.id }
+                .map { e ->
+                    Contact(
+                        id = e.id,
+                        name = e.full_name,
+                        avatarUrl = null,
+                        type = ContactType.EDUCATOR
+                    )
+                }
+                .sortedBy { it.name.lowercase() }
+        }.distinctUntilChanged()
+    }
 
     override suspend fun createOrGetDirectConversation(contactId: String): String {
         // Try to find existing 1:1 conversation with that participant
