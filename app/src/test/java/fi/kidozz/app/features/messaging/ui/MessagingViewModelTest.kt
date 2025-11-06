@@ -20,9 +20,9 @@ import retrofit2.Response
 class MessagingViewModelTest {
 
     private val fakeApi = object : MessagingApiService {
-        override suspend fun getConversations(filter: String?) = Response.success(emptyList())
-        override suspend fun getMessages(conversationId: String, cursor: String?) = Response.success(emptyList())
-        override suspend fun sendMessage(conversationId: String, message: fi.kidozz.app.features.messaging.data.api.SendMessageRequest) = Response.success(fi.kidozz.app.features.messaging.data.api.MessageDto("", "", "", null, "", 0L, false, ""))
+        override suspend fun getConversations(filter: String?) = Response.success(emptyList<fi.kidozz.app.features.messaging.data.api.MessageDto>())
+        override suspend fun getMessages(conversationId: String, cursor: String?) = Response.success(emptyList<fi.kidozz.app.features.messaging.data.api.MessageDto>())
+        override suspend fun sendMessage(conversationId: String, message: fi.kidozz.app.features.messaging.data.api.SendMessageRequest) = Response.success(fi.kidozz.app.features.messaging.data.api.MessageDto("", "", "", null, "", 0L, ""))
         override suspend fun markAsRead(conversationId: String) = Response.success(Unit)
     }
     
@@ -189,6 +189,59 @@ class MessagingViewModelTest {
         assertTrue("Other Parent should be included", contactIds.contains("11"))
         assertFalse("Wrong Parent should be excluded", contactIds.contains("99"))
         assertEquals(1, contacts.size)
+    }
+
+    @Test
+    fun role_switching_from_educator_to_parent_updates_contacts() = runTest {
+        // GIVEN: Start with role=EDUCATOR, then switch to role=PARENT
+        val educators = listOf(
+            Educator(id="25", full_name="Teacher1", role="Teacher", email=null, phone_num=null,
+                groups=listOf(Group("7","G7"))),
+            Educator(id="27", full_name="Jessica", role="Teacher", email=null, phone_num=null,
+                groups=listOf(Group("7","G7"))),
+            Educator(id="28", full_name="Teacher2", role="Teacher", email=null, phone_num=null,
+                groups=listOf(Group("7","G7"))),
+            Educator(id="24", full_name="Sarah Davis", role="Teacher", email=null, phone_num=null,
+                groups=listOf(Group("8","G8"))) // Different group
+        )
+        val educatorsFlow = MutableStateFlow(educators)
+        val kidsFlow = MutableStateFlow(emptyList<Kid>())
+        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, kidsFlow, educatorsFlow)
+        
+        val sessionManager = UserSessionManager(
+            UserSession(userId = "27", role = UserRole.EDUCATOR, groupIds = setOf("7"))
+        )
+        val viewModel = MessagingViewModel(repo, sessionManager)
+
+        // WHEN: Educator 27 selects Educators tab
+        viewModel.setFilter(ConversationType.EDUCATOR)
+        
+        // Wait for flow to emit
+        val contactsAsEducator = viewModel.contacts.first { it.isNotEmpty() || true }
+
+        // THEN: Should see all educators except self (no group filtering)
+        val contactIdsAsEducator = contactsAsEducator.map { it.id }.toSet()
+        assertFalse("Self (Jessica 27) should be excluded", contactIdsAsEducator.contains("27"))
+        assertTrue("Teacher1 should be included", contactIdsAsEducator.contains("25"))
+        assertTrue("Teacher2 should be included", contactIdsAsEducator.contains("28"))
+        assertTrue("Sarah Davis should be included (all educators)", contactIdsAsEducator.contains("24"))
+        assertEquals(3, contactsAsEducator.size)
+
+        // WHEN: Switch role to PARENT
+        sessionManager.update(
+            sessionManager.session.value.copy(role = UserRole.PARENT, userId = "10", groupIds = setOf("7"))
+        )
+        
+        // Wait for flow to emit with new role
+        val contactsAsParent = viewModel.contacts.first { it.size != contactsAsEducator.size || it.map { c -> c.id }.toSet() != contactIdsAsEducator }
+
+        // THEN: Should see only educators in group 7 (group-filtered)
+        val contactIdsAsParent = contactsAsParent.map { it.id }.toSet()
+        assertTrue("Teacher1 should be included (group 7)", contactIdsAsParent.contains("25"))
+        assertTrue("Teacher2 should be included (group 7)", contactIdsAsParent.contains("28"))
+        assertFalse("Sarah Davis should be excluded (different group)", contactIdsAsParent.contains("24"))
+        assertFalse("Self (Jessica 27) should be excluded", contactIdsAsParent.contains("27"))
+        assertEquals(2, contactsAsParent.size)
     }
 }
 

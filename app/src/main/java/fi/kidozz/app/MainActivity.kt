@@ -23,7 +23,6 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import kotlinx.coroutines.flow.filter
-import fi.kidozz.app.BuildConfig
 import fi.kidozz.app.data.auth.TokenManager
 import fi.kidozz.app.navigation.Routes
 import fi.kidozz.app.ui.components.ParentBottomNavigation
@@ -69,8 +68,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Log the active backend URL for debugging
-        Log.d("Kiddozz", "Backend URL: " + BuildConfig.BASE_URL)
         Log.d("Kiddozz", "MainActivity onCreate called")
 
         // Compose entrypoint: Initialize theme, navigation, and role-based routing
@@ -126,6 +123,22 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 
+                // Update session.role whenever TokenManager.roleFlow changes (source of truth)
+                LaunchedEffect(role) {
+                    val mappedRole = if (role in listOf("educator", "super_educator")) 
+                        fi.kidozz.app.core.session.UserRole.EDUCATOR 
+                    else 
+                        fi.kidozz.app.core.session.UserRole.PARENT
+                    
+                    val oldRole = sessionManager.session.value.role
+                    if (oldRole != mappedRole) {
+                        sessionManager.update(
+                            sessionManager.session.value.copy(role = mappedRole)
+                        )
+                        Log.d("SessionRole", "roleFlow='$role' → mapped=$mappedRole, session.role was $oldRole")
+                    }
+                }
+                
                 // Single instances for the whole NavHost lifetime
                 val groupsViewModel = remember { fi.kidozz.app.features.dashboard.GroupsViewModel(groupsRepository) }
                 val educatorViewModel = remember { fi.kidozz.app.features.dashboard.EducatorViewModel(educatorRepository) }
@@ -162,6 +175,7 @@ class MainActivity : ComponentActivity() {
                 }
                 
                 // Update session with educator's user ID and group IDs when educator loads (reactive)
+                // NOTE: Do NOT update role here - role comes only from TokenManager.roleFlow
                 val currentEducator by educatorViewModel.currentEducator.collectAsState()
                 LaunchedEffect(currentEducator, session.role, authUserId) {
                     val educator = currentEducator
@@ -172,14 +186,17 @@ class MainActivity : ComponentActivity() {
                         sessionManager.update(
                             sessionManager.session.value.copy(
                                 userId = educatorUserId, // ✅ Set userId from educator.id
-                                groupIds = educatorGroupIds
+                                groupIds = educatorGroupIds // ✅ Set groupIds from educator.groups
+                                // ✅ Do NOT update role - it comes from TokenManager.roleFlow
                             )
                         )
+                        Log.d("EducatorSession", "userId=$educatorUserId, groupIds=$educatorGroupIds")
                         Log.d("SessionUpdate", "role=EDUCATOR, userId=$educatorUserId, groupIds=$educatorGroupIds, daycareId=$daycareId")
                     }
                 }
                 
                 // Update session with parent's user ID and group IDs when kids load (for parents, reactive)
+                // NOTE: Do NOT update role here - role comes only from TokenManager.roleFlow
                 val kids by kidsViewModel.kids.collectAsState()
                 
                 // Get parent ID from JWT token (sub claim)
@@ -202,27 +219,32 @@ class MainActivity : ComponentActivity() {
                             Log.w("UserSession", "WARNING: Using placeholder parent ID: $currentParentId. Session may be incorrect.")
                             sessionManager.update(
                                 sessionManager.session.value.copy(
-                                    userId = currentParentId,
+                                    userId = currentParentId, // ✅ Set userId from JWT token
                                     groupIds = emptySet() // Empty to prevent showing everyone
+                                    // ✅ Do NOT update role - it comes from TokenManager.roleFlow
                                 )
                             )
                         } else if (parentGroupIds.isNotEmpty()) {
                             sessionManager.update(
                                 sessionManager.session.value.copy(
                                     userId = currentParentId, // ✅ Set userId from JWT token
-                                    groupIds = parentGroupIds
+                                    groupIds = parentGroupIds // ✅ Set groupIds from parent's kids
+                                    // ✅ Do NOT update role - it comes from TokenManager.roleFlow
                                 )
                             )
+                            Log.d("ParentSession", "userId=$currentParentId, groupIds=$parentGroupIds (from ${myKids.size} kids)")
                             Log.d("SessionUpdate", "role=PARENT, userId=$currentParentId, groupIds=$parentGroupIds, daycareId=$daycareId (from ${myKids.size} kids: ${myKids.map { "${it.full_name}(g${it.group_id})" }})")
                         } else {
                             Log.w("UserSession", "No group IDs found for parent $currentParentId from ${myKids.size} kids!")
                             // Keep session with empty groupIds to show empty state (not everyone)
                             sessionManager.update(
                                 sessionManager.session.value.copy(
-                                    userId = currentParentId,
-                                    groupIds = emptySet()
+                                    userId = currentParentId, // ✅ Set userId from JWT token
+                                    groupIds = emptySet() // ✅ Set empty groupIds
+                                    // ✅ Do NOT update role - it comes from TokenManager.roleFlow
                                 )
                             )
+                            Log.d("ParentSession", "userId=$currentParentId, groupIds=empty (from ${myKids.size} kids)")
                             Log.d("SessionUpdate", "role=PARENT, userId=$currentParentId, groupIds=empty, daycareId=$daycareId")
                         }
                     }

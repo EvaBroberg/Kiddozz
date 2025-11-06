@@ -20,9 +20,9 @@ import retrofit2.Response
 class MessagingRepositoryImplTest {
 
     private val fakeApi = object : MessagingApiService {
-        override suspend fun getConversations(filter: String?) = Response.success(emptyList())
-        override suspend fun getMessages(conversationId: String, cursor: String?) = Response.success(emptyList())
-        override suspend fun sendMessage(conversationId: String, message: SendMessageRequest) = Response.success(MessageDto("", "", "", null, "", 0L, false, ""))
+        override suspend fun getConversations(filter: String?) = Response.success(emptyList<MessageDto>())
+        override suspend fun getMessages(conversationId: String, cursor: String?) = Response.success(emptyList<MessageDto>())
+        override suspend fun sendMessage(conversationId: String, message: SendMessageRequest) = Response.success(MessageDto("", "", "", null, "", 0L, ""))
         override suspend fun markAsRead(conversationId: String) = Response.success(Unit)
     }
     
@@ -256,8 +256,8 @@ class MessagingRepositoryImplTest {
                 attendance="IN")
         )
         val kidsFlow = MutableStateFlow(kids)
-        val educatorsFlow = MutableStateFlow(emptyList<Educator>())
-        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, kidsFlow, educatorsFlow)
+        val educatorsFlowEmpty = MutableStateFlow(emptyList<Educator>())
+        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, kidsFlow, educatorsFlowEmpty)
 
         // WHEN: Parent 10 views contacts (groupIds should be {7, 8} from their kids only)
         val contacts = repo.observeContactsInMyGroups(
@@ -283,8 +283,8 @@ class MessagingRepositoryImplTest {
             Educator(id="50", full_name="Other Teacher", role="Teacher", email=null, phone_num=null,
                 groups=listOf(Group("9","G9")))
         )
-        val educatorsFlow = MutableStateFlow(educators)
-        val repoWithEducators = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, kidsFlow, educatorsFlow)
+        val educatorsFlowWithData = MutableStateFlow(educators)
+        val repoWithEducators = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, kidsFlow, educatorsFlowWithData)
 
         val educatorContacts = repoWithEducators.observeContactsInMyGroups(
             type = ContactType.EDUCATOR,
