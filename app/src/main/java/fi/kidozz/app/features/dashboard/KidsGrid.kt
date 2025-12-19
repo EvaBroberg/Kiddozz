@@ -12,8 +12,8 @@ import fi.kidozz.app.ui.styles.EducatorDashboardStyles
 
 @Composable
 fun KidsGrid(
-    filteredKids: List<Kid>,
-    onKidClick: (Kid) -> Unit,
+    kids: List<Kid>,
+    onKidClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
@@ -23,10 +23,10 @@ fun KidsGrid(
         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(EducatorDashboardStyles.GridSpacing),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(EducatorDashboardStyles.GridSpacing)
     ) {
-        items(filteredKids) { kid ->
+        items(kids) { kid ->
             KiddozCard(
                 kid = kid,
-                modifier = Modifier.clickable { onKidClick(kid) }
+                modifier = Modifier.clickable { onKidClick(kid.id) }
             )
         }
     }

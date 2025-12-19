@@ -7,7 +7,11 @@ import fi.kidozz.app.data.repository.KidsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.update
 
 class KidsViewModel(
     private val kidsRepository: KidsRepository?
@@ -16,11 +20,41 @@ class KidsViewModel(
     private val _kids = MutableStateFlow<List<Kid>>(emptyList())
     val kids: StateFlow<List<Kid>> = _kids.asStateFlow()
     
+    private val _selectedGroupIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedGroupIds: StateFlow<Set<String>> = _selectedGroupIds.asStateFlow()
+    
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+    
+    // Filtered kids based on selected groups
+    val filteredKids: StateFlow<List<Kid>> =
+        combine(kids, selectedGroupIds) { list, groups ->
+            if (groups.isEmpty()) list
+            else list.filter { kid -> inSelectedGroups(kid, groups) }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = emptyList()
+        )
+    
+    // Helper function to check if a kid belongs to any of the selected groups
+    private fun inSelectedGroups(kid: Kid, groups: Set<String>): Boolean {
+        return kid.group_id in groups
+    }
+    
+    // Group selection methods
+    fun setSelectedGroupIds(ids: Set<String>) {
+        _selectedGroupIds.value = ids
+    }
+    
+    fun toggleGroup(id: String) {
+        _selectedGroupIds.update { current ->
+            if (id in current) current - id else current + id
+        }
+    }
     
     fun loadKids(daycareId: String, groupId: String? = null) {
         viewModelScope.launch {

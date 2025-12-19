@@ -36,6 +36,7 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+      - MESSAGING_BACKEND=true
     depends_on:
       db:
         condition: service_healthy

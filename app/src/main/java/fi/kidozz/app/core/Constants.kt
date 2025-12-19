@@ -3,6 +3,7 @@ package fi.kidozz.app.core
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -15,6 +16,7 @@ enum class Screen {
 enum class NavigationSection(val title: String, val icon: ImageVector) {
     KidsOverview("Kids Overview", Icons.Filled.Face),
     Calendar("Calendar", Icons.Filled.DateRange),
+    Messages("Messages", Icons.AutoMirrored.Filled.Message),
     Menu("Menu", Icons.Filled.Face),
     Profile("Profile", Icons.Filled.Person)
 }

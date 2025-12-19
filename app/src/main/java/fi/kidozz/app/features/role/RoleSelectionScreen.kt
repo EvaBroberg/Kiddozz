@@ -34,9 +34,9 @@ fun RoleSelectionScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     
-    // Only show role selection in staging builds
+    // Only show role selection in debug builds
+    // In production/release builds, go directly to the main app
     if (!BuildConfig.DEBUG) {
-        // In production, go directly to the main app
         LaunchedEffect(Unit) {
             onEducatorViewClick()
         }

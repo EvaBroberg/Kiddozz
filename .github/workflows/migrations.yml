@@ -71,7 +71,7 @@ jobs:
           poetry run alembic current || true
 
   migrate-prod:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'release'
     name: Alembic Upgrade → PRODUCTION
     runs-on: ubuntu-latest
     concurrency:

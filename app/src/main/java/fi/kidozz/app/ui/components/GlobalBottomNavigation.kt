@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import fi.kidozz.app.core.NavigationSection
+import fi.kidozz.app.navigation.Routes
 
 @Composable
 fun GlobalBottomNavigationBase(
@@ -26,10 +27,11 @@ fun GlobalBottomNavigationBase(
     NavigationBar(modifier = modifier.testTag("navigation_bar")) {
         sections.forEach { section ->
             val targetRoute = when (section) {
-                NavigationSection.KidsOverview -> "educator_dashboard"
-                NavigationSection.Calendar -> "calendar"
-                NavigationSection.Menu -> "menu"
-                NavigationSection.Profile -> "profile"
+                NavigationSection.KidsOverview -> Routes.KIDS_OVERVIEW
+                NavigationSection.Calendar -> Routes.CALENDAR
+                NavigationSection.Messages -> fi.kidozz.app.features.messaging.nav.MessagingRoutes.MESSAGES_GRAPH
+                NavigationSection.Menu -> Routes.MENU
+                NavigationSection.Profile -> Routes.PROFILE
             }
             val selected = currentRoute == targetRoute
 
@@ -55,6 +57,7 @@ fun GlobalBottomNavigationBase(
 fun ParentBottomNavigation(navController: NavController) {
     val sections = listOf(
         NavigationSection.Calendar,
+        NavigationSection.Messages,
         NavigationSection.Menu,
         NavigationSection.Profile
     )
@@ -66,6 +69,7 @@ fun EducatorBottomNavigation(navController: NavController) {
     val sections = listOf(
         NavigationSection.KidsOverview,
         NavigationSection.Calendar,
+        NavigationSection.Messages,
         NavigationSection.Menu,
         NavigationSection.Profile
     )

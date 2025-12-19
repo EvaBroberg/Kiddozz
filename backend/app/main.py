@@ -18,6 +18,12 @@ app.include_router(parents.router, prefix="/api/v1", tags=["parents"])
 app.include_router(kids.router, prefix="/api/v1", tags=["kids"])
 app.include_router(groups.router, prefix="/api/v1", tags=["groups"])
 
+# Register messaging router (behind feature flag)
+if os.getenv("MESSAGING_BACKEND", "false").lower() == "true":
+    from app.api import messaging
+
+    app.include_router(messaging.router, prefix="/api", tags=["messaging"])
+
 
 @app.on_event("startup")
 def startup_event():
@@ -47,6 +53,24 @@ def startup_event():
             # Don't exit here, let the app start and handle DB errors gracefully
     except Exception as e:
         print(f"⚠️  Could not run migrations: {e}")
+        # Don't exit here, let the app start and handle DB errors gracefully
+
+    # Ensure absence partitions exist
+    try:
+        if os.getenv("ENABLE_ABSENCE_PARTITIONS", "true").lower() == "true":
+            print("🔄 Ensuring absence partitions...")
+            from app.core.database import engine
+            from app.db.partitioning import ensure_current_and_next_year_partitions
+
+            success = ensure_current_and_next_year_partitions(engine)
+            if success:
+                print("✅ Absence partitions ensured successfully")
+            else:
+                print("⚠️  Could not ensure absence partitions")
+        else:
+            print("ℹ️  Absence partitions disabled via ENABLE_ABSENCE_PARTITIONS=false")
+    except Exception as e:
+        print(f"⚠️  Could not ensure absence partitions: {e}")
         # Don't exit here, let the app start and handle DB errors gracefully
 
     print(
