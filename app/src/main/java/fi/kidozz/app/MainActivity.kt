@@ -190,7 +190,7 @@ class MainActivity : ComponentActivity() {
                 val absenceReasonsViewModel = remember { fi.kidozz.app.features.dashboard.AbsenceReasonsViewModel(kidsRepository) }
                 
                 val messagingRepository = fi.kidozz.app.features.messaging.data.repo.MessagingRepositoryImpl(
-                    messagingApiService, messagingDao, messagingWebSocketClient, messagingSseClient,
+                    messagingApiService, messagingDao, messagingWebSocketClient, messagingSseClient, tokenManager,
                     kidsViewModel.kids, educatorsListViewModel.educators
                 )
                 
