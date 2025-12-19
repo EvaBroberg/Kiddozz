@@ -5,8 +5,8 @@ import json
 from typing import List, Optional, Tuple
 from uuid import UUID
 
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc, func
 
 from app.models.messaging import (
     Conversation,
@@ -18,19 +18,23 @@ from app.models.messaging import (
 )
 
 
-def compute_direct_key_hash(participant_a: Tuple[str, str], participant_b: Tuple[str, str]) -> str:
+def compute_direct_key_hash(
+    participant_a: Tuple[str, str], participant_b: Tuple[str, str]
+) -> str:
     """
     Compute canonical hash for direct conversation (order-invariant).
-    
+
     Args:
         participant_a: (user_type, user_id)
         participant_b: (user_type, user_id)
-    
+
     Returns:
         SHA256 hash of sorted JSON representation
     """
     # Ensure consistent ordering
-    sorted_participants = sorted([participant_a, participant_b], key=lambda x: (x[0], x[1]))
+    sorted_participants = sorted(
+        [participant_a, participant_b], key=lambda x: (x[0], x[1])
+    )
     key_json = json.dumps(sorted_participants, sort_keys=True)
     return hashlib.sha256(key_json.encode()).hexdigest()
 
@@ -44,29 +48,30 @@ def get_or_create_direct_conversation(
     """
     Get or create a direct conversation between two participants.
     Ensures canonicalization using a hash of sorted participant IDs.
-    
+
     Args:
         db: Database session
         daycare_id: Daycare ID
         participant_a: (user_type, user_id) for first participant
         participant_b: (user_type, user_id) for second participant
-    
+
     Returns:
         Conversation object (existing or newly created)
-    
+
     Raises:
         ValueError: If participant_a == participant_b (cannot message self)
     """
     import logging
+
     logger = logging.getLogger(__name__)
-    
+
     logger.info("=" * 80)
     logger.info("get_or_create_direct_conversation called")
     logger.info("  daycare_id: %s", daycare_id)
     logger.info("  participant_a: %s", participant_a)
     logger.info("  participant_b: %s", participant_b)
     logger.info("=" * 80)
-    
+
     if participant_a == participant_b:
         logger.error("Self-conversation attempt detected!")
         raise ValueError("Cannot create a direct conversation with oneself.")
@@ -98,7 +103,11 @@ def get_or_create_direct_conversation(
     )
 
     if conversation:
-        logger.info("Found existing conversation: id=%s, type=%s", conversation.id, conversation.type)
+        logger.info(
+            "Found existing conversation: id=%s, type=%s",
+            conversation.id,
+            conversation.type,
+        )
     else:
         logger.info("No existing conversation found. Creating new one via ORM.")
         conversation = Conversation(
@@ -109,7 +118,11 @@ def get_or_create_direct_conversation(
         )
         db.add(conversation)
         db.flush()  # assign ID from DB
-        logger.info("New conversation created (pending commit): id=%s, type=%s", conversation.id, conversation.type)
+        logger.info(
+            "New conversation created (pending commit): id=%s, type=%s",
+            conversation.id,
+            conversation.type,
+        )
 
     # Add participants
     logger.info("=" * 80)
@@ -117,13 +130,15 @@ def get_or_create_direct_conversation(
     logger.info("  participant_a: %s", participant_a)
     logger.info("  participant_b: %s", participant_b)
     logger.info("=" * 80)
-    
+
     try:
         logger.info("Creating ConversationParticipant for participant_a...")
         # Normalize user_type to lowercase and validate
         user_type_a = participant_a[0].lower().strip()
         if user_type_a not in ("parent", "educator"):
-            raise ValueError(f"Invalid user_type for participant_a: '{participant_a[0]}' (normalized: '{user_type_a}')")
+            raise ValueError(
+                f"Invalid user_type for participant_a: '{participant_a[0]}' (normalized: '{user_type_a}')"
+            )
         participant_a_obj = ConversationParticipant(
             conversation_id=conversation.id,
             user_type=UserType(user_type_a),
@@ -138,13 +153,15 @@ def get_or_create_direct_conversation(
     except Exception as e:
         logger.exception("Failed to add participant_a: %s", e)
         raise
-    
+
     try:
         logger.info("Creating ConversationParticipant for participant_b...")
         # Normalize user_type to lowercase and validate
         user_type_b = participant_b[0].lower().strip()
         if user_type_b not in ("parent", "educator"):
-            raise ValueError(f"Invalid user_type for participant_b: '{participant_b[0]}' (normalized: '{user_type_b}')")
+            raise ValueError(
+                f"Invalid user_type for participant_b: '{participant_b[0]}' (normalized: '{user_type_b}')"
+            )
         participant_b_obj = ConversationParticipant(
             conversation_id=conversation.id,
             user_type=UserType(user_type_b),
@@ -168,7 +185,7 @@ def get_or_create_direct_conversation(
         logger.exception("db.commit() FAILED: %s", e)
         db.rollback()
         raise
-    
+
     try:
         logger.info("Calling db.refresh(conversation)...")
         db.refresh(conversation)
@@ -179,7 +196,7 @@ def get_or_create_direct_conversation(
     except Exception as e:
         logger.exception("db.refresh() FAILED: %s", e)
         raise
-    
+
     return conversation
 
 
@@ -193,7 +210,7 @@ def list_conversations_for_user(
 ) -> List[Conversation]:
     """
     List conversations where the user is a participant.
-    
+
     Args:
         db: Database session
         daycare_id: Daycare ID
@@ -201,7 +218,7 @@ def list_conversations_for_user(
         user_id: User ID
         cursor: Optional cursor for pagination (conversation ID)
         limit: Maximum number of conversations to return
-    
+
     Returns:
         List of Conversation objects, ordered by most recent message
     """
@@ -248,13 +265,13 @@ def list_messages(
 ) -> List[Message]:
     """
     List messages in a conversation with pagination.
-    
+
     Args:
         db: Database session
         conversation_id: Conversation ID
         cursor: Optional cursor for pagination (message ID)
         limit: Maximum number of messages to return
-    
+
     Returns:
         List of Message objects, ordered by created_at ASC
     """
@@ -283,7 +300,7 @@ def append_message(
 ) -> Message:
     """
     Append a message to a conversation.
-    
+
     Args:
         db: Database session
         conversation_id: Conversation ID
@@ -292,15 +309,17 @@ def append_message(
         body: Message body (optional)
         image_url: Image URL (optional)
         message_id: Optional message ID (if provided by client)
-    
+
     Returns:
         Created Message object
-    
+
     Raises:
         ValueError: If conversation doesn't exist
     """
     # Verify conversation exists
-    conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    conversation = (
+        db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    )
     if not conversation:
         raise ValueError(f"Conversation {conversation_id} not found")
 
@@ -315,7 +334,7 @@ def append_message(
     }
     if message_id is not None:
         message_kwargs["id"] = message_id
-    
+
     message = Message(**message_kwargs)
     db.add(message)
     db.commit()
@@ -331,13 +350,13 @@ def verify_participant(
 ) -> bool:
     """
     Verify if a user is a participant in a conversation.
-    
+
     Args:
         db: Database session
         conversation_id: Conversation ID
         user_type: User type ('parent' or 'educator')
         user_id: User ID
-    
+
     Returns:
         True if user is a participant, False otherwise
     """
@@ -361,13 +380,13 @@ def register_push_token(
 ) -> PushToken:
     """
     Register or update a push token for a user.
-    
+
     Args:
         db: Database session
         user_type: User type ('parent' or 'educator')
         user_id: User ID
         token: FCM token
-    
+
     Returns:
         PushToken object
     """
@@ -385,7 +404,8 @@ def register_push_token(
     if push_token:
         # Update updated_at
         from datetime import datetime
-        from sqlalchemy.sql import func
+
+
         push_token.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(push_token)
@@ -410,12 +430,12 @@ def get_push_tokens_for_user(
 ) -> List[PushToken]:
     """
     Get all push tokens for a user.
-    
+
     Args:
         db: Database session
         user_type: User type ('parent' or 'educator')
         user_id: User ID
-    
+
     Returns:
         List of PushToken objects
     """
@@ -427,4 +447,3 @@ def get_push_tokens_for_user(
         )
         .all()
     )
-

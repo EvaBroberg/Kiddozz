@@ -3,7 +3,6 @@ import os
 from fastapi import FastAPI
 
 from app.api import auth, educators, events, groups, health, kids, parents
-import os
 
 app = FastAPI(title="Kiddozz Backend API", version="1.0.0")
 
@@ -22,6 +21,7 @@ app.include_router(groups.router, prefix="/api/v1", tags=["groups"])
 # Register messaging router (behind feature flag)
 if os.getenv("MESSAGING_BACKEND", "false").lower() == "true":
     from app.api import messaging
+
     app.include_router(messaging.router, prefix="/api", tags=["messaging"])
 
 

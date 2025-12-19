@@ -43,7 +43,9 @@ class ConversationOut(BaseModel):
     daycare_id: str = Field(..., alias="daycareId")
     title: Optional[str] = None
     last_message_preview: Optional[str] = Field(None, alias="lastMessagePreview")
-    last_timestamp: int = Field(..., alias="lastTimestamp")  # Unix timestamp in milliseconds
+    last_timestamp: int = Field(
+        ..., alias="lastTimestamp"
+    )  # Unix timestamp in milliseconds
     unread_count: int = Field(0, alias="unreadCount")
     participants: List[ParticipantOut]
 
@@ -98,8 +100,3 @@ class MessagingEvent(BaseModel):
 
     class Config:
         populate_by_name = True
-
-
-
-
-
