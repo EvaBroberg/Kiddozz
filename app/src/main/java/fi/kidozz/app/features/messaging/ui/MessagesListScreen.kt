@@ -119,8 +119,26 @@ fun MessagesListScreen(
                                     contact = contact,
                                     onClick = {
                                         scope.launch {
-                                            val conversationId = viewModel.openDirectWith(contact.id)
-                                            onOpenConversation(conversationId)
+                                            // TODO(LOG-REMOVE)
+                                            android.util.Log.d("TapNav", "CLICK contactId=${contact.id}, name=${contact.name}")
+                                            try {
+                                                // TODO(LOG-REMOVE)
+                                                android.util.Log.d("TapNav", "openDirectWith START contactId=${contact.id}")
+                                                val conversationId = viewModel.openDirectWith(contact.id)
+                                                // TODO(LOG-REMOVE)
+                                                android.util.Log.d("TapNav", "openDirectWith OK conversationId=$conversationId blank=${conversationId.isBlank()}")
+                                                if (conversationId.isNotBlank()) {
+                                                    // TODO(LOG-REMOVE)
+                                                    android.util.Log.d("TapNav", "NAVIGATE attempt conversationId=$conversationId")
+                                                    onOpenConversation(conversationId)
+                                                } else {
+                                                    // TODO(LOG-REMOVE)
+                                                    android.util.Log.w("TapNav", "NAVIGATE SKIPPED reason=blankIdOrGuard")
+                                                }
+                                            } catch (e: Throwable) {
+                                                // TODO(LOG-REMOVE)
+                                                android.util.Log.e("TapNav", "openDirectWith ERROR contactId=${contact.id}", e)
+                                            }
                                         }
                                     }
                                 )

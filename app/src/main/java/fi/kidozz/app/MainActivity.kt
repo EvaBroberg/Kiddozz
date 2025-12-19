@@ -23,6 +23,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import kotlinx.coroutines.flow.filter
+import fi.kidozz.app.BuildConfig
 import fi.kidozz.app.data.auth.TokenManager
 import fi.kidozz.app.navigation.Routes
 import fi.kidozz.app.ui.components.ParentBottomNavigation
@@ -74,7 +75,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             KiddozzTheme {
                 val context = LocalContext.current
-                val navController = rememberNavController()
                 val tokenManager = remember { TokenManager(context) }
                 val role by tokenManager.roleFlow.collectAsState(initial = tokenManager.getRole())
                 val token by tokenManager.tokenFlow.collectAsState(initial = tokenManager.getToken())
@@ -85,13 +85,48 @@ class MainActivity : ComponentActivity() {
                 val session = remember(role, loggedIn) {
                     SessionState(isLoggedIn = loggedIn, role = role)
                 }
+                
+                // Use a single NavController
+                // Navigation is handled automatically by NavHost recomposition when session state changes
+                val navController = rememberNavController()
 
                 // Hoist ViewModels and repositories at the top level for shared state
-                val baseUrl = "http://10.0.2.2:8000"
-                val retrofit = Retrofit.Builder()
-                    .baseUrl(baseUrl)
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build()
+                val baseUrl: String = BuildConfig.BASE_URL
+                
+                // Log BASE_URL once on initialization
+                LaunchedEffect(baseUrl) {
+                    if (BuildConfig.DEBUG) {
+                        Log.d("MainActivity", "BASE_URL: $baseUrl")
+                    }
+                }
+                
+                // Create OkHttpClient with AuthInterceptor for authenticated requests
+                // Remember to avoid recreating on every recomposition
+                val okHttpClient = remember(tokenManager) {
+                    okhttp3.OkHttpClient.Builder()
+                        .addInterceptor { chain ->
+                            val request = chain.request()
+                            val authToken = tokenManager.getToken()
+                            val newRequest = if (authToken != null) {
+                                request.newBuilder()
+                                    .header("Authorization", "Bearer $authToken")
+                                    .build()
+                            } else {
+                                request
+                            }
+                            chain.proceed(newRequest)
+                        }
+                        .build()
+                }
+                
+                // Remember Retrofit to avoid recreating on every recomposition
+                val retrofit = remember(baseUrl, okHttpClient) {
+                    Retrofit.Builder()
+                        .baseUrl(BuildConfig.BASE_URL)
+                        .client(okHttpClient)
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build()
+                }
                 
                 val groupsApiService = retrofit.create(fi.kidozz.app.data.api.GroupsApiService::class.java)
                 val educatorApiService = retrofit.create(fi.kidozz.app.data.api.EducatorApiService::class.java)
@@ -108,6 +143,13 @@ class MainActivity : ComponentActivity() {
                 val messagingDatabase = fi.kidozz.app.features.messaging.data.db.MessagingDatabase.getDatabase(context)
                 val messagingDao = messagingDatabase.messagingDao()
                 val messagingWebSocketClient = fi.kidozz.app.features.messaging.data.ws.MessagingWebSocketClient()
+                
+                // Create SSE client for real-time message events (reuse the same OkHttpClient with auth)
+                val messagingSseClient = fi.kidozz.app.features.messaging.data.ws.MessagingSseClient(
+                    okHttpClient = okHttpClient,
+                    baseUrl = baseUrl,
+                    authTokenProvider = { tokenManager.getToken() }
+                )
                 
                 // Create UserSessionManager - will be updated when educator/parent data loads
                 val sessionManager = remember {
@@ -148,7 +190,7 @@ class MainActivity : ComponentActivity() {
                 val absenceReasonsViewModel = remember { fi.kidozz.app.features.dashboard.AbsenceReasonsViewModel(kidsRepository) }
                 
                 val messagingRepository = fi.kidozz.app.features.messaging.data.repo.MessagingRepositoryImpl(
-                    messagingApiService, messagingDao, messagingWebSocketClient,
+                    messagingApiService, messagingDao, messagingWebSocketClient, messagingSseClient,
                     kidsViewModel.kids, educatorsListViewModel.educators
                 )
                 
@@ -182,7 +224,7 @@ class MainActivity : ComponentActivity() {
                     if (educator != null && session.role in listOf("educator", "super_educator")) {
                         // Use educator.id from DB (not from token, as token may have different format)
                         val educatorUserId = educator.id
-                        val educatorGroupIds = educator.groups.map { it.id.toString() }.toSet()
+                        val educatorGroupIds = educator.groups.map { it.id }.toSet()
                         sessionManager.update(
                             sessionManager.session.value.copy(
                                 userId = educatorUserId, // ✅ Set userId from educator.id
@@ -256,8 +298,9 @@ class MainActivity : ComponentActivity() {
                 }
                 
                 // Debug session group IDs
-                LaunchedEffect(sessionManager.session.value.groupIds) {
-                    Log.d("KiddozzSession", "Session group IDs: ${sessionManager.session.value.groupIds}")
+                val currentSession by sessionManager.session.collectAsState()
+                LaunchedEffect(currentSession.groupIds) {
+                    Log.d("KiddozzSession", "Session group IDs: ${currentSession.groupIds}")
                 }
 
                 when {
@@ -314,9 +357,15 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) { innerPadding ->
+                            // Determine start destination based on user role
+                            val startDestination = when (session.role?.lowercase()) {
+                                "educator", "super_educator" -> Routes.EDU_GRAPH
+                                "parent" -> "parent_dashboard"
+                                else -> Routes.ROLE_SELECTION
+                            }
                             NavHost(
                                 navController = navController,
-                                startDestination = Routes.ROLE_SELECTION,
+                                startDestination = startDestination,
                                 modifier = Modifier.padding(innerPadding)
                             ) {
                                 composable(Routes.ROLE_SELECTION) {
@@ -342,14 +391,14 @@ class MainActivity : ComponentActivity() {
                                                     groupsViewModel = groupsViewModel,
                                                     educatorViewModel = educatorViewModel,
                                                     kidsViewModel = kidsViewModel,
-                                                    daycareId = "default-daycare-id",
+                                                    daycareId = daycareId ?: "default-daycare-id",
                                                     onKidClick = { kidId -> navController.navigateToKidDetail(kidId) }
                                                 )
                                             },
                                             groupsViewModel = groupsViewModel,
                                             educatorViewModel = educatorViewModel,
                                             kidsViewModel = kidsViewModel,
-                                            daycareId = "default-daycare-id"
+                                            daycareId = daycareId ?: "default-daycare-id"
                                         )
                                     }
                                     composable(Routes.CALENDAR) {
@@ -364,7 +413,7 @@ class MainActivity : ComponentActivity() {
                                             groupsViewModel = groupsViewModel,
                                             educatorViewModel = educatorViewModel,
                                             kidsViewModel = kidsViewModel,
-                                            daycareId = "default-daycare-id"
+                                            daycareId = daycareId ?: "default-daycare-id"
                                         )
                                     }
                                 }
@@ -376,7 +425,14 @@ class MainActivity : ComponentActivity() {
                                     composable(fi.kidozz.app.features.messaging.nav.MessagingRoutes.MESSAGES_LIST) {
                                         fi.kidozz.app.features.messaging.ui.MessagesListScreen(
                                             onOpenConversation = { id ->
-                                                navController.navigate(fi.kidozz.app.features.messaging.nav.MessagingRoutes.conversation(id))
+                                                try {
+                                                    val route = fi.kidozz.app.features.messaging.nav.MessagingRoutes.conversation(id)
+                                                    android.util.Log.d("MainActivity", "Navigating to conversation route: $route with id: $id")
+                                                    navController.navigate(route)
+                                                } catch (e: Exception) {
+                                                    android.util.Log.e("MainActivity", "Navigation failed for conversationId: $id", e)
+                                                    e.printStackTrace()
+                                                }
                                             },
                                             onBack = { navController.popBackStack() },
                                             viewModel = messagingViewModel
@@ -409,7 +465,7 @@ class MainActivity : ComponentActivity() {
 
                                 composable("parent_dashboard") {
                                     fi.kidozz.app.features.dashboard.ParentDashboardScreen(
-                                        parentId = authUserId ?: "unknown",
+                                        parentId = authUserId ?: "unknown_parent",
                                         parentsViewModel = parentsViewModel,
                                         absenceReasonsViewModel = absenceReasonsViewModel,
                                         kidsRepository = kidsRepository
@@ -417,7 +473,10 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 composable("menu") { 
-                                    fi.kidozz.app.navigation.MenuScreen(navController = navController) 
+                                    fi.kidozz.app.navigation.MenuScreen(
+                                        navController = navController,
+                                        tokenManager = tokenManager
+                                    ) 
                                 }
 
                                 composable("profile") { 

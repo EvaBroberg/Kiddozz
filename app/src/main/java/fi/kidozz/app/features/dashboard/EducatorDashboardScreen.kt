@@ -51,10 +51,12 @@ fun EducatorDashboardScreen(
     val currentEducator by educatorViewModel?.currentEducator?.collectAsState() ?: remember { mutableStateOf(null) }
     
     // Load data when screen is first displayed
+    // NOTE: Educator loading is handled by MainActivity with the correct educator ID from token
+    // Do not call loadCurrentEducatorByDaycare here as it would overwrite the correct educator
     LaunchedEffect(daycareId) {
         groupsViewModel?.loadGroups(daycareId)
         kidsViewModel?.loadKids(daycareId)
-        educatorViewModel?.loadCurrentEducatorByDaycare(daycareId)
+        // Educator is already loaded by MainActivity with loadCurrentEducatorById()
     }
     
     // Initialize selectedGroupIds with educator's assigned groups (only when empty)
@@ -162,10 +164,12 @@ fun EducatorDashboardContent(
     val currentEducator by educatorViewModel.currentEducator.collectAsState()
     
     // Load data when screen is first displayed
+    // NOTE: Educator loading is handled by MainActivity with the correct educator ID from token
+    // Do not call loadCurrentEducatorByDaycare here as it would overwrite the correct educator
     LaunchedEffect(daycareId) {
         groupsViewModel.loadGroups(daycareId)
         kidsViewModel.loadKids(daycareId)
-        educatorViewModel.loadCurrentEducatorByDaycare(daycareId)
+        // Educator is already loaded by MainActivity with loadCurrentEducatorById()
     }
     
     // Initialize selectedGroupIds with educator's assigned groups (only when empty)

@@ -30,6 +30,36 @@ fun ConversationScreen(
     viewModel: MessagingViewModel,
     modifier: Modifier = Modifier
 ) {
+    // TODO(LOG-REMOVE)
+    android.util.Log.d("ConvScreen", "entered with conversationId=$conversationId (blank=${conversationId.isBlank()})")
+    
+    // Guard against blank conversationId - show friendly error UI
+    if (conversationId.isBlank()) {
+        // TODO(LOG-REMOVE)
+        android.util.Log.w("ConvScreen", "Blank conversationId - showing error UI")
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "This chat couldn't be opened. Please go back and try again.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+                Button(onClick = onBack) {
+                    Text("Back")
+                }
+            }
+        }
+        return
+    }
+    
     val messages by viewModel.conversation(conversationId).collectAsState(initial = emptyList())
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()

@@ -5,33 +5,36 @@ import com.google.gson.annotations.SerializedName
 data class MessageDto(
     @SerializedName("id")
     val id: String,
-    @SerializedName("conversation_id")
+    @SerializedName("conversationId")
     val conversationId: String,
-    @SerializedName("sender_id")
+    @SerializedName("senderId")
     val senderId: String,
+    @SerializedName("senderType")
+    val senderType: String,
     @SerializedName("body")
     val body: String?,
-    @SerializedName("image_url")
+    @SerializedName("imageUrl")
     val imageUrl: String? = null,
-    @SerializedName("created_at")
-    val createdAt: Long,
-    @SerializedName("status")
-    val status: String = "sent"
+    @SerializedName("createdAt")
+    val createdAt: String  // ISO 8601 datetime string
+    // Note: status field is not provided by backend
 )
 
 data class ConversationDto(
     @SerializedName("id")
     val id: String,
-    @SerializedName("title")
-    val title: String,
-    @SerializedName("last_message_preview")
-    val lastMessagePreview: String?,
-    @SerializedName("last_timestamp")
-    val lastTimestamp: Long,
-    @SerializedName("unread_count")
-    val unreadCount: Int,
     @SerializedName("type")
     val type: String,
+    @SerializedName("daycareId")
+    val daycare_id: String,
+    @SerializedName("title")
+    val title: String?,
+    @SerializedName("lastMessagePreview")
+    val last_message_preview: String?,
+    @SerializedName("lastTimestamp")
+    val last_timestamp: Long,
+    @SerializedName("unreadCount")
+    val unread_count: Int,
     @SerializedName("participants")
     val participants: List<ParticipantDto>
 )
@@ -45,4 +48,11 @@ data class ParticipantDto(
     val avatarUrl: String? = null,
     @SerializedName("role")
     val role: String
+)
+
+data class MessagingEventDto(
+    val type: String,
+    @SerializedName("conversation_id")
+    val conversationId: String,
+    val message: MessageDto
 )

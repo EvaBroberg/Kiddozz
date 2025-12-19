@@ -14,18 +14,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import fi.kidozz.app.data.auth.TokenManager
+import fi.kidozz.app.navigation.Routes
 import fi.kidozz.app.ui.components.LogoutButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuScreen(
-    navController: NavController
+    navController: NavController,
+    tokenManager: TokenManager
 ) {
     val menuItems = listOf(
         MenuItem("Messages", Icons.AutoMirrored.Filled.Message) {
             navController.navigate(fi.kidozz.app.features.messaging.nav.MessagingRoutes.MESSAGES_GRAPH) {
                 launchSingleTop = true
             }
+        },
+        MenuItem("Switch Role", Icons.Default.SwapHoriz) {
+            // Clear the current role so user can select a new one
+            // This will trigger MainActivity to show the role selection screen
+            tokenManager.clearRole()
+            // Navigation will be handled automatically by MainActivity recomposition
         },
         MenuItem("Settings", Icons.Default.Settings) {
             // TODO: Navigate to settings

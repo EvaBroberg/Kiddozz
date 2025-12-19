@@ -22,8 +22,11 @@ abstract class MessagingDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     MessagingDatabase::class.java,
-                    "messaging_database"
-                ).build()
+                    "messaging.db"
+                )
+                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigrationOnDowngrade()
+                    .build()
                 INSTANCE = instance
                 instance
             }

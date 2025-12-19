@@ -15,9 +15,8 @@ fun LogoutButton(
     Button(
         onClick = {
             tokenManager.clearAll()
-            navController.navigate("role_selection") { 
-                popUpTo(0) 
-            }
+            // Navigation will be handled automatically by MainActivity recomposition
+            // when session.isLoggedIn becomes false or session.role becomes null
         },
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
         modifier = modifier

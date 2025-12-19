@@ -7,6 +7,8 @@ import fi.kidozz.app.data.models.*
 import fi.kidozz.app.features.messaging.data.db.MessagingDao
 import fi.kidozz.app.features.messaging.data.api.MessagingApiService
 import fi.kidozz.app.features.messaging.data.ws.MessagingWebSocketClient
+import fi.kidozz.app.features.messaging.data.ws.MessagingSseClient
+import okhttp3.OkHttpClient
 import fi.kidozz.app.features.messaging.data.repo.MessagingRepositoryImpl
 import fi.kidozz.app.features.messaging.domain.model.ContactType
 import fi.kidozz.app.features.messaging.domain.model.ConversationType
@@ -20,10 +22,13 @@ import retrofit2.Response
 class MessagingViewModelTest {
 
     private val fakeApi = object : MessagingApiService {
-        override suspend fun getConversations(filter: String?) = Response.success(emptyList<fi.kidozz.app.features.messaging.data.api.MessageDto>())
-        override suspend fun getMessages(conversationId: String, cursor: String?) = Response.success(emptyList<fi.kidozz.app.features.messaging.data.api.MessageDto>())
-        override suspend fun sendMessage(conversationId: String, message: fi.kidozz.app.features.messaging.data.api.SendMessageRequest) = Response.success(fi.kidozz.app.features.messaging.data.api.MessageDto("", "", "", null, "", 0L, ""))
+        override suspend fun createDirectConversation(request: fi.kidozz.app.features.messaging.data.api.CreateDirectConversationRequest) = 
+            Response.success(fi.kidozz.app.features.messaging.data.api.CreateDirectConversationResponse("conv-1", emptyList()))
+        override suspend fun getConversations(cursor: String?, limit: Int) = Response.success(emptyList<fi.kidozz.app.features.messaging.data.api.ConversationDto>())
+        override suspend fun getMessages(conversationId: String, cursor: String?, limit: Int) = Response.success(emptyList<fi.kidozz.app.features.messaging.data.api.MessageDto>())
+        override suspend fun sendMessage(conversationId: String, message: fi.kidozz.app.features.messaging.data.api.SendMessageRequest) = Response.success(fi.kidozz.app.features.messaging.data.api.MessageDto(id = "", conversationId = "", senderId = "", senderType = "", body = null, imageUrl = null, createdAt = "2024-01-01T00:00:00Z"))
         override suspend fun markAsRead(conversationId: String) = Response.success(Unit)
+        override suspend fun registerPushToken(request: fi.kidozz.app.features.messaging.data.api.RegisterPushTokenRequest) = Response.success(Unit)
     }
     
     private val fakeDao = object : MessagingDao {
@@ -38,6 +43,11 @@ class MessagingViewModelTest {
     }
     
     private val fakeWs = MessagingWebSocketClient()
+    private val fakeSse = MessagingSseClient(
+        okHttpClient = OkHttpClient(),
+        baseUrl = "http://test",
+        authTokenProvider = { null }
+    )
 
     @Test
     fun educator_educators_tab_shows_all_educators_except_self() = runTest {
@@ -54,7 +64,7 @@ class MessagingViewModelTest {
         )
         val educatorsFlow = MutableStateFlow(educators)
         val kidsFlow = MutableStateFlow(emptyList<Kid>())
-        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, kidsFlow, educatorsFlow)
+        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, fakeSse, kidsFlow, educatorsFlow)
         
         val sessionManager = UserSessionManager(
             UserSession(userId = "27", role = UserRole.EDUCATOR, groupIds = setOf("7"))
@@ -95,7 +105,7 @@ class MessagingViewModelTest {
         )
         val kidsFlow = MutableStateFlow(kids)
         val educatorsFlow = MutableStateFlow(emptyList<Educator>())
-        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, kidsFlow, educatorsFlow)
+        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, fakeSse, kidsFlow, educatorsFlow)
         
         val sessionManager = UserSessionManager(
             UserSession(userId = "27", role = UserRole.EDUCATOR, groupIds = setOf("7"))
@@ -129,7 +139,7 @@ class MessagingViewModelTest {
         )
         val educatorsFlow = MutableStateFlow(educators)
         val kidsFlow = MutableStateFlow(emptyList<Kid>())
-        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, kidsFlow, educatorsFlow)
+        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, fakeSse, kidsFlow, educatorsFlow)
         
         val sessionManager = UserSessionManager(
             UserSession(userId = "10", role = UserRole.PARENT, groupIds = setOf("7"))
@@ -170,7 +180,7 @@ class MessagingViewModelTest {
         )
         val kidsFlow = MutableStateFlow(kids)
         val educatorsFlow = MutableStateFlow(emptyList<Educator>())
-        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, kidsFlow, educatorsFlow)
+        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, fakeSse, kidsFlow, educatorsFlow)
         
         val sessionManager = UserSessionManager(
             UserSession(userId = "10", role = UserRole.PARENT, groupIds = setOf("7"))
@@ -206,7 +216,7 @@ class MessagingViewModelTest {
         )
         val educatorsFlow = MutableStateFlow(educators)
         val kidsFlow = MutableStateFlow(emptyList<Kid>())
-        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, kidsFlow, educatorsFlow)
+        val repo = MessagingRepositoryImpl(fakeApi, fakeDao, fakeWs, fakeSse, kidsFlow, educatorsFlow)
         
         val sessionManager = UserSessionManager(
             UserSession(userId = "27", role = UserRole.EDUCATOR, groupIds = setOf("7"))

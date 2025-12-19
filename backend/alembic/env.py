@@ -15,6 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # add your model imports here
 from app.core.database import Base
 from app.models.event import Event, EventImage
+from app.models.messaging import Conversation, ConversationParticipant, Message, PushToken
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

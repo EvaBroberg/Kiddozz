@@ -108,6 +108,15 @@ class TokenManager(context: Context) {
         }
     }
 
+    fun clearRole() {
+        val hadRole = _roleFlow.value
+        if (hadRole != null) {
+            prefs.edit().remove("role").apply()
+            _roleFlow.value = null
+            Log.d("TokenManagerDebug", "clearRole() reset role from '$hadRole'")
+        }
+    }
+
     fun getRole(): String? {
         val r = prefs.getString("role", null)
         val current = _roleFlow.value

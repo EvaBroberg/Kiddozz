@@ -43,6 +43,8 @@ class MessagingViewModel(
                 it.educatorsCache.value.size 
             } ?: 0
             
+            // TODO(LOG-REMOVE)
+            android.util.Log.d("VMConv", "filter=$filter role=${session.role} groupIds=${session.groupIds}")
             android.util.Log.d("ContactsSelect", "filter=$filter, role=${session.role}, userId=${session.userId}, groupIds=${session.groupIds} (size=${session.groupIds.size}), size(kids)=$kidsSize, size(educators)=$educatorsSize")
 
             // Guardrail: check for placeholder user IDs
@@ -90,8 +92,11 @@ class MessagingViewModel(
         _filter.value = type
     }
 
-    fun conversation(conversationId: String): Flow<List<Message>> =
-        repository.observeConversation(conversationId)
+    fun conversation(conversationId: String): Flow<List<Message>> {
+        // TODO(LOG-REMOVE)
+        android.util.Log.d("VMConv", "observe conversationId=$conversationId")
+        return repository.observeConversation(conversationId)
+    }
 
     fun send(conversationId: String, text: String?, image: ByteArray? = null) {
         viewModelScope.launch {

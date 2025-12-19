@@ -6,6 +6,7 @@
 
 # Set environment
 export APP_ENV=local
+export MESSAGING_BACKEND=true
 
 # Print banner
 echo "🚀 Starting Kiddozz Backend - LOCAL Environment"
