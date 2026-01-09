@@ -24,6 +24,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import kotlinx.coroutines.flow.filter
 import fi.kidozz.app.BuildConfig
+import fi.kidozz.app.core.config.AuthConfig
 import fi.kidozz.app.data.auth.TokenManager
 import fi.kidozz.app.navigation.Routes
 import fi.kidozz.app.ui.components.ParentBottomNavigation
@@ -70,6 +71,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         Log.d("Kiddozz", "MainActivity onCreate called")
+        
+        // Log AUTH_MODE once on app launch
+        Log.d("MainActivity", "🔐 AUTH_MODE = ${AuthConfig.authMode}")
 
         // Compose entrypoint: Initialize theme, navigation, and role-based routing
         setContent {
