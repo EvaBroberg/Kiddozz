@@ -3,8 +3,6 @@
 import logging
 from unittest.mock import patch
 
-import pytest
-
 from app.core.config import Settings
 
 
@@ -22,9 +20,10 @@ class TestAuthModeConfig:
         # Test the validator directly
         result = Settings.validate_auth_mode("INVITE")
         assert result == "INVITE"
-        
+
         # Test via Settings instance with env var
         import os
+
         with patch.dict(os.environ, {"AUTH_MODE": "INVITE"}):
             # Create new instance to pick up env var
             settings = Settings()
@@ -40,7 +39,7 @@ class TestAuthModeConfig:
             ("Dev", "DEV"),
             ("DEV", "DEV"),
         ]
-        
+
         for input_value, expected in test_cases:
             result = Settings.validate_auth_mode(input_value)
             assert result == expected, f"Failed for input: {input_value}"
@@ -49,10 +48,10 @@ class TestAuthModeConfig:
         """Test that AUTH_MODE defaults to DEV and logs warning on invalid value."""
         with caplog.at_level(logging.WARNING):
             result = Settings.validate_auth_mode("garbage")
-            
+
             # Should default to DEV
             assert result == "DEV"
-            
+
             # Should log a warning
             assert "Invalid AUTH_MODE value" in caplog.text
             assert "garbage" in caplog.text
@@ -62,4 +61,3 @@ class TestAuthModeConfig:
         """Test that AUTH_MODE handles whitespace correctly."""
         result = Settings.validate_auth_mode("  invite  ")
         assert result == "INVITE"
-
