@@ -35,6 +35,10 @@ def startup_event():
     # Log the current environment
     app_env = os.getenv("APP_ENV", "not set")
     print(f"🌍 APP_ENV = {app_env}")
+    
+    # Log active auth mode
+    from app.core.config import settings
+    print(f"🔐 AUTH_MODE = {settings.auth_mode}")
 
     # Run database migrations first
     try:

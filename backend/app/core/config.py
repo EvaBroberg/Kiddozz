@@ -1,9 +1,12 @@
+import logging
 import os
 from typing import List, Union
 
 from dotenv import load_dotenv
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
+
+logger = logging.getLogger(__name__)
 
 # Determine environment (default: local)
 APP_ENV = os.getenv("APP_ENV", "local")
@@ -62,6 +65,27 @@ class Settings(BaseSettings):
     # API Configuration
     api_v1_str: str = "/api/v1"
     project_name: str = "Kiddozz API"
+
+    # Authentication Mode Configuration
+    auth_mode: str = "DEV"
+
+    @field_validator("auth_mode", mode="before")
+    @classmethod
+    def validate_auth_mode(cls, v):
+        """Validate and normalize AUTH_MODE environment variable."""
+        if v is None:
+            return "DEV"
+        
+        # Normalize to uppercase and validate
+        normalized = str(v).upper().strip()
+        if normalized in ("DEV", "INVITE"):
+            return normalized
+        
+        # Invalid value: log warning and default to DEV
+        logger.warning(
+            f"Invalid AUTH_MODE value '{v}'. Allowed values: DEV, INVITE. Defaulting to DEV."
+        )
+        return "DEV"
 
     class Config:
         env_file = ".env"

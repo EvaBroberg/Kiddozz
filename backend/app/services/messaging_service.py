@@ -108,6 +108,20 @@ def get_or_create_direct_conversation(
             conversation.id,
             conversation.type,
         )
+        # Check if participants already exist
+        existing_participants = {
+            (p.user_type.value, p.user_id)
+            for p in conversation.participants
+        }
+        participant_a_key = (participant_a[0].lower().strip(), str(participant_a[1]).strip())
+        participant_b_key = (participant_b[0].lower().strip(), str(participant_b[1]).strip())
+        
+        if participant_a_key in existing_participants and participant_b_key in existing_participants:
+            logger.info("All participants already exist, skipping participant creation")
+            db.refresh(conversation)
+            return conversation
+        else:
+            logger.info("Some participants missing, will add them")
     else:
         logger.info("No existing conversation found. Creating new one via ORM.")
         conversation = Conversation(
@@ -124,58 +138,84 @@ def get_or_create_direct_conversation(
             conversation.type,
         )
 
-    # Add participants
+    # Add participants (only if they don't exist)
     logger.info("=" * 80)
     logger.info("ADDING PARTICIPANTS")
     logger.info("  participant_a: %s", participant_a)
     logger.info("  participant_b: %s", participant_b)
     logger.info("=" * 80)
 
-    try:
-        logger.info("Creating ConversationParticipant for participant_a...")
-        # Normalize user_type to lowercase and validate
-        user_type_a = participant_a[0].lower().strip()
-        if user_type_a not in ("parent", "educator"):
-            raise ValueError(
-                f"Invalid user_type for participant_a: '{participant_a[0]}' (normalized: '{user_type_a}')"
-            )
-        participant_a_obj = ConversationParticipant(
-            conversation_id=conversation.id,
-            user_type=UserType(user_type_a),
-            user_id=str(participant_a[1]).strip(),
+    # Normalize and validate participant_a
+    user_type_a = participant_a[0].lower().strip()
+    user_id_a = str(participant_a[1]).strip()
+    if user_type_a not in ("parent", "educator"):
+        raise ValueError(
+            f"Invalid user_type for participant_a: '{participant_a[0]}' (normalized: '{user_type_a}')"
         )
-        logger.info("  participant_a_obj: %s", participant_a_obj)
-        db.add(participant_a_obj)
-        logger.info("db.add(participant_a_obj) succeeded")
-    except ValueError as e:
-        logger.exception("Invalid user_type for participant_a: %s", e)
-        raise
-    except Exception as e:
-        logger.exception("Failed to add participant_a: %s", e)
-        raise
+    
+    # Check if participant_a already exists
+    existing_a = (
+        db.query(ConversationParticipant)
+        .filter(
+            ConversationParticipant.conversation_id == conversation.id,
+            ConversationParticipant.user_type == UserType(user_type_a),
+            ConversationParticipant.user_id == user_id_a,
+        )
+        .first()
+    )
+    
+    if not existing_a:
+        try:
+            logger.info("Creating ConversationParticipant for participant_a...")
+            participant_a_obj = ConversationParticipant(
+                conversation_id=conversation.id,
+                user_type=UserType(user_type_a),
+                user_id=user_id_a,
+            )
+            logger.info("  participant_a_obj: %s", participant_a_obj)
+            db.add(participant_a_obj)
+            logger.info("db.add(participant_a_obj) succeeded")
+        except Exception as e:
+            logger.exception("Failed to add participant_a: %s", e)
+            raise
+    else:
+        logger.info("Participant_a already exists, skipping")
 
-    try:
-        logger.info("Creating ConversationParticipant for participant_b...")
-        # Normalize user_type to lowercase and validate
-        user_type_b = participant_b[0].lower().strip()
-        if user_type_b not in ("parent", "educator"):
-            raise ValueError(
-                f"Invalid user_type for participant_b: '{participant_b[0]}' (normalized: '{user_type_b}')"
-            )
-        participant_b_obj = ConversationParticipant(
-            conversation_id=conversation.id,
-            user_type=UserType(user_type_b),
-            user_id=str(participant_b[1]).strip(),
+    # Normalize and validate participant_b
+    user_type_b = participant_b[0].lower().strip()
+    user_id_b = str(participant_b[1]).strip()
+    if user_type_b not in ("parent", "educator"):
+        raise ValueError(
+            f"Invalid user_type for participant_b: '{participant_b[0]}' (normalized: '{user_type_b}')"
         )
-        logger.info("  participant_b_obj: %s", participant_b_obj)
-        db.add(participant_b_obj)
-        logger.info("db.add(participant_b_obj) succeeded")
-    except ValueError as e:
-        logger.exception("Invalid user_type for participant_b: %s", e)
-        raise
-    except Exception as e:
-        logger.exception("Failed to add participant_b: %s", e)
-        raise
+    
+    # Check if participant_b already exists
+    existing_b = (
+        db.query(ConversationParticipant)
+        .filter(
+            ConversationParticipant.conversation_id == conversation.id,
+            ConversationParticipant.user_type == UserType(user_type_b),
+            ConversationParticipant.user_id == user_id_b,
+        )
+        .first()
+    )
+    
+    if not existing_b:
+        try:
+            logger.info("Creating ConversationParticipant for participant_b...")
+            participant_b_obj = ConversationParticipant(
+                conversation_id=conversation.id,
+                user_type=UserType(user_type_b),
+                user_id=user_id_b,
+            )
+            logger.info("  participant_b_obj: %s", participant_b_obj)
+            db.add(participant_b_obj)
+            logger.info("db.add(participant_b_obj) succeeded")
+        except Exception as e:
+            logger.exception("Failed to add participant_b: %s", e)
+            raise
+    else:
+        logger.info("Participant_b already exists, skipping")
 
     try:
         logger.info("Calling db.commit()...")
@@ -404,7 +444,6 @@ def register_push_token(
     if push_token:
         # Update updated_at
         from datetime import datetime
-
 
         push_token.updated_at = datetime.utcnow()
         db.commit()

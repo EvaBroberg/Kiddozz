@@ -11,6 +11,21 @@ object FeatureFlags {
     }
 }
 
+enum class AuthMode {
+    DEV,
+    INVITE
+}
+
+object AuthConfig {
+    /**
+     * Authentication mode: DEV (default) or INVITE.
+     * 
+     * Currently defaults to DEV. Can be overridden via BuildConfig.AUTH_MODE
+     * in build variants later (e.g., buildConfigField("String", "AUTH_MODE", "\"INVITE\"")).
+     */
+    val authMode: AuthMode = AuthMode.DEV
+}
+
 
 
 

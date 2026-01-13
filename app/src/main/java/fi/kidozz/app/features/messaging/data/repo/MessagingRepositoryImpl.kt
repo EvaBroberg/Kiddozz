@@ -36,6 +36,7 @@ class MessagingRepositoryImpl(
     private val dao: MessagingDao,
     private val webSocketClient: MessagingWebSocketClient, // Kept for backward compatibility, not used for new logic
     private val sseClient: MessagingSseClient,
+    private val tokenManager: fi.kidozz.app.data.auth.TokenManager,
     val kidsCache: kotlinx.coroutines.flow.StateFlow<List<Kid>>, // Made internal for logging
     val educatorsCache: kotlinx.coroutines.flow.StateFlow<List<Educator>> // Made internal for logging
 ) : MessagingRepository {
@@ -139,14 +140,36 @@ class MessagingRepositoryImpl(
         }
 
         try {
-            val response = apiService.getConversations(cursor = null, limit = 50)
-            if (response.isSuccessful) {
-                val conversations = response.body() ?: emptyList()
+            // Sync conversations
+            val conversationsResponse = apiService.getConversations(cursor = null, limit = 50)
+            if (conversationsResponse.isSuccessful) {
+                val conversations = conversationsResponse.body() ?: emptyList()
                 android.util.Log.d("MessagingRepo", "Fetched ${conversations.size} conversations from server")
+                
                 // Convert and insert conversations
-                // TODO: Implement ConversationDto.toEntity() and insert into Room
+                for (conversationDto in conversations) {
+                    try {
+                        val entity = conversationDto.toEntity()
+                        dao.insertConversation(entity)
+                        
+                        // Also sync messages for this conversation
+                        val messagesResponse = apiService.getMessages(conversationDto.id, cursor = null, limit = 50)
+                        if (messagesResponse.isSuccessful) {
+                            val messages = messagesResponse.body() ?: emptyList()
+                            if (messages.isNotEmpty()) {
+                                val currentUserId = tokenManager.getUserId() ?: "unknown"
+                                val messageEntities = messages.map { it.toEntity(currentUserId) }
+                                dao.insertMessages(messageEntities)
+                                android.util.Log.d("MessagingRepo", "Synced ${messages.size} messages for conversation ${conversationDto.id}")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("MessagingRepo", "Error syncing conversation ${conversationDto.id}", e)
+                    }
+                }
+                android.util.Log.d("MessagingRepo", "Successfully synced ${conversations.size} conversations")
             } else {
-                android.util.Log.w("MessagingRepo", "Failed to fetch conversations: ${response.code()}")
+                android.util.Log.w("MessagingRepo", "Failed to fetch conversations: ${conversationsResponse.code()}")
             }
         } catch (e: Exception) {
             android.util.Log.e("MessagingRepo", "Error during sync", e)
@@ -451,7 +474,65 @@ class MessagingRepositoryImpl(
         )
     }
 
+    // Extension function for ConversationDto
+    private fun fi.kidozz.app.features.messaging.data.api.ConversationDto.toEntity(): ConversationEntity {
+        // Convert participants to JSON
+        val participantsJson = try {
+            val jsonArray = JSONArray()
+            for (participant in this.participants) {
+                val jsonObject = JSONObject()
+                jsonObject.put("id", participant.id)
+                jsonObject.put("name", participant.name)
+                if (participant.avatarUrl != null) {
+                    jsonObject.put("avatarUrl", participant.avatarUrl)
+                }
+                jsonObject.put("role", participant.role)
+                jsonArray.put(jsonObject)
+            }
+            jsonArray.toString()
+        } catch (e: Exception) {
+            android.util.Log.e("MessagingRepo", "Failed to serialize participants to JSON", e)
+            "[]"
+        }
+        
+        return ConversationEntity(
+            id = this.id,
+            title = this.title ?: "",
+            lastMessagePreview = this.last_message_preview,
+            lastTimestamp = this.last_timestamp,
+            unreadCount = this.unread_count,
+            type = this.type.lowercase(), // Store as "direct" or "group"
+            participantsJson = participantsJson
+        )
+    }
+    
     // Extension function for MessageDto
+    private fun fi.kidozz.app.features.messaging.data.api.MessageDto.toEntity(myUserId: String): MessageEntity {
+        // Convert ISO 8601 string to epoch millis
+        val createdAtMillis = try {
+            java.time.Instant.parse(this.createdAt).toEpochMilli()
+        } catch (e: Exception) {
+            try {
+                java.time.OffsetDateTime.parse(this.createdAt).toInstant().toEpochMilli()
+            } catch (e2: Exception) {
+                android.util.Log.w("MessagingRepo", "Failed to parse createdAt: ${this.createdAt}, using current time")
+                System.currentTimeMillis()
+            }
+        }
+        
+        return MessageEntity(
+            id = this.id,
+            conversationId = this.conversationId,
+            senderId = this.senderId,
+            body = this.body,
+            imageUrl = this.imageUrl,
+            createdAt = createdAtMillis,
+            isMine = this.senderId == myUserId,
+            status = "sent" // Backend doesn't provide status, default to "sent"
+        )
+    }
+    
+    // Extension function for MessageDto toDomain (for SSE events)
     // Note: Build verified successful after fixing field name mismatches (camelCase DTO properties)
     private fun fi.kidozz.app.features.messaging.data.api.MessageDto.toDomain(myUserId: String): Message {
         // Convert ISO 8601 string to epoch millis
