@@ -12,6 +12,8 @@ from app.services.invite_token_service import (
     RevokedTokenError,
     TokenAlreadyUsedError,
     consume_invite_token,
+    generate_invite_token,
+    revoke_invite_token,
     validate_invite_token,
 )
 
@@ -226,3 +228,251 @@ class TestConsumeInviteToken:
         result = consume_invite_token(db_session, "super-educator-token")
         assert result.role == "super_educator"
         assert result.used_at is not None
+
+
+class TestGenerateInviteToken:
+    """Test generate_invite_token function."""
+
+    def test_generate_token(self, db_session, test_daycare):
+        """Test that a token can be generated."""
+        token_obj, token_str = generate_invite_token(
+            db_session,
+            daycare_id=test_daycare.id,
+            role="parent",
+            email="newuser@example.com",
+            ttl_minutes=60 * 24,  # 1 day
+        )
+
+        assert token_obj.id is not None
+        assert token_obj.token == token_str
+        assert token_obj.daycare_id == test_daycare.id
+        assert token_obj.role == "parent"
+        assert token_obj.email == "newuser@example.com"
+        assert token_obj.used_at is None
+        assert token_obj.revoked_at is None
+        # Ensure expires_at is in the future (timezone-aware comparison)
+        now_utc = datetime.now(timezone.utc)
+        assert token_obj.expires_at.replace(tzinfo=timezone.utc) > now_utc
+
+    def test_generate_token_with_created_by(self, db_session, test_daycare):
+        """Test generating a token with created_by field."""
+        token_obj, token_str = generate_invite_token(
+            db_session,
+            daycare_id=test_daycare.id,
+            role="educator",
+            email="educator@example.com",
+            created_by="admin-user-123",
+        )
+
+        assert token_obj.created_by == "admin-user-123"
+
+    def test_generate_token_invalid_role(self, db_session, test_daycare):
+        """Test that generating with invalid role raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid role"):
+            generate_invite_token(
+                db_session,
+                daycare_id=test_daycare.id,
+                role="invalid_role",
+                email="test@example.com",
+            )
+
+    def test_generate_token_invalid_ttl(self, db_session, test_daycare):
+        """Test that generating with non-positive TTL raises ValueError."""
+        with pytest.raises(ValueError, match="ttl_minutes must be positive"):
+            generate_invite_token(
+                db_session,
+                daycare_id=test_daycare.id,
+                role="parent",
+                email="test@example.com",
+                ttl_minutes=0,
+            )
+
+        with pytest.raises(ValueError, match="ttl_minutes must be positive"):
+            generate_invite_token(
+                db_session,
+                daycare_id=test_daycare.id,
+                role="parent",
+                email="test@example.com",
+                ttl_minutes=-1,
+            )
+
+    def test_generate_token_ttl_enforced(self, db_session, test_daycare):
+        """Test that TTL is properly enforced in expiration."""
+        # Generate token with default TTL (7 days)
+        token_obj, token_str = generate_invite_token(
+            db_session,
+            daycare_id=test_daycare.id,
+            role="parent",
+            email="test@example.com",
+        )
+
+        # Token should be valid immediately
+        validate_invite_token(db_session, token_str)
+
+        # Manually expire the token by setting expires_at to past
+        # Ensure timezone-aware datetime
+        token_obj.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+        db_session.commit()
+        db_session.refresh(token_obj)
+
+        # Validation should fail with ExpiredTokenError
+        with pytest.raises(ExpiredTokenError, match="has expired"):
+            validate_invite_token(db_session, token_str)
+
+    def test_token_randomness(self, db_session, test_daycare):
+        """Test that generated tokens are unique (randomness check)."""
+        tokens = set()
+        for _ in range(50):
+            token_obj, token_str = generate_invite_token(
+                db_session,
+                daycare_id=test_daycare.id,
+                role="parent",
+                email=f"user{_}@example.com",
+            )
+            assert token_str not in tokens, "Token collision detected"
+            tokens.add(token_str)
+
+
+class TestRevokeInviteToken:
+    """Test revoke_invite_token function."""
+
+    def test_revoke_token(self, db_session, test_daycare):
+        """Test that a token can be revoked."""
+        token_obj, token_str = generate_invite_token(
+            db_session,
+            daycare_id=test_daycare.id,
+            role="parent",
+            email="test@example.com",
+        )
+
+        # Token should be valid before revocation
+        validate_invite_token(db_session, token_str)
+
+        # Revoke the token
+        revoked_token = revoke_invite_token(
+            db_session, token_str, revoked_by="admin-123"
+        )
+
+        assert revoked_token.id == token_obj.id
+        assert revoked_token.revoked_at is not None
+        # Ensure timezone-aware comparison
+        now_utc = datetime.now(timezone.utc)
+        revoked_at_utc = (
+            revoked_token.revoked_at.replace(tzinfo=timezone.utc)
+            if revoked_token.revoked_at.tzinfo is None
+            else revoked_token.revoked_at
+        )
+        assert revoked_at_utc <= now_utc
+
+        # Token should fail validation after revocation
+        with pytest.raises(RevokedTokenError, match="has been revoked"):
+            validate_invite_token(db_session, token_str)
+
+    def test_revoke_nonexistent_token(self, db_session):
+        """Test that revoking a non-existent token raises InvalidTokenError."""
+        with pytest.raises(InvalidTokenError, match="does not exist"):
+            revoke_invite_token(db_session, "non-existent-token")
+
+    def test_revoke_used_token_rejected(self, db_session, test_daycare):
+        """Test that revoking a used token is rejected."""
+        token_obj, token_str = generate_invite_token(
+            db_session,
+            daycare_id=test_daycare.id,
+            role="parent",
+            email="test@example.com",
+        )
+
+        # Consume the token first
+        consume_invite_token(db_session, token_str)
+
+        # Attempting to revoke should fail
+        with pytest.raises(TokenAlreadyUsedError, match="already been used"):
+            revoke_invite_token(db_session, token_str)
+
+
+class TestInviteTokenLifecycle:
+    """Test complete lifecycle: generate -> validate -> revoke -> validate."""
+
+    def test_generate_validate_revoke_flow(self, db_session, test_daycare):
+        """Test the complete lifecycle flow."""
+        # 1. Generate token
+        token_obj, token_str = generate_invite_token(
+            db_session,
+            daycare_id=test_daycare.id,
+            role="educator",
+            email="educator@example.com",
+        )
+
+        # 2. Validate succeeds
+        validated_token = validate_invite_token(db_session, token_str)
+        assert validated_token.id == token_obj.id
+
+        # 3. Revoke token
+        revoked_token = revoke_invite_token(db_session, token_str)
+        assert revoked_token.revoked_at is not None
+
+        # 4. Validate fails as revoked
+        with pytest.raises(RevokedTokenError, match="has been revoked"):
+            validate_invite_token(db_session, token_str)
+
+
+class TestInviteTokenLogging:
+    """Test that logging works correctly and doesn't leak tokens."""
+
+    def test_generate_logs_lifecycle(self, db_session, test_daycare, caplog):
+        """Test that token generation is logged without full token."""
+        with caplog.at_level("INFO"):
+            token_obj, token_str = generate_invite_token(
+                db_session,
+                daycare_id=test_daycare.id,
+                role="parent",
+                email="test@example.com",
+            )
+
+        # Check that log contains generation message
+        assert "Invite token generated" in caplog.text
+        assert f"id={token_obj.id}" in caplog.text
+        assert f"token_prefix='{token_str[:6]}...'" in caplog.text
+
+        # Ensure full token is NOT in logs
+        assert token_str not in caplog.text
+
+    def test_revoke_logs_lifecycle(self, db_session, test_daycare, caplog):
+        """Test that token revocation is logged without full token."""
+        token_obj, token_str = generate_invite_token(
+            db_session,
+            daycare_id=test_daycare.id,
+            role="parent",
+            email="test@example.com",
+        )
+
+        with caplog.at_level("INFO"):
+            revoke_invite_token(db_session, token_str, revoked_by="admin-123")
+
+        # Check that log contains revocation message
+        assert "Invite token revoked" in caplog.text
+        assert f"id={token_obj.id}" in caplog.text
+        assert f"token_prefix='{token_str[:6]}...'" in caplog.text
+
+        # Ensure full token is NOT in logs
+        assert token_str not in caplog.text
+
+    def test_consume_logs_lifecycle(self, db_session, test_daycare, caplog):
+        """Test that token consumption is logged without full token."""
+        token_obj, token_str = generate_invite_token(
+            db_session,
+            daycare_id=test_daycare.id,
+            role="parent",
+            email="test@example.com",
+        )
+
+        with caplog.at_level("INFO"):
+            consume_invite_token(db_session, token_str)
+
+        # Check that log contains consumption message
+        assert "Invite token consumed" in caplog.text
+        assert f"id={token_obj.id}" in caplog.text
+        assert f"token_prefix='{token_str[:6]}...'" in caplog.text
+
+        # Ensure full token is NOT in logs
+        assert token_str not in caplog.text
