@@ -13,6 +13,7 @@ from app.core.database import Base
 if TYPE_CHECKING:
     from .educator import Educator
     from .group import Group
+    from .invite_token import InviteToken
     from .kid import Kid
     from .parent import Parent
 
@@ -45,6 +46,9 @@ class Daycare(Base):
     )
     kids: Mapped[List["Kid"]] = relationship(
         "Kid", back_populates="daycare", cascade="all, delete-orphan"
+    )
+    invite_tokens: Mapped[List["InviteToken"]] = relationship(
+        "InviteToken", back_populates="daycare", cascade="all, delete-orphan"
     )
 
     def __repr__(self):
