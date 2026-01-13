@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.roles import Role
 from app.core.security import create_access_token
 from app.models.educator import Educator
 from app.models.parent import Parent
@@ -70,16 +71,16 @@ def test_token(request: TestTokenRequest) -> Dict[str, Any]:
             detail="Endpoint not available in this environment",
         )
 
-    # Define allowed roles
-    ALLOWED_ROLES = {"parent", "educator", "super_educator"}
-    role = request.role.lower().strip()
-
-    # Validate role
-    if role not in ALLOWED_ROLES:
+    # Validate role using Role enum
+    try:
+        role_enum = Role.from_str(request.role)
+        role = role_enum.value
+    except ValueError as e:
+        valid_roles = [r.value for r in Role]
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid role. Allowed: {sorted(ALLOWED_ROLES)}",
-        )
+            detail=f"Invalid role. Allowed: {valid_roles}",
+        ) from e
 
     # Create token data
     token_data = {
@@ -125,7 +126,11 @@ def dev_login(payload: DevLoginRequest, db: Session = Depends(get_db)):
         edu = db.query(Educator).get(payload.educator_id)
         if not edu:
             raise HTTPException(status_code=404, detail="Educator not found")
-        role = "educator" if edu.role == "educator" else "super_educator"
+        # Map EducatorRole to Role enum
+        if edu.role == "educator":
+            role = Role.EDUCATOR.value
+        else:
+            role = Role.SUPER_EDUCATOR.value
         sub = str(edu.id)
         daycare_id = resolve_daycare_id(db, str(edu.daycare_id))
         groups = [g.name for g in edu.groups]
@@ -134,7 +139,7 @@ def dev_login(payload: DevLoginRequest, db: Session = Depends(get_db)):
         par = db.query(Parent).get(payload.parent_id)
         if not par:
             raise HTTPException(status_code=404, detail="Parent not found")
-        role = "parent"
+        role = Role.PARENT.value
         sub = str(par.id)
         daycare_id = resolve_daycare_id(db, str(par.daycare_id))
         # parents don't have groups directly, but you can derive via their kids if you wish; leave empty for now or compute later
@@ -155,10 +160,19 @@ def dev_login(payload: DevLoginRequest, db: Session = Depends(get_db)):
 def get_current_user_info(
     current_user: Dict[str, Any] = Depends(get_current_user),
 ) -> Dict[str, Any]:
-    """Get current user information from JWT token."""
+    """
+    Get current user information from JWT token.
+
+    Returns server-authoritative user identity:
+    - user_id (sub claim)
+    - role (validated against Role enum)
+    - daycare_id (if present in token)
+    - exp (token expiration)
+    """
     return {
         "user_id": current_user.get("sub"),
         "role": current_user.get("role"),
+        "daycare_id": current_user.get("daycare_id"),
         "exp": current_user.get("exp"),
     }
 
@@ -169,8 +183,13 @@ def get_current_educator_info(
     db: Session = Depends(get_db),
 ):
     """Get current educator information including groups."""
-    role = current_user.get("role")
-    if role not in ["educator", "super_educator"]:
+    role_str = current_user.get("role")
+    try:
+        role = Role.from_str(role_str)
+    except ValueError:
+        raise HTTPException(status_code=403, detail=f"Invalid role: {role_str}")
+
+    if role not in [Role.EDUCATOR, Role.SUPER_EDUCATOR]:
         raise HTTPException(
             status_code=403, detail="This endpoint is only available for educators"
         )

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import require_any_role
+from app.core.roles import Role
 from app.models.event import Event, EventImage
 from app.models.schemas import (
     Event as EventSchema,
@@ -29,7 +30,7 @@ router = APIRouter()
 
 @router.get("/educator-only")
 def get_educator_only_events(
-    current_user: dict = Depends(require_any_role("educator", "super_educator"))
+    current_user: dict = Depends(require_any_role(Role.EDUCATOR, Role.SUPER_EDUCATOR))
 ):
     """Protected endpoint that only educators and super_educators can access."""
     return {"message": "Educator-only endpoint", "user": current_user}
