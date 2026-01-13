@@ -6,6 +6,7 @@ import fi.kidozz.app.data.models.DevLoginRequest
 import fi.kidozz.app.data.models.Educator
 import fi.kidozz.app.data.models.Parent
 import fi.kidozz.app.data.models.TokenResponse
+import fi.kidozz.app.data.models.UserInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -13,6 +14,28 @@ class AuthRepository(
     private val authApiService: AuthApiService,
     private val tokenManager: TokenManager
 ) {
+    
+    /**
+     * Get current user information from server (server-authoritative role).
+     * Returns role, user_id, and daycare_id from backend.
+     */
+    suspend fun getCurrentUserInfo(): Result<UserInfo> = withContext(Dispatchers.IO) {
+        try {
+            val response = authApiService.getCurrentUserInfo()
+            if (response.isSuccessful) {
+                val userInfo = response.body()
+                if (userInfo != null) {
+                    Result.success(userInfo)
+                } else {
+                    Result.failure(Exception("Empty response body"))
+                }
+            } else {
+                Result.failure(Exception("Failed to get user info: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     
     suspend fun getEducators(daycareId: String, search: String? = null): Result<List<Educator>> = withContext(Dispatchers.IO) {
         try {

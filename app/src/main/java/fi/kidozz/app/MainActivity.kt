@@ -24,8 +24,10 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import kotlinx.coroutines.flow.filter
 import fi.kidozz.app.BuildConfig
+import fi.kidozz.app.core.auth.mapServerRoleToAppRole
 import fi.kidozz.app.core.config.AuthConfig
 import fi.kidozz.app.data.auth.TokenManager
+import fi.kidozz.app.data.repository.AuthRepository
 import fi.kidozz.app.navigation.Routes
 import fi.kidozz.app.ui.components.ParentBottomNavigation
 import fi.kidozz.app.ui.components.EducatorBottomNavigation
@@ -80,15 +82,14 @@ class MainActivity : ComponentActivity() {
             KiddozzTheme {
                 val context = LocalContext.current
                 val tokenManager = remember { TokenManager(context) }
-                val role by tokenManager.roleFlow.collectAsState(initial = tokenManager.getRole())
                 val token by tokenManager.tokenFlow.collectAsState(initial = tokenManager.getToken())
                 val authUserId by tokenManager.userIdFlow.collectAsState()
                 val authDaycareId by tokenManager.daycareIdFlow.collectAsState()
                 val loggedIn = !token.isNullOrEmpty()
 
-                val session = remember(role, loggedIn) {
-                    SessionState(isLoggedIn = loggedIn, role = role)
-                }
+                // Server-authoritative role state (from /auth/me)
+                var serverRole by remember { mutableStateOf<String?>(null) }
+                var isResolvingAuth by remember { mutableStateOf(false) }
                 
                 // Use a single NavController
                 // Navigation is handled automatically by NavHost recomposition when session state changes
@@ -132,11 +133,53 @@ class MainActivity : ComponentActivity() {
                         .build()
                 }
                 
+                val authApiService = retrofit.create(fi.kidozz.app.data.api.AuthApiService::class.java)
                 val groupsApiService = retrofit.create(fi.kidozz.app.data.api.GroupsApiService::class.java)
                 val educatorApiService = retrofit.create(fi.kidozz.app.data.api.EducatorApiService::class.java)
                 val kidsApiService = retrofit.create(fi.kidozz.app.data.api.KidsApiService::class.java)
                 val parentsApiService = retrofit.create(fi.kidozz.app.data.api.ParentsApiService::class.java)
                 val messagingApiService = retrofit.create(fi.kidozz.app.features.messaging.data.api.MessagingApiService::class.java)
+                
+                // Server-authoritative role resolution: call /auth/me if token exists
+                val authRepository = remember(authApiService, tokenManager) { AuthRepository(authApiService, tokenManager) }
+                
+                LaunchedEffect(token, authRepository) {
+                    if (token != null && !isResolvingAuth) {
+                        Log.d("MainActivity", "🔐 Token present, calling /auth/me for server-authoritative role")
+                        isResolvingAuth = true
+                        val result = authRepository.getCurrentUserInfo()
+                        result.fold(
+                            onSuccess = { userInfo ->
+                                val mappedRole = mapServerRoleToAppRole(userInfo.role)
+                                serverRole = mappedRole
+                                Log.d("MainActivity", "✅ /auth/me success: role='${userInfo.role}' → mapped='$mappedRole', user_id='${userInfo.user_id}', daycare_id='${userInfo.daycare_id}'")
+                                isResolvingAuth = false
+                            },
+                            onFailure = { exception ->
+                                Log.e("MainActivity", "❌ /auth/me failed: ${exception.message}")
+                                // On 401 (unauthorized), clear token to force re-login
+                                if (exception.message?.contains("401") == true || exception.message?.contains("Unauthorized") == true) {
+                                    Log.d("MainActivity", "🔐 401 response, clearing token")
+                                    tokenManager.clearToken()
+                                    serverRole = null
+                                }
+                                isResolvingAuth = false
+                            }
+                        )
+                    } else if (token == null) {
+                        Log.d("MainActivity", "🔐 Token missing, skipping /auth/me")
+                        serverRole = null
+                        isResolvingAuth = false
+                    }
+                }
+                
+                // Session state based on server-authoritative role
+                val session = remember(serverRole, loggedIn, isResolvingAuth) {
+                    SessionState(
+                        isLoggedIn = if (isResolvingAuth) null else loggedIn,
+                        role = serverRole
+                    )
+                }
                 
                 val groupsRepository = fi.kidozz.app.data.repository.GroupsRepository(groupsApiService)
                 val educatorRepository = fi.kidozz.app.data.repository.EducatorRepository(educatorApiService)
@@ -160,7 +203,7 @@ class MainActivity : ComponentActivity() {
                     fi.kidozz.app.core.session.UserSessionManager(
                         fi.kidozz.app.core.session.UserSession(
                             userId = authUserId ?: "unknown", // Will be updated from token or educator/parent data
-                            role = if (session.role in listOf("educator", "super_educator")) 
+                            role = if (serverRole in listOf("educator", "super_educator")) 
                                 fi.kidozz.app.core.session.UserRole.EDUCATOR 
                             else 
                                 fi.kidozz.app.core.session.UserRole.PARENT,
@@ -169,9 +212,9 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 
-                // Update session.role whenever TokenManager.roleFlow changes (source of truth)
-                LaunchedEffect(role) {
-                    val mappedRole = if (role in listOf("educator", "super_educator")) 
+                // Update session.role whenever serverRole changes (server-authoritative)
+                LaunchedEffect(serverRole) {
+                    val mappedRole = if (serverRole in listOf("educator", "super_educator")) 
                         fi.kidozz.app.core.session.UserRole.EDUCATOR 
                     else 
                         fi.kidozz.app.core.session.UserRole.PARENT
@@ -181,7 +224,7 @@ class MainActivity : ComponentActivity() {
                         sessionManager.update(
                             sessionManager.session.value.copy(role = mappedRole)
                         )
-                        Log.d("SessionRole", "roleFlow='$role' → mapped=$mappedRole, session.role was $oldRole")
+                        Log.d("SessionRole", "serverRole='$serverRole' → mapped=$mappedRole, session.role was $oldRole")
                     }
                 }
                 
@@ -210,7 +253,7 @@ class MainActivity : ComponentActivity() {
                         Log.d("MainActivity", "Loading data for daycare: $daycareId")
                         educatorsListViewModel.load(daycareId)
                         // Load current educator from token userId if available
-                        if (authUserId != null && session.role in listOf("educator", "super_educator")) {
+                        if (authUserId != null && serverRole in listOf("educator", "super_educator")) {
                             // Load educator by ID from token
                             educatorViewModel.loadCurrentEducatorById(daycareId, authUserId)
                         }
@@ -221,11 +264,11 @@ class MainActivity : ComponentActivity() {
                 }
                 
                 // Update session with educator's user ID and group IDs when educator loads (reactive)
-                // NOTE: Do NOT update role here - role comes only from TokenManager.roleFlow
+                // NOTE: Do NOT update role here - role comes from server (/auth/me)
                 val currentEducator by educatorViewModel.currentEducator.collectAsState()
-                LaunchedEffect(currentEducator, session.role, authUserId) {
+                LaunchedEffect(currentEducator, serverRole, authUserId) {
                     val educator = currentEducator
-                    if (educator != null && session.role in listOf("educator", "super_educator")) {
+                    if (educator != null && serverRole in listOf("educator", "super_educator")) {
                         // Use educator.id from DB (not from token, as token may have different format)
                         val educatorUserId = educator.id
                         val educatorGroupIds = educator.groups.map { it.id }.toSet()
@@ -242,14 +285,14 @@ class MainActivity : ComponentActivity() {
                 }
                 
                 // Update session with parent's user ID and group IDs when kids load (for parents, reactive)
-                // NOTE: Do NOT update role here - role comes only from TokenManager.roleFlow
+                // NOTE: Do NOT update role here - role comes from server (/auth/me)
                 val kids by kidsViewModel.kids.collectAsState()
                 
                 // Get parent ID from JWT token (sub claim)
                 val currentParentId = authUserId
                 
-                LaunchedEffect(kids, session.role, currentParentId) {
-                    if (session.role == "parent" && currentParentId != null) {
+                LaunchedEffect(kids, serverRole, currentParentId) {
+                    if (serverRole == "parent" && currentParentId != null) {
                         // Filter kids to only those belonging to the logged-in parent
                         val myKids = kids.filter { kid ->
                             kid.parents.any { parent -> parent.id == currentParentId }
@@ -297,8 +340,8 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // Add this debugging log block:
-                LaunchedEffect(session.role) {
-                    Log.d("KiddozzSession", "Session updated: logged=${session.isLoggedIn} role='${session.role}'")
+                LaunchedEffect(serverRole) {
+                    Log.d("KiddozzSession", "Session updated: logged=${session.isLoggedIn} serverRole='$serverRole'")
                 }
                 
                 // Debug session group IDs
@@ -353,7 +396,7 @@ class MainActivity : ComponentActivity() {
                     else -> {
                         Scaffold(
                             bottomBar = {
-                                when (session.role?.lowercase()) {
+                                when (serverRole?.lowercase()) {
                                     "educator" -> EducatorBottomNavigation(navController)
                                     "super_educator" -> EducatorBottomNavigation(navController)
                                     "parent" -> ParentBottomNavigation(navController)
@@ -361,8 +404,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) { innerPadding ->
-                            // Determine start destination based on user role
-                            val startDestination = when (session.role?.lowercase()) {
+                            // Determine start destination based on server-authoritative role
+                            val startDestination = when (serverRole?.lowercase()) {
                                 "educator", "super_educator" -> Routes.EDU_GRAPH
                                 "parent" -> "parent_dashboard"
                                 else -> Routes.ROLE_SELECTION
