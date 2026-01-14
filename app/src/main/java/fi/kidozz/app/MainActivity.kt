@@ -68,6 +68,31 @@ fun LoadingScreen() {
 }
 
 class MainActivity : ComponentActivity() {
+    
+    /**
+     * Extract invite token from deep link intent.
+     * Returns token if found, null otherwise.
+     * Logs token prefix only (never full token).
+     */
+    internal fun extractInviteToken(intent: android.content.Intent?): String? {
+        val data = intent?.data
+        if (data != null && data.scheme == "kiddozz" && data.host == "invite") {
+            val token = data.getQueryParameter("token")
+            if (token != null) {
+                val tokenPrefix = if (token.length >= 6) token.take(6) else token.take(token.length)
+                Log.d("MainActivity", "Deep link received: token_prefix='$tokenPrefix...'")
+                return token
+            }
+        }
+        return null
+    }
+    
+    override fun onNewIntent(intent: android.content.Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // Intent will be checked in LaunchedEffect below
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -76,6 +101,9 @@ class MainActivity : ComponentActivity() {
         
         // Log AUTH_MODE once on app launch
         Log.d("MainActivity", "🔐 AUTH_MODE = ${AuthConfig.authMode}")
+        
+        // Extract invite token from intent (cold start)
+        val initialInviteToken = extractInviteToken(intent)
 
         // Compose entrypoint: Initialize theme, navigation, and role-based routing
         setContent {
@@ -94,6 +122,21 @@ class MainActivity : ComponentActivity() {
                 // Use a single NavController
                 // Navigation is handled automatically by NavHost recomposition when session state changes
                 val navController = rememberNavController()
+                
+                // State for invite token from deep link
+                var inviteToken by remember { mutableStateOf<String?>(initialInviteToken) }
+                
+                // Handle onNewIntent: check current intent for invite token
+                val activity = androidx.compose.ui.platform.LocalContext.current as? MainActivity
+                LaunchedEffect(Unit) {
+                    activity?.let {
+                        // Check current intent for invite token (handles onNewIntent case)
+                        val currentIntentToken = it.extractInviteToken(it.intent)
+                        if (currentIntentToken != null && inviteToken != currentIntentToken) {
+                            inviteToken = currentIntentToken
+                        }
+                    }
+                }
 
                 // Hoist ViewModels and repositories at the top level for shared state
                 val baseUrl: String = BuildConfig.BASE_URL
@@ -351,6 +394,27 @@ class MainActivity : ComponentActivity() {
                 }
 
                 when {
+                    // If invite token is present, show accept invite screen
+                    inviteToken != null -> {
+                        NavHost(
+                            navController = navController,
+                            startDestination = Routes.ACCEPT_INVITE
+                        ) {
+                            composable(Routes.ACCEPT_INVITE) {
+                                fi.kidozz.app.features.invite.AcceptInviteScreen(
+                                    inviteToken = inviteToken!!,
+                                    authRepository = authRepository,
+                                    tokenManager = tokenManager,
+                                    onSuccess = {
+                                        // Clear invite token and let normal auth flow handle routing
+                                        inviteToken = null
+                                        // Token is saved, so next recomposition will trigger /auth/me check
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
                     session.isLoggedIn == null -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),

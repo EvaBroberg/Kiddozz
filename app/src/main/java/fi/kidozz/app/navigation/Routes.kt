@@ -2,6 +2,7 @@ package fi.kidozz.app.navigation
 
 object Routes {
     const val ROLE_SELECTION = "role_selection"
+    const val ACCEPT_INVITE = "accept_invite"
     const val EDU_GRAPH = "educator_graph"
     const val KIDS_OVERVIEW = "kids_overview"
     const val CALENDAR = "calendar"
