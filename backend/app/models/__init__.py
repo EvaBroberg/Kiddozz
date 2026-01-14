@@ -4,6 +4,7 @@ from .daycare import Daycare
 from .educator import Educator, EducatorRole
 from .event import Event, EventImage
 from .group import Group
+from .invite_token import InviteToken
 from .kid import Kid
 from .messaging import (
     Conversation,
@@ -22,6 +23,7 @@ __all__ = [
     "Daycare",
     "Educator",
     "EducatorRole",
+    "InviteToken",
     "Event",
     "EventImage",
     "Group",

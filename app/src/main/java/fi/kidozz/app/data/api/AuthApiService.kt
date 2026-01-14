@@ -4,6 +4,7 @@ import fi.kidozz.app.data.models.DevLoginRequest
 import fi.kidozz.app.data.models.Educator
 import fi.kidozz.app.data.models.Parent
 import fi.kidozz.app.data.models.TokenResponse
+import fi.kidozz.app.data.models.UserInfo
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -25,4 +26,7 @@ interface AuthApiService {
     
     @POST("api/v1/auth/dev-login")
     suspend fun devLogin(@Body request: DevLoginRequest): Response<TokenResponse>
+    
+    @GET("api/v1/auth/me")
+    suspend fun getCurrentUserInfo(): Response<UserInfo>
 }

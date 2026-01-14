@@ -11,7 +11,9 @@ class TokenManager(context: Context) {
 
     private val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
-    private val _roleFlow = MutableStateFlow<String?>(prefs.getString("role", null))
+    // Role is no longer persisted - it comes from server (/auth/me)
+    // Keep roleFlow for backwards compatibility during transition, but it's not authoritative
+    private val _roleFlow = MutableStateFlow<String?>(null)
     val roleFlow: StateFlow<String?> = _roleFlow
 
     private val _tokenFlow = MutableStateFlow<String?>(prefs.getString("token", null))
@@ -96,37 +98,25 @@ class TokenManager(context: Context) {
         }
     }
 
+    // Role persistence removed - role is now server-authoritative via /auth/me
+    // These methods are kept for backwards compatibility but do not persist to SharedPreferences
+    @Deprecated("Role is now server-authoritative. Use /auth/me endpoint instead.", ReplaceWith(""))
     fun saveRole(role: String) {
-        val canonical = role.trim().lowercase()
-        val current = _roleFlow.value
-        if (current != canonical) {
-            prefs.edit().putString("role", canonical).apply()
-            _roleFlow.value = canonical
-            Log.d("TokenManagerDebug", "saveRole('$canonical') – changed from '$current'")
-        } else {
-            Log.d("TokenManagerDebug", "saveRole('$canonical') – skipped duplicate")
-        }
+        // No-op: role is no longer persisted
+        Log.d("TokenManager", "saveRole() called but ignored - role is server-authoritative")
     }
 
+    @Deprecated("Role is now server-authoritative. Use /auth/me endpoint instead.", ReplaceWith(""))
     fun clearRole() {
-        val hadRole = _roleFlow.value
-        if (hadRole != null) {
-            prefs.edit().remove("role").apply()
-            _roleFlow.value = null
-            Log.d("TokenManagerDebug", "clearRole() reset role from '$hadRole'")
-        }
+        // No-op: role is no longer persisted
+        _roleFlow.value = null
+        Log.d("TokenManager", "clearRole() called - clearing in-memory role only")
     }
 
+    @Deprecated("Role is now server-authoritative. Use /auth/me endpoint instead.", ReplaceWith(""))
     fun getRole(): String? {
-        val r = prefs.getString("role", null)
-        val current = _roleFlow.value
-        if (current != r) {
-            _roleFlow.value = r
-            Log.d("TokenManagerDebug", "getRole() -> '$r' (updated from '$current')")
-        } else {
-            Log.d("TokenManagerDebug", "getRole() -> '$r' (no change)")
-        }
-        return r
+        // Return in-memory role only (not from SharedPreferences)
+        return _roleFlow.value
     }
 
     fun isLoggedIn(): Boolean {
@@ -135,14 +125,11 @@ class TokenManager(context: Context) {
     }
 
     fun clearAll() {
-        val hadRole = _roleFlow.value
         val hadToken = _tokenFlow.value
         prefs.edit().clear().apply()
 
-        if (hadRole != null) {
-            _roleFlow.value = null
-            Log.d("TokenManagerDebug", "clearAll() reset role from '$hadRole'")
-        }
+        // Clear in-memory role (not persisted, but clear for consistency)
+        _roleFlow.value = null
         if (hadToken != null) {
             _tokenFlow.value = null
             Log.d("TokenManagerDebug", "clearAll() reset token from '$hadToken'")

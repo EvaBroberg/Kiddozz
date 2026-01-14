@@ -80,10 +80,8 @@ fun RoleSelectionScreen(
                                                 Toast.LENGTH_LONG
                                             ).show()
                                             authRepository.loginWithToken(tokenResponse.access_token)
-                                            // Save the role for navigation filtering (only if different)
-                                            if (tokenManager.getRole() != "educator") {
-                                                tokenManager.saveRole("educator")
-                                            }
+                                            // Role will be determined server-authoritatively via /auth/me in MainActivity
+                                            // No need to persist role locally
                                             onEducatorViewClick()
                                         },
                                         onFailure = { exception ->
@@ -115,10 +113,8 @@ fun RoleSelectionScreen(
                                                 Toast.LENGTH_LONG
                                             ).show()
                                             authRepository.loginWithToken(tokenResponse.access_token)
-                                            // Save the role for navigation filtering (only if different)
-                                            if (tokenManager.getRole() != "parent") {
-                                                tokenManager.saveRole("parent")
-                                            }
+                                            // Role will be determined server-authoritatively via /auth/me in MainActivity
+                                            // No need to persist role locally
                                             onParentViewClick()
                                         },
                                         onFailure = { exception ->
@@ -150,10 +146,8 @@ fun RoleSelectionScreen(
                                                 Toast.LENGTH_LONG
                                             ).show()
                                             authRepository.loginWithToken(tokenResponse.access_token)
-                                            // Save the role for navigation filtering (only if different)
-                                            if (tokenManager.getRole() != "super_educator") {
-                                                tokenManager.saveRole("super_educator")
-                                            }
+                                            // Role will be determined server-authoritatively via /auth/me in MainActivity
+                                            // No need to persist role locally
                                             onSuperEducatorViewClick()
                                         },
                                         onFailure = { exception ->
