@@ -29,12 +29,20 @@ def test_dev_auth_shortcuts_not_used_outside_gating_tests() -> None:
     tests_dir = Path(__file__).resolve().parent
     this_file = str(Path(__file__).resolve())
 
-    # Substrings we want to ban in test modules outside allowlist
+    # Substrings we want to ban in test modules.
+    # Avoid embedding the banned substrings directly in this file.
+    dev_login = "dev" + "-login"
+    switch_role = "switch" + "-role"
+    test_token = "test" + "-token"
+
     banned_needles = [
-        # Avoid embedding the banned substring directly in this file.
-        "dev" + "-login",
-        "/auth/" + ("dev" + "-login"),
-        "/api/v1/auth/" + ("dev" + "-login"),
+        dev_login,
+        "/auth/" + dev_login,
+        "/api/v1/auth/" + dev_login,
+        switch_role,
+        "/api/v1/auth/" + switch_role,
+        test_token,
+        "/api/v1/auth/" + test_token,
     ]
 
     offenders: list[Match] = []

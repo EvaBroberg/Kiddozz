@@ -120,66 +120,10 @@ class TestJWTSecurity:
 class TestAuthEndpoints:
     """Test authentication endpoints."""
 
-    def test_switch_role_educator_returns_valid_jwt(self):
-        """Test switching to educator role returns valid JWT."""
-        response = client.post("/api/v1/auth/switch-role?role=educator")
-
-        assert response.status_code == 200
-        data = response.json()
-
-        # Verify response structure
-        assert "access_token" in data
-        assert "token_type" in data
-        assert "user_id" in data
-        assert "role" in data
-        assert "expires_in" in data
-
-        # Verify values
-        assert data["token_type"] == "bearer"
-        assert data["user_id"] == "test-user"
-        assert data["role"] == "educator"
-        assert data["expires_in"] == 24 * 60 * 60  # 24 hours
-
-        # Verify token is valid
-        token = data["access_token"]
-        decoded = decode_access_token(token)
-        assert decoded["sub"] == "test-user"
-        assert decoded["role"] == "educator"
-
-    def test_switch_role_parent_returns_valid_jwt(self):
-        """Test switching to parent role returns valid JWT."""
-        response = client.post("/api/v1/auth/switch-role?role=parent")
-
-        assert response.status_code == 200
-        data = response.json()
-
-        # Verify response structure
-        assert "access_token" in data
-        assert data["role"] == "parent"
-
-        # Verify token is valid
-        token = data["access_token"]
-        decoded = decode_access_token(token)
-        assert decoded["sub"] == "test-user"
-        assert decoded["role"] == "parent"
-
-    def test_switch_role_invalid_role_fails(self):
-        """Test switching to invalid role fails."""
-        response = client.post("/api/v1/auth/switch-role?role=invalid")
-
-        assert response.status_code == 422  # Validation error
-
-    def test_switch_role_missing_role_fails(self):
-        """Test switching without role parameter fails."""
-        response = client.post("/api/v1/auth/switch-role")
-
-        assert response.status_code == 422  # Validation error
-
-    def test_get_me_with_valid_token(self):
+    def test_get_me_with_valid_token(self, auth_token_via_invite):
         """Test /auth/me returns user info with valid token."""
-        # Get educator token
-        switch_response = client.post("/api/v1/auth/switch-role?role=educator")
-        token = switch_response.json()["access_token"]
+        auth = auth_token_via_invite(role="educator")
+        token = auth["access_token"]
 
         # Test /me endpoint
         headers = {"Authorization": f"Bearer {token}"}
@@ -189,15 +133,14 @@ class TestAuthEndpoints:
         data = response.json()
 
         # Verify user info
-        assert data["user_id"] == "test-user"
+        assert data["user_id"] == auth["user_id"]
         assert data["role"] == "educator"
         assert "exp" in data
 
-    def test_get_me_with_parent_token(self):
+    def test_get_me_with_parent_token(self, auth_token_via_invite):
         """Test /auth/me returns parent info with parent token."""
-        # Get parent token
-        switch_response = client.post("/api/v1/auth/switch-role?role=parent")
-        token = switch_response.json()["access_token"]
+        auth = auth_token_via_invite(role="parent", phone_num="+358000000000")
+        token = auth["access_token"]
 
         # Test /me endpoint
         headers = {"Authorization": f"Bearer {token}"}
@@ -207,7 +150,7 @@ class TestAuthEndpoints:
         data = response.json()
 
         # Verify user info
-        assert data["user_id"] == "test-user"
+        assert data["user_id"] == auth["user_id"]
         assert data["role"] == "parent"
         assert "exp" in data
 
@@ -230,11 +173,10 @@ class TestAuthEndpoints:
 class TestRoleBasedAccessControl:
     """Test role-based access control middleware."""
 
-    def test_educator_only_endpoint_with_educator_token_succeeds(self):
+    def test_educator_only_endpoint_with_educator_token_succeeds(self, auth_token_via_invite):
         """Test educator-only endpoint allows educator access."""
-        # Get educator token
-        switch_response = client.post("/api/v1/auth/switch-role?role=educator")
-        token = switch_response.json()["access_token"]
+        auth = auth_token_via_invite(role="educator")
+        token = auth["access_token"]
 
         # Access protected endpoint
         headers = {"Authorization": f"Bearer {token}"}
@@ -248,11 +190,10 @@ class TestRoleBasedAccessControl:
         assert "user" in data
         assert data["user"]["role"] == "educator"
 
-    def test_educator_only_endpoint_with_parent_token_fails(self):
+    def test_educator_only_endpoint_with_parent_token_fails(self, auth_token_via_invite):
         """Test educator-only endpoint denies parent access."""
-        # Get parent token
-        switch_response = client.post("/api/v1/auth/switch-role?role=parent")
-        token = switch_response.json()["access_token"]
+        auth = auth_token_via_invite(role="parent", phone_num="+358000000000")
+        token = auth["access_token"]
 
         # Access protected endpoint
         headers = {"Authorization": f"Bearer {token}"}
@@ -281,11 +222,10 @@ class TestRoleBasedAccessControl:
         assert response.status_code == 401
         assert "Invalid authentication credentials" in response.json()["detail"]
 
-    def test_educator_only_endpoint_with_super_educator_token_succeeds(self):
+    def test_educator_only_endpoint_with_super_educator_token_succeeds(self, auth_token_via_invite):
         """Test educator-only endpoint allows super_educator access."""
-        # Get super_educator token
-        switch_response = client.post("/api/v1/auth/switch-role?role=super_educator")
-        token = switch_response.json()["access_token"]
+        auth = auth_token_via_invite(role="super_educator")
+        token = auth["access_token"]
 
         # Access protected endpoint
         headers = {"Authorization": f"Bearer {token}"}
@@ -325,157 +265,10 @@ class TestTokenExpiry:
         assert decoded_valid["role"] == "educator"
 
 
-class TestTestTokenEndpoint:
-    """Test the /auth/test-token endpoint."""
-
-    def test_test_token_parent_role_in_dev_local(self):
-        """Test issuing a parent token in development/local environment."""
-        with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "development"
-            mock_settings.app_env = "local"
-
-            response = client.post(
-                "/api/v1/auth/test-token", json={"role": "parent", "user_id": 123}
-            )
-
-            assert response.status_code == 200
-            data = response.json()
-
-            # Verify response structure
-            assert "access_token" in data
-            assert data["token_type"] == "bearer"
-            assert data["user_id"] == 123
-            assert data["role"] == "parent"
-
-            # Verify token is valid and has correct claims
-            token = data["access_token"]
-            decoded = decode_access_token(token)
-            assert decoded["sub"] == "123"
-            assert decoded["role"] == "parent"
-
-    def test_test_token_educator_role_in_dev_local(self):
-        """Test issuing an educator token in development/local environment."""
-        with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "development"
-            mock_settings.app_env = "local"
-
-            response = client.post(
-                "/api/v1/auth/test-token", json={"role": "educator", "user_id": 456}
-            )
-
-            assert response.status_code == 200
-            data = response.json()
-
-            # Verify response structure
-            assert "access_token" in data
-            assert data["token_type"] == "bearer"
-            assert data["user_id"] == 456
-            assert data["role"] == "educator"
-
-            # Verify token is valid and has correct claims
-            token = data["access_token"]
-            decoded = decode_access_token(token)
-            assert decoded["sub"] == "456"
-            assert decoded["role"] == "educator"
-
-    def test_test_token_default_user_id(self):
-        """Test issuing a token with default user_id."""
-        with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "development"
-            mock_settings.app_env = "local"
-
-            response = client.post("/api/v1/auth/test-token", json={"role": "parent"})
-
-            assert response.status_code == 200
-            data = response.json()
-
-            # Verify default user_id is used
-            assert data["user_id"] == 1
-            assert data["role"] == "parent"
-
-            # Verify token has correct claims
-            token = data["access_token"]
-            decoded = decode_access_token(token)
-            assert decoded["sub"] == "1"
-            assert decoded["role"] == "parent"
-
-    def test_test_token_super_educator_role_in_dev_local(self):
-        """Test issuing a super_educator token in development/local environment."""
-        with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "development"
-            mock_settings.app_env = "local"
-
-            response = client.post(
-                "/api/v1/auth/test-token",
-                json={"role": "super_educator", "user_id": 789},
-            )
-
-            assert response.status_code == 200
-            data = response.json()
-
-            # Verify response structure
-            assert "access_token" in data
-            assert data["token_type"] == "bearer"
-            assert data["user_id"] == 789
-            assert data["role"] == "super_educator"
-
-            # Verify token is valid and has correct claims
-            token = data["access_token"]
-            decoded = decode_access_token(token)
-            assert decoded["sub"] == "789"
-            assert decoded["role"] == "super_educator"
-
-    def test_test_token_invalid_role(self):
-        """Test issuing a token with invalid role."""
-        with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "development"
-            mock_settings.app_env = "local"
-
-            response = client.post(
-                "/api/v1/auth/test-token", json={"role": "hacker", "user_id": 123}
-            )
-
-            assert response.status_code == 400
-            data = response.json()
-            assert "Invalid role. Allowed:" in data["detail"]
-            assert "parent" in data["detail"]
-            assert "educator" in data["detail"]
-            assert "super_educator" in data["detail"]
-
-    def test_test_token_in_staging_environment_returns_404(self):
-        """Test that endpoint returns 404 in staging environment (locked down)."""
-        with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "staging"
-            mock_settings.app_env = "staging"
-
-            response = client.post(
-                "/api/v1/auth/test-token", json={"role": "parent", "user_id": 123}
-            )
-
-            assert response.status_code == 404
-            data = response.json()
-            assert "not found" in data["detail"].lower()
-
-    def test_test_token_in_production_environment(self):
-        """Test that endpoint returns 404 in production environment."""
-        with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "production"
-            mock_settings.app_env = "production"
-
-            response = client.post(
-                "/api/v1/auth/test-token", json={"role": "parent", "user_id": 123}
-            )
-
-            assert response.status_code == 404
-            data = response.json()
-            assert "not found" in data["detail"].lower()
-
-
-def test_logout(client_fixture):
+def test_logout(client_fixture, auth_token_via_invite):
     """Test logout endpoint returns success message."""
-    # Get a valid token first
-    switch_response = client_fixture.post("/api/v1/auth/switch-role?role=educator")
-    token = switch_response.json()["access_token"]
+    auth = auth_token_via_invite(role="educator")
+    token = auth["access_token"]
 
     # Test logout endpoint
     headers = {"Authorization": f"Bearer {token}"}

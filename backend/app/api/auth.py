@@ -1,14 +1,12 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any, Dict
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.roles import Role
@@ -30,108 +28,6 @@ from app.services.invite_token_service import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-def is_dev_auth_enabled() -> bool:
-    """
-    Dev auth shortcuts must only be available in local/dev/test.
-
-    Uses existing config fields only:
-    - settings.environment (ENVIRONMENT)
-    - settings.app_env (APP_ENV)
-    """
-    env = (settings.environment or "").lower().strip()
-    app_env = (settings.app_env or "").lower().strip()
-
-    allowed_env = {"development", "dev", "test", "local"}
-    allowed_app_env = {"local", "development", "dev", "test"}
-    return env in allowed_env and app_env in allowed_app_env
-
-
-class TestTokenRequest(BaseModel):
-    role: str
-    user_id: int = 1
-
-
-@router.post("/switch-role")
-def switch_role(
-    role: str = Query(
-        ...,
-        description="Role to switch to",
-        pattern="^(parent|educator|super_educator)$",
-    )
-) -> Dict[str, Any]:
-    """
-    Switch user role (staging only).
-    This endpoint is for testing purposes and should be removed in production.
-    """
-    if not is_dev_auth_enabled():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Not found",
-        )
-
-    # In staging, we'll use a test user
-    user_id = "test-user"
-
-    # Create token data
-    token_data = {
-        "sub": user_id,
-        "role": role,
-    }
-
-    # Create access token with 24 hour expiry for testing
-    access_token = create_access_token(
-        data=token_data, expires_delta=timedelta(hours=24)
-    )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user_id": user_id,
-        "role": role,
-        "expires_in": 24 * 60 * 60,  # 24 hours in seconds
-    }
-
-
-@router.post("/test-token")
-def test_token(request: TestTokenRequest) -> Dict[str, Any]:
-    """
-    Generate a test token for the specified role and user_id.
-    Only available in staging environment.
-    """
-    if not is_dev_auth_enabled():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Not found",
-        )
-
-    # Validate role using Role enum
-    try:
-        role_enum = Role.from_str(request.role)
-        role = role_enum.value
-    except ValueError as e:
-        valid_roles = [r.value for r in Role]
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid role. Allowed: {valid_roles}",
-        ) from e
-
-    # Create token data
-    token_data = {
-        "sub": str(request.user_id),
-        "role": role,
-    }
-
-    # Create access token
-    access_token = create_access_token(data=token_data)
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user_id": request.user_id,
-        "role": role,
-    }
 
 
 @router.get("/me")
