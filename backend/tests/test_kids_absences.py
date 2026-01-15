@@ -831,7 +831,7 @@ def test_unique_absence_returns_200(auth_token_via_invite):
         db.close()
 
 
-def test_create_absence_with_note():
+def test_create_absence_with_note(auth_token_via_invite):
     """Test creating absence with note field."""
     db = TestingSessionLocal()
     try:
@@ -846,16 +846,6 @@ def test_create_absence_with_note():
         db.commit()
         db.refresh(group)
 
-        parent = Parent(
-            full_name="Test Parent",
-            email="test@example.com",
-            phone_num="+1234567890",
-            daycare_id=daycare.id,
-        )
-        db.add(parent)
-        db.commit()
-        db.refresh(parent)
-
         kid = Kid(
             full_name="Test Kid",
             dob=date(2020, 1, 1),
@@ -867,17 +857,19 @@ def test_create_absence_with_note():
         db.commit()
         db.refresh(kid)
 
-        # Link parent to kid
+        invite_auth = auth_token_via_invite(
+            role="parent",
+            daycare_id=str(daycare.id),
+            name="Test Parent",
+            phone_num="+1234567890",
+        )
+        token = invite_auth["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        parent = db.query(Parent).get(int(invite_auth["user_id"]))
+        assert parent is not None
         parent.kids.append(kid)
         db.commit()
-
-        # Get parent JWT token
-        login_response = client.post(
-            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
-        )
-        assert login_response.status_code == 200
-        token = login_response.json()["access_token"]
-        headers = {"Authorization": f"Bearer {token}"}
 
         # Create absence with note
         absence_data = {
@@ -904,7 +896,7 @@ def test_create_absence_with_note():
         db.close()
 
 
-def test_list_absences_includes_note():
+def test_list_absences_includes_note(auth_token_via_invite):
     """Test that listing absences includes note field."""
     db = TestingSessionLocal()
     try:
@@ -919,16 +911,6 @@ def test_list_absences_includes_note():
         db.commit()
         db.refresh(group)
 
-        parent = Parent(
-            full_name="Test Parent",
-            email="test@example.com",
-            phone_num="+1234567890",
-            daycare_id=daycare.id,
-        )
-        db.add(parent)
-        db.commit()
-        db.refresh(parent)
-
         kid = Kid(
             full_name="Test Kid",
             dob=date(2020, 1, 1),
@@ -940,7 +922,17 @@ def test_list_absences_includes_note():
         db.commit()
         db.refresh(kid)
 
-        # Link parent to kid
+        invite_auth = auth_token_via_invite(
+            role="parent",
+            daycare_id=str(daycare.id),
+            name="Test Parent",
+            phone_num="+1234567890",
+        )
+        token = invite_auth["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        parent = db.query(Parent).get(int(invite_auth["user_id"]))
+        assert parent is not None
         parent.kids.append(kid)
         db.commit()
 
@@ -954,14 +946,6 @@ def test_list_absences_includes_note():
         db.add(absence)
         db.commit()
         db.refresh(absence)
-
-        # Get parent JWT token
-        login_response = client.post(
-            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
-        )
-        assert login_response.status_code == 200
-        token = login_response.json()["access_token"]
-        headers = {"Authorization": f"Bearer {token}"}
 
         # List absences
         response = client.get(
@@ -980,7 +964,7 @@ def test_list_absences_includes_note():
         db.close()
 
 
-def test_create_absence_without_note():
+def test_create_absence_without_note(auth_token_via_invite):
     """Test creating absence without note (note should be null)."""
     db = TestingSessionLocal()
     try:
@@ -995,16 +979,6 @@ def test_create_absence_without_note():
         db.commit()
         db.refresh(group)
 
-        parent = Parent(
-            full_name="Test Parent",
-            email="test@example.com",
-            phone_num="+1234567890",
-            daycare_id=daycare.id,
-        )
-        db.add(parent)
-        db.commit()
-        db.refresh(parent)
-
         kid = Kid(
             full_name="Test Kid",
             dob=date(2020, 1, 1),
@@ -1016,17 +990,19 @@ def test_create_absence_without_note():
         db.commit()
         db.refresh(kid)
 
-        # Link parent to kid
+        invite_auth = auth_token_via_invite(
+            role="parent",
+            daycare_id=str(daycare.id),
+            name="Test Parent",
+            phone_num="+1234567890",
+        )
+        token = invite_auth["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        parent = db.query(Parent).get(int(invite_auth["user_id"]))
+        assert parent is not None
         parent.kids.append(kid)
         db.commit()
-
-        # Get parent JWT token
-        login_response = client.post(
-            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
-        )
-        assert login_response.status_code == 200
-        token = login_response.json()["access_token"]
-        headers = {"Authorization": f"Bearer {token}"}
 
         # Create absence without note
         absence_data = {"date": date.today().isoformat(), "reason": "holiday"}
