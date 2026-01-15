@@ -82,11 +82,8 @@ def get_database_type():
 class TestAbsencePartitions:
     """Test absence partitioning functionality."""
 
-    def test_insert_routes_to_correct_partition(self, clean_db):
+    def test_insert_routes_to_correct_partition(self, clean_db, auth_token_via_invite):
         """Test that inserts route to correct partition."""
-        if ACTIVE_BACKEND != "postgresql":
-            pytest.skip("Partition introspection requires PostgreSQL")
-
         db = TestingSessionLocal()
         try:
             # Create test data
@@ -100,16 +97,6 @@ class TestAbsencePartitions:
             db.commit()
             db.refresh(group)
 
-            parent = Parent(
-                full_name="Test Parent",
-                email="test@example.com",
-                phone_num="+1234567890",
-                daycare_id=daycare.id,
-            )
-            db.add(parent)
-            db.commit()
-            db.refresh(parent)
-
             kid = Kid(
                 full_name="Test Kid",
                 dob=date(2020, 1, 1),
@@ -121,16 +108,18 @@ class TestAbsencePartitions:
             db.commit()
             db.refresh(kid)
 
+            auth = auth_token_via_invite(
+                role="parent", daycare_id=str(daycare.id), phone_num="+1234567890"
+            )
+            token = auth["access_token"]
+            parent = (
+                db.query(Parent).filter(Parent.id == int(auth["user_id"])).one()
+            )
+
             # Link parent to kid
             parent.kids.append(kid)
             db.commit()
 
-            # Get parent JWT token
-            login_response = client.post(
-                "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
-            )
-            assert login_response.status_code == 200
-            token = login_response.json()["access_token"]
             headers = {"Authorization": f"Bearer {token}"}
 
             # Insert absences for different years
@@ -194,11 +183,8 @@ class TestAbsencePartitions:
         finally:
             db.close()
 
-    def test_unique_constraint_enforced_across_partitions(self, clean_db):
+    def test_unique_constraint_enforced_across_partitions(self, clean_db, auth_token_via_invite):
         """Test that unique constraint is enforced across partitions."""
-        if ACTIVE_BACKEND != "postgresql":
-            pytest.skip("Partition introspection requires PostgreSQL")
-
         db = TestingSessionLocal()
         try:
             # Create test data
@@ -212,16 +198,6 @@ class TestAbsencePartitions:
             db.commit()
             db.refresh(group)
 
-            parent = Parent(
-                full_name="Test Parent",
-                email="test@example.com",
-                phone_num="+1234567890",
-                daycare_id=daycare.id,
-            )
-            db.add(parent)
-            db.commit()
-            db.refresh(parent)
-
             kid = Kid(
                 full_name="Test Kid",
                 dob=date(2020, 1, 1),
@@ -233,16 +209,18 @@ class TestAbsencePartitions:
             db.commit()
             db.refresh(kid)
 
+            auth = auth_token_via_invite(
+                role="parent", daycare_id=str(daycare.id), phone_num="+1234567890"
+            )
+            token = auth["access_token"]
+            parent = (
+                db.query(Parent).filter(Parent.id == int(auth["user_id"])).one()
+            )
+
             # Link parent to kid
             parent.kids.append(kid)
             db.commit()
 
-            # Get parent JWT token
-            login_response = client.post(
-                "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
-            )
-            assert login_response.status_code == 200
-            token = login_response.json()["access_token"]
             headers = {"Authorization": f"Bearer {token}"}
 
             # Insert first absence
