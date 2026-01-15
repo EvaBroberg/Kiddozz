@@ -196,7 +196,7 @@ class TestAbsenceSystem:
         finally:
             db.close()
 
-    def test_absence_reason_restricted(self, clean_db):
+    def test_absence_reason_restricted(self, clean_db, auth_token_via_invite):
         """Test that only 'sick' and 'holiday' reasons are allowed for absences."""
         db = TestingSessionLocal()
         try:
@@ -211,16 +211,6 @@ class TestAbsenceSystem:
             db.commit()
             db.refresh(group)
 
-            parent = Parent(
-                full_name="Test Parent",
-                email="test@example.com",
-                phone_num="+1234567890",
-                daycare_id=daycare.id,
-            )
-            db.add(parent)
-            db.commit()
-            db.refresh(parent)
-
             kid = Kid(
                 full_name="Test Kid",
                 dob=date(2020, 1, 1),
@@ -232,7 +222,16 @@ class TestAbsenceSystem:
             db.commit()
             db.refresh(kid)
 
-            # Link parent to kid
+            invite_auth = auth_token_via_invite(
+                role="parent",
+                daycare_id=str(daycare.id),
+                name="Test Parent",
+                phone_num="+1234567890",
+            )
+            token = invite_auth["access_token"]
+
+            parent = db.query(Parent).get(int(invite_auth["user_id"]))
+            assert parent is not None
             parent.kids.append(kid)
             db.commit()
 
@@ -241,13 +240,6 @@ class TestAbsenceSystem:
                 "date": date.today().isoformat(),
                 "reason": "out",  # Invalid reason
             }
-
-            # Get parent JWT token
-            login_response = client.post(
-                "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
-            )
-            assert login_response.status_code == 200
-            token = login_response.json()["access_token"]
 
             # Test POST absence with invalid reason
             response = client.post(
@@ -260,7 +252,7 @@ class TestAbsenceSystem:
         finally:
             db.close()
 
-    def test_absence_teacher_cannot_create(self, clean_db):
+    def test_absence_teacher_cannot_create(self, clean_db, auth_token_via_invite):
         """Test that educators cannot create absences."""
         db = TestingSessionLocal()
         try:
@@ -275,20 +267,6 @@ class TestAbsenceSystem:
             db.commit()
             db.refresh(group)
 
-            # Create educator
-            from app.models.educator import Educator
-
-            educator = Educator(
-                full_name="Test Educator",
-                email="educator@example.com",
-                phone_num="+1234567890",
-                daycare_id=daycare.id,
-                role="educator",
-            )
-            db.add(educator)
-            db.commit()
-            db.refresh(educator)
-
             parent = Parent(
                 full_name="Test Parent",
                 email="test@example.com",
@@ -314,12 +292,12 @@ class TestAbsenceSystem:
             parent.kids.append(kid)
             db.commit()
 
-            # Get educator JWT token
-            login_response = client.post(
-                "/api/v1/auth/dev-login", json={"educator_id": str(educator.id)}
+            invite_auth = auth_token_via_invite(
+                role="educator",
+                daycare_id=str(daycare.id),
+                name="Test Educator",
             )
-            assert login_response.status_code == 200
-            token = login_response.json()["access_token"]
+            token = invite_auth["access_token"]
 
             # Test POST absence as educator
             absence_data = {"date": date.today().isoformat(), "reason": "sick"}
