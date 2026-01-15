@@ -15,7 +15,12 @@ from app.core.roles import Role
 from app.core.security import create_access_token
 from app.models.educator import Educator, EducatorRole
 from app.models.parent import Parent
-from app.schemas.auth import AcceptInviteRequest, AcceptInviteResponse, DevLoginRequest, TokenResponse
+from app.schemas.auth import (
+    AcceptInviteRequest,
+    AcceptInviteResponse,
+    DevLoginRequest,
+    TokenResponse,
+)
 from app.services.invite_token_service import (
     ExpiredTokenError,
     InvalidTokenError,
@@ -28,6 +33,22 @@ from app.utils.daycare_resolver import resolve_daycare_id
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def is_dev_auth_enabled() -> bool:
+    """
+    Dev auth shortcuts must only be available in local/dev/test.
+
+    Uses existing config fields only:
+    - settings.environment (ENVIRONMENT)
+    - settings.app_env (APP_ENV)
+    """
+    env = (settings.environment or "").lower().strip()
+    app_env = (settings.app_env or "").lower().strip()
+
+    allowed_env = {"development", "dev", "test", "local"}
+    allowed_app_env = {"local", "development", "dev", "test"}
+    return env in allowed_env and app_env in allowed_app_env
 
 
 class TestTokenRequest(BaseModel):
@@ -47,6 +68,12 @@ def switch_role(
     Switch user role (staging only).
     This endpoint is for testing purposes and should be removed in production.
     """
+    if not is_dev_auth_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not found",
+        )
+
     # In staging, we'll use a test user
     user_id = "test-user"
 
@@ -76,11 +103,10 @@ def test_token(request: TestTokenRequest) -> Dict[str, Any]:
     Generate a test token for the specified role and user_id.
     Only available in staging environment.
     """
-    # Check if environment is staging
-    if settings.environment != "staging":
+    if not is_dev_auth_enabled():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Endpoint not available in this environment",
+            detail="Not found",
         )
 
     # Validate role using Role enum
@@ -244,35 +270,51 @@ def accept_invite(
     try:
         invite_token = validate_invite_token(db, token_str)
     except InvalidTokenError as e:
-        logger.warning(f"Invite acceptance failed: invalid token (prefix='{token_str[:6]}...')")
+        logger.warning(
+            f"Invite acceptance failed: invalid token (prefix='{token_str[:6]}...')"
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except ExpiredTokenError as e:
-        logger.warning(f"Invite acceptance failed: expired token (prefix='{token_str[:6]}...')")
+        logger.warning(
+            f"Invite acceptance failed: expired token (prefix='{token_str[:6]}...')"
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except RevokedTokenError as e:
-        logger.warning(f"Invite acceptance failed: revoked token (prefix='{token_str[:6]}...')")
+        logger.warning(
+            f"Invite acceptance failed: revoked token (prefix='{token_str[:6]}...')"
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except TokenAlreadyUsedError as e:
-        logger.warning(f"Invite acceptance failed: already used token (prefix='{token_str[:6]}...')")
+        logger.warning(
+            f"Invite acceptance failed: already used token (prefix='{token_str[:6]}...')"
+        )
         raise HTTPException(status_code=400, detail=str(e))
 
     # 2. Validate required fields BEFORE consuming token
     role_enum = Role.from_str(invite_token.role)
-    
+
     # Check for missing name
     if not payload.name or not payload.name.strip():
-        logger.warning(f"Invite acceptance failed: missing name (prefix='{token_str[:6]}...')")
+        logger.warning(
+            f"Invite acceptance failed: missing name (prefix='{token_str[:6]}...')"
+        )
         raise HTTPException(status_code=422, detail="name is required")
-    
+
     # Check for missing phone_num for Parent
     if role_enum == Role.PARENT:
         if not payload.phone_num or not payload.phone_num.strip():
-            logger.warning(f"Invite acceptance failed: missing phone_num for parent (prefix='{token_str[:6]}...')")
-            raise HTTPException(status_code=422, detail="phone_num is required for parent accounts")
-    
+            logger.warning(
+                f"Invite acceptance failed: missing phone_num for parent (prefix='{token_str[:6]}...')"
+            )
+            raise HTTPException(
+                status_code=422, detail="phone_num is required for parent accounts"
+            )
+
     # 3. Check for duplicate email before consuming token
     if role_enum in [Role.EDUCATOR, Role.SUPER_EDUCATOR]:
-        existing_educator = db.query(Educator).filter(Educator.email == invite_token.email).first()
+        existing_educator = (
+            db.query(Educator).filter(Educator.email == invite_token.email).first()
+        )
         if existing_educator:
             logger.warning(
                 f"Invite acceptance failed: email already exists (email='{invite_token.email}', role='{invite_token.role}')"
@@ -282,7 +324,9 @@ def accept_invite(
                 detail=f"Email '{invite_token.email}' is already registered as an educator",
             )
     elif role_enum == Role.PARENT:
-        existing_parent = db.query(Parent).filter(Parent.email == invite_token.email).first()
+        existing_parent = (
+            db.query(Parent).filter(Parent.email == invite_token.email).first()
+        )
         if existing_parent:
             logger.warning(
                 f"Invite acceptance failed: email already exists (email='{invite_token.email}', role='{invite_token.role}')"
@@ -293,7 +337,9 @@ def accept_invite(
             )
 
     # 4. Atomically consume token (within transaction, no commit yet)
-    now = datetime.now(timezone.utc) if invite_token.expires_at.tzinfo else datetime.now()
+    now = (
+        datetime.now(timezone.utc) if invite_token.expires_at.tzinfo else datetime.now()
+    )
     bind = db.bind
     dialect = bind.dialect.name
 
@@ -355,7 +401,9 @@ def accept_invite(
                 email=invite_token.email,
                 role=educator_role,
                 daycare_id=invite_token.daycare_id,
-                phone_num=payload.phone_num.strip() if payload.phone_num else None,  # Optional for Educator
+                phone_num=(
+                    payload.phone_num.strip() if payload.phone_num else None
+                ),  # Optional for Educator
             )
             db.add(educator)
             db.flush()  # Flush to get ID without committing
