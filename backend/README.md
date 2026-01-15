@@ -237,7 +237,6 @@ The API will be available at:
 
 - `GET /api/v1/educators` - List educators (requires `daycare_id` in production)
 - `GET /api/v1/parents` - List parents (requires `daycare_id` in production)
-- `POST /api/v1/auth/dev-login` - Development login endpoint (disabled in production)
 
 #### Query Parameters
 
@@ -254,7 +253,6 @@ The API will be available at:
 - `educator_id` (optional) - Login as educator
 - `parent_id` (optional) - Login as parent
 
-**Note:** The dev-login endpoint is only available in development and staging environments. It is disabled in production for security reasons.
 
 ## Usage Examples
 
@@ -334,12 +332,10 @@ curl "http://localhost:8000/api/v1/parents?daycare_id=your-daycare-id&search=sar
 
 ```bash
 # Login as educator
-curl -X POST "http://localhost:8000/api/v1/auth/dev-login" \
   -H "Content-Type: application/json" \
   -d '{"educator_id": "27"}'
 
 # Login as parent
-curl -X POST "http://localhost:8000/api/v1/auth/dev-login" \
   -H "Content-Type: application/json" \
   -d '{"parent_id": "10"}'
 ```

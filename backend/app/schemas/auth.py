@@ -3,11 +3,6 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class DevLoginRequest(BaseModel):
-    educator_id: Optional[str] = None
-    parent_id: Optional[str] = None
-
-
 class AcceptInviteRequest(BaseModel):
     token: str
     name: str  # Required for both Educator and Parent

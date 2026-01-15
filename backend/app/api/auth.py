@@ -18,8 +18,6 @@ from app.models.parent import Parent
 from app.schemas.auth import (
     AcceptInviteRequest,
     AcceptInviteResponse,
-    DevLoginRequest,
-    TokenResponse,
 )
 from app.services.invite_token_service import (
     ExpiredTokenError,
@@ -28,7 +26,6 @@ from app.services.invite_token_service import (
     TokenAlreadyUsedError,
     validate_invite_token,
 )
-from app.utils.daycare_resolver import resolve_daycare_id
 
 logger = logging.getLogger(__name__)
 
@@ -135,63 +132,6 @@ def test_token(request: TestTokenRequest) -> Dict[str, Any]:
         "user_id": request.user_id,
         "role": role,
     }
-
-
-@router.post("/dev-login", response_model=TokenResponse)
-def dev_login(payload: DevLoginRequest, db: Session = Depends(get_db)):
-    # Import settings at the beginning
-    from app.core.config import settings
-
-    if not is_dev_auth_enabled():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Not found",
-        )
-
-    if (payload.educator_id and payload.parent_id) or (
-        not payload.educator_id and not payload.parent_id
-    ):
-        raise HTTPException(
-            status_code=400, detail="Provide exactly one of educator_id or parent_id"
-        )
-
-    role = None
-    sub = None
-    daycare_id = None
-    groups = []
-
-    if payload.educator_id:
-        edu = db.query(Educator).get(payload.educator_id)
-        if not edu:
-            raise HTTPException(status_code=404, detail="Educator not found")
-        # Map EducatorRole to Role enum
-        if edu.role == "educator":
-            role = Role.EDUCATOR.value
-        else:
-            role = Role.SUPER_EDUCATOR.value
-        sub = str(edu.id)
-        daycare_id = resolve_daycare_id(db, str(edu.daycare_id))
-        groups = [g.name for g in edu.groups]
-
-    if payload.parent_id:
-        par = db.query(Parent).get(payload.parent_id)
-        if not par:
-            raise HTTPException(status_code=404, detail="Parent not found")
-        role = Role.PARENT.value
-        sub = str(par.id)
-        daycare_id = resolve_daycare_id(db, str(par.daycare_id))
-        # parents don't have groups directly, but you can derive via their kids if you wish; leave empty for now or compute later
-        groups = []
-
-    token = create_access_token(
-        data={"sub": sub, "role": role, "daycare_id": daycare_id, "groups": groups}
-    )
-
-    # Debug: Print secret key being used
-    print(f"Dev-login using secret key: {settings.secret_key}")
-    print(f"Dev-login environment: {settings.app_env}")
-
-    return {"access_token": token, "token_type": "bearer"}
 
 
 @router.get("/me")
