@@ -425,10 +425,15 @@ class MainActivity : ComponentActivity() {
                     }
 
                     session.isLoggedIn == false -> {
-                        // Show only role selection, no bottom nav
+                        // Show role selection in DEBUG, invite required in non-DEBUG
+                        val startDestination = if (BuildConfig.DEBUG) {
+                            Routes.ROLE_SELECTION
+                        } else {
+                            Routes.INVITE_REQUIRED
+                        }
                         NavHost(
                             navController = navController,
-                            startDestination = Routes.ROLE_SELECTION
+                            startDestination = startDestination
                         ) {
                             composable(Routes.ROLE_SELECTION) {
                                 fi.kidozz.app.features.role.RoleSelectionScreen(
@@ -438,13 +443,22 @@ class MainActivity : ComponentActivity() {
                                     onSuperEducatorViewClick = { navController.navigate(Routes.EDU_GRAPH) }
                                 )
                             }
+                            composable(Routes.INVITE_REQUIRED) {
+                                fi.kidozz.app.features.invite.InviteRequiredScreen()
+                            }
                         }
                     }
 
                     session.role == null -> {
+                        // Show role selection in DEBUG, invite required in non-DEBUG
+                        val startDestination = if (BuildConfig.DEBUG) {
+                            Routes.ROLE_SELECTION
+                        } else {
+                            Routes.INVITE_REQUIRED
+                        }
                         NavHost(
                             navController = navController,
-                            startDestination = Routes.ROLE_SELECTION
+                            startDestination = startDestination
                         ) {
                             composable(Routes.ROLE_SELECTION) {
                                 fi.kidozz.app.features.role.RoleSelectionScreen(
@@ -453,6 +467,9 @@ class MainActivity : ComponentActivity() {
                                     onParentViewClick = { navController.navigate("parent_dashboard") },
                                     onSuperEducatorViewClick = { navController.navigate(Routes.EDU_GRAPH) }
                                 )
+                            }
+                            composable(Routes.INVITE_REQUIRED) {
+                                fi.kidozz.app.features.invite.InviteRequiredScreen()
                             }
                         }
                     }
