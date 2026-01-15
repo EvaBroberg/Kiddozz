@@ -123,7 +123,7 @@ def auth_token_via_invite():
     """
     Helper fixture that creates and accepts an invite, returning a JWT access token.
 
-    This is intended to gradually migrate tests away from /auth/dev-login.
+    This is intended to gradually migrate tests away from dev-only auth shortcuts.
     """
     from app.core.roles import Role
     from app.models.daycare import Daycare
