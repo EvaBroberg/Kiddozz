@@ -1,4 +1,5 @@
 import os
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -115,3 +116,78 @@ def make_token():
         return create_access_token(data)
 
     return _make_token
+
+
+@pytest.fixture
+def auth_token_via_invite():
+    """
+    Helper fixture that creates and accepts an invite, returning a JWT access token.
+
+    This is intended to gradually migrate tests away from /auth/dev-login.
+    """
+    from app.core.roles import Role
+    from app.models.daycare import Daycare
+    from app.services.invite_token_service import generate_invite_token
+
+    def _factory(
+        *,
+        role: str,
+        daycare_id: str | None = None,
+        name: str = "Test User",
+        phone_num: str | None = None,
+        email: str | None = None,
+    ) -> dict:
+        db = TestingSessionLocal()
+        try:
+            if daycare_id is None:
+                daycare = Daycare(name=f"Test Daycare {uuid4().hex[:8]}")
+                db.add(daycare)
+                db.commit()
+                db.refresh(daycare)
+                daycare_id = str(daycare.id)
+
+            if email is None:
+                email = f"test+{uuid4().hex}@example.com"
+
+            role_str = Role.from_str(role).value
+            if role_str == Role.PARENT.value and phone_num is None:
+                phone_num = "+358000000000"
+
+            token_row, token_str = generate_invite_token(
+                db,
+                daycare_id=daycare_id,
+                role=role_str,
+                email=email,
+                ttl_minutes=60,
+                created_by="test-fixture",
+            )
+
+            # SQLite returns timezone-naive datetimes even for timezone=True columns.
+            # The current validate logic compares naive expires_at to local naive now,
+            # so ensure expires_at is set in local time to avoid false-expired tokens.
+            if token_row.expires_at.tzinfo is None:
+                from datetime import datetime, timedelta
+
+                token_row.expires_at = datetime.now() + timedelta(minutes=60)
+                db.commit()
+
+            payload = {"token": token_str, "name": name}
+            if phone_num is not None:
+                payload["phone_num"] = phone_num
+
+            res = client.post("/api/v1/auth/accept-invite", json=payload)
+            assert res.status_code == 200, res.text
+            data = res.json()
+
+            return {
+                "access_token": data["access_token"],
+                "token_type": data["token_type"],
+                "user_id": data["user_id"],
+                "role": data["role"],
+                "daycare_id": data["daycare_id"],
+                "email": email,
+            }
+        finally:
+            db.close()
+
+    return _factory

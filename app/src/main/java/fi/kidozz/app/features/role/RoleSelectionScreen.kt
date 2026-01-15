@@ -34,12 +34,11 @@ fun RoleSelectionScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     
-    // Only show role selection in debug builds
-    // In production/release builds, go directly to the main app
+    // RoleSelectionScreen is only shown in DEBUG builds
+    // In non-DEBUG builds, MainActivity will route to InviteRequiredScreen instead
+    // This check ensures the screen doesn't auto-navigate in release builds
     if (!BuildConfig.DEBUG) {
-        LaunchedEffect(Unit) {
-            onEducatorViewClick()
-        }
+        // This should not be reached in non-DEBUG builds, but guard against it
         return
     }
     

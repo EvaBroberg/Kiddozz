@@ -328,10 +328,11 @@ class TestTokenExpiry:
 class TestTestTokenEndpoint:
     """Test the /auth/test-token endpoint."""
 
-    def test_test_token_parent_role_in_staging(self):
-        """Test issuing a parent token in staging environment."""
+    def test_test_token_parent_role_in_dev_local(self):
+        """Test issuing a parent token in development/local environment."""
         with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "staging"
+            mock_settings.environment = "development"
+            mock_settings.app_env = "local"
 
             response = client.post(
                 "/api/v1/auth/test-token", json={"role": "parent", "user_id": 123}
@@ -352,10 +353,11 @@ class TestTestTokenEndpoint:
             assert decoded["sub"] == "123"
             assert decoded["role"] == "parent"
 
-    def test_test_token_educator_role_in_staging(self):
-        """Test issuing an educator token in staging environment."""
+    def test_test_token_educator_role_in_dev_local(self):
+        """Test issuing an educator token in development/local environment."""
         with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "staging"
+            mock_settings.environment = "development"
+            mock_settings.app_env = "local"
 
             response = client.post(
                 "/api/v1/auth/test-token", json={"role": "educator", "user_id": 456}
@@ -379,7 +381,8 @@ class TestTestTokenEndpoint:
     def test_test_token_default_user_id(self):
         """Test issuing a token with default user_id."""
         with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "staging"
+            mock_settings.environment = "development"
+            mock_settings.app_env = "local"
 
             response = client.post("/api/v1/auth/test-token", json={"role": "parent"})
 
@@ -396,10 +399,11 @@ class TestTestTokenEndpoint:
             assert decoded["sub"] == "1"
             assert decoded["role"] == "parent"
 
-    def test_test_token_super_educator_role_in_staging(self):
-        """Test issuing a super_educator token in staging environment."""
+    def test_test_token_super_educator_role_in_dev_local(self):
+        """Test issuing a super_educator token in development/local environment."""
         with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "staging"
+            mock_settings.environment = "development"
+            mock_settings.app_env = "local"
 
             response = client.post(
                 "/api/v1/auth/test-token",
@@ -424,7 +428,8 @@ class TestTestTokenEndpoint:
     def test_test_token_invalid_role(self):
         """Test issuing a token with invalid role."""
         with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "staging"
+            mock_settings.environment = "development"
+            mock_settings.app_env = "local"
 
             response = client.post(
                 "/api/v1/auth/test-token", json={"role": "hacker", "user_id": 123}
@@ -437,11 +442,11 @@ class TestTestTokenEndpoint:
             assert "educator" in data["detail"]
             assert "super_educator" in data["detail"]
 
-    def test_test_token_in_non_staging_environment(self):
-        """Test that endpoint returns 404 in non-staging environment."""
-        # Mock the settings to return "development" environment
+    def test_test_token_in_staging_environment_returns_404(self):
+        """Test that endpoint returns 404 in staging environment (locked down)."""
         with patch("app.api.auth.settings") as mock_settings:
-            mock_settings.environment = "development"
+            mock_settings.environment = "staging"
+            mock_settings.app_env = "staging"
 
             response = client.post(
                 "/api/v1/auth/test-token", json={"role": "parent", "user_id": 123}
@@ -449,12 +454,13 @@ class TestTestTokenEndpoint:
 
             assert response.status_code == 404
             data = response.json()
-            assert "Endpoint not available in this environment" in data["detail"]
+            assert "not found" in data["detail"].lower()
 
     def test_test_token_in_production_environment(self):
         """Test that endpoint returns 404 in production environment."""
         with patch("app.api.auth.settings") as mock_settings:
             mock_settings.environment = "production"
+            mock_settings.app_env = "production"
 
             response = client.post(
                 "/api/v1/auth/test-token", json={"role": "parent", "user_id": 123}
@@ -462,7 +468,7 @@ class TestTestTokenEndpoint:
 
             assert response.status_code == 404
             data = response.json()
-            assert "Endpoint not available in this environment" in data["detail"]
+            assert "not found" in data["detail"].lower()
 
 
 def test_logout(client_fixture):

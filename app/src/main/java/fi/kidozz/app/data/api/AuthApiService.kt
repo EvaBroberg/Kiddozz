@@ -1,5 +1,7 @@
 package fi.kidozz.app.data.api
 
+import fi.kidozz.app.data.models.AcceptInviteRequest
+import fi.kidozz.app.data.models.AcceptInviteResponse
 import fi.kidozz.app.data.models.DevLoginRequest
 import fi.kidozz.app.data.models.Educator
 import fi.kidozz.app.data.models.Parent
@@ -29,4 +31,7 @@ interface AuthApiService {
     
     @GET("api/v1/auth/me")
     suspend fun getCurrentUserInfo(): Response<UserInfo>
+    
+    @POST("api/v1/auth/accept-invite")
+    suspend fun acceptInvite(@Body request: AcceptInviteRequest): Response<AcceptInviteResponse>
 }

@@ -2,6 +2,8 @@ package fi.kidozz.app.data.repository
 
 import fi.kidozz.app.data.api.AuthApiService
 import fi.kidozz.app.data.auth.TokenManager
+import fi.kidozz.app.data.models.AcceptInviteRequest
+import fi.kidozz.app.data.models.AcceptInviteResponse
 import fi.kidozz.app.data.models.DevLoginRequest
 import fi.kidozz.app.data.models.Educator
 import fi.kidozz.app.data.models.Parent
@@ -117,5 +119,29 @@ class AuthRepository(
     
     fun getCurrentToken(): String? {
         return tokenManager.getToken()
+    }
+    
+    /**
+     * Accept an invite token and create a user account.
+     * Returns the access token response on success.
+     */
+    suspend fun acceptInvite(token: String, name: String, phoneNum: String? = null): Result<AcceptInviteResponse> = withContext(Dispatchers.IO) {
+        try {
+            val request = AcceptInviteRequest(token = token, name = name, phone_num = phoneNum)
+            val response = authApiService.acceptInvite(request)
+            if (response.isSuccessful) {
+                val inviteResponse = response.body()
+                if (inviteResponse != null) {
+                    Result.success(inviteResponse)
+                } else {
+                    Result.failure(Exception("Empty response body"))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                Result.failure(Exception("Failed to accept invite: ${response.code()} - $errorBody"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }
