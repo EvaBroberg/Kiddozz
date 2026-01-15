@@ -1,8 +1,6 @@
 import pytest
 
-from app.models.educator import Educator
-from app.models.parent import Parent
-from tests.conftest import TestingSessionLocal, client
+from tests.conftest import client
 
 
 @pytest.fixture
@@ -28,89 +26,28 @@ def test_list_parents(client_fixture, seeded_daycare_id):
     assert any(p["full_name"].lower().startswith("sara") for p in data)
 
 
-def test_dev_login_as_educator(client_fixture, seeded_daycare_id):
-    """Test that POST /api/v1/auth/dev-login returns a valid JWT for a known educator_id."""
-    db = TestingSessionLocal()
-    try:
-        edu = db.query(Educator).first()
-        res = client_fixture.post(
-            "/api/v1/auth/dev-login", json={"educator_id": str(edu.id)}
-        )
-        assert res.status_code == 200
-        token = res.json()["access_token"]
-        assert token and len(token) > 10
-    finally:
-        db.close()
+def test_accept_invite_as_educator(client_fixture, seeded_daycare_id, auth_token_via_invite):
+    """Test that POST /api/v1/auth/accept-invite returns a valid JWT for an educator invite."""
+    result = auth_token_via_invite(role="educator", daycare_id=seeded_daycare_id)
+    assert result["access_token"] and len(result["access_token"]) > 10
 
 
-def test_dev_login_as_parent(client_fixture, seeded_daycare_id):
-    """Test that POST /api/v1/auth/dev-login returns a valid JWT for a known parent_id."""
-    db = TestingSessionLocal()
-    try:
-        parent = db.query(Parent).first()
-        res = client_fixture.post(
-            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
-        )
-        assert res.status_code == 200
-        token = res.json()["access_token"]
-        assert token and len(token) > 10
-    finally:
-        db.close()
+def test_accept_invite_as_parent(client_fixture, seeded_daycare_id, auth_token_via_invite):
+    """Test that POST /api/v1/auth/accept-invite returns a valid JWT for a parent invite."""
+    result = auth_token_via_invite(role="parent", daycare_id=seeded_daycare_id)
+    assert result["access_token"] and len(result["access_token"]) > 10
 
 
-def test_dev_login_requires_exactly_one_id(client_fixture):
-    """Test that dev-login requires exactly one of educator_id or parent_id."""
-    # Test with both IDs
-    res = client_fixture.post(
-        "/api/v1/auth/dev-login", json={"educator_id": "1", "parent_id": "1"}
-    )
-    assert res.status_code == 400
-    assert "exactly one" in res.json()["detail"]
-
-    # Test with neither ID
-    res = client_fixture.post("/api/v1/auth/dev-login", json={})
-    assert res.status_code == 400
-    assert "exactly one" in res.json()["detail"]
-
-
-def test_dev_login_educator_not_found(client_fixture):
-    """Test that dev-login returns 404 for non-existent educator."""
-    res = client_fixture.post("/api/v1/auth/dev-login", json={"educator_id": "99999"})
-    assert res.status_code == 404
-    assert "Educator not found" in res.json()["detail"]
-
-
-def test_dev_login_parent_not_found(client_fixture):
-    """Test that dev-login returns 404 for non-existent parent."""
-    res = client_fixture.post("/api/v1/auth/dev-login", json={"parent_id": "99999"})
-    assert res.status_code == 404
-    assert "Parent not found" in res.json()["detail"]
-
-
-def test_token_payload_includes_role_daycare_groups(client_fixture, seeded_daycare_id):
-    """Test that token payload includes role, daycare_id and groups (for educators)."""
-    db = TestingSessionLocal()
-    try:
-        edu = db.query(Educator).first()
-        res = client_fixture.post(
-            "/api/v1/auth/dev-login", json={"educator_id": str(edu.id)}
-        )
-        assert res.status_code == 200
-
-        # Decode the token to check payload
-        from app.core.security import decode_access_token
-
-        token = res.json()["access_token"]
-        payload = decode_access_token(token)
-
-        assert "role" in payload
-        assert "daycare_id" in payload
-        assert "groups" in payload
-        assert payload["role"] in ["educator", "super_educator"]
-        assert payload["daycare_id"] == str(edu.daycare_id)
-        assert isinstance(payload["groups"], list)
-    finally:
-        db.close()
+def test_auth_me_via_invite_token(client_fixture, seeded_daycare_id, auth_token_via_invite):
+    """Test that a JWT obtained via invite acceptance works for /api/v1/auth/me."""
+    result = auth_token_via_invite(role="educator", daycare_id=seeded_daycare_id)
+    headers = {"Authorization": f"Bearer {result['access_token']}"}
+    res = client_fixture.get("/api/v1/auth/me", headers=headers)
+    assert res.status_code == 200
+    me = res.json()
+    assert me["user_id"] == result["user_id"]
+    assert me["role"] == result["role"]
+    assert me["daycare_id"] == result["daycare_id"]
 
 
 def test_educators_endpoint_requires_daycare_id_in_prod(

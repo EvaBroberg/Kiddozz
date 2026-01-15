@@ -142,10 +142,10 @@ def dev_login(payload: DevLoginRequest, db: Session = Depends(get_db)):
     # Import settings at the beginning
     from app.core.config import settings
 
-    # Disabled in production
-    if settings.environment == "production":
+    if not is_dev_auth_enabled():
         raise HTTPException(
-            status_code=403, detail="Dev login is disabled in production"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not found",
         )
 
     if (payload.educator_id and payload.parent_id) or (
