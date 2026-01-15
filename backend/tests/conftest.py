@@ -10,6 +10,9 @@ from sqlalchemy.orm import sessionmaker
 os.environ["APP_ENV"] = "test"
 os.environ["ENVIRONMENT"] = "test"
 os.environ["SECRET_KEY"] = "test-secret-key"
+# Ensure routers registered behind feature flags are included in the test app.
+# (Messaging tests expect /api/messaging/* to exist; otherwise they 404 at routing.)
+os.environ["MESSAGING_BACKEND"] = "true"
 
 from app.core.database import Base, get_db
 from app.core.database import engine as app_engine
