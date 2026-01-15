@@ -27,6 +27,16 @@ test_engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 
+@pytest.fixture
+def db_session():
+    """Alias fixture used by some tests for a raw SQLAlchemy session."""
+    session = TestingSessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
 def override_get_db():
     try:
         db = TestingSessionLocal()

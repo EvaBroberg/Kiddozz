@@ -85,6 +85,11 @@ class TestEducatorGroupsConstraints:
 
     def test_trigger_prevents_zero_groups(self, db_session):
         """Test that constraint trigger prevents removing last group assignment."""
+        # This constraint is enforced via a database trigger in PostgreSQL.
+        # Our default local test DB is SQLite, which does not run those triggers.
+        if db_session.get_bind().dialect.name != "postgresql":
+            pytest.skip("Trigger enforcement requires PostgreSQL")
+
         # Create test data
         daycare = Daycare(name="Test Daycare")
         db_session.add(daycare)
