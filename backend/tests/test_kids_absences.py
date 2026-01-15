@@ -313,7 +313,7 @@ class TestAbsenceSystem:
         finally:
             db.close()
 
-    def test_absence_parent_can_only_update_own_kids(self, clean_db):
+    def test_absence_parent_can_only_update_own_kids(self, clean_db, auth_token_via_invite):
         """Test that parents can only create absences for their own kids."""
         db = TestingSessionLocal()
         try:
@@ -328,23 +328,16 @@ class TestAbsenceSystem:
             db.commit()
             db.refresh(group)
 
-            # Create two parents
+            # Create one parent (the kid's actual parent)
             parent1 = Parent(
                 full_name="Parent 1",
                 email="parent1@example.com",
                 phone_num="+1234567890",
                 daycare_id=daycare.id,
             )
-            parent2 = Parent(
-                full_name="Parent 2",
-                email="parent2@example.com",
-                phone_num="+1234567891",
-                daycare_id=daycare.id,
-            )
-            db.add_all([parent1, parent2])
+            db.add(parent1)
             db.commit()
             db.refresh(parent1)
-            db.refresh(parent2)
 
             # Create kid linked only to parent1
             kid = Kid(
@@ -362,12 +355,13 @@ class TestAbsenceSystem:
             parent1.kids.append(kid)
             db.commit()
 
-            # Get parent2 JWT token
-            login_response = client.post(
-                "/api/v1/auth/dev-login", json={"parent_id": str(parent2.id)}
+            invite_auth = auth_token_via_invite(
+                role="parent",
+                daycare_id=str(daycare.id),
+                name="Parent 2",
+                phone_num="+1234567891",
             )
-            assert login_response.status_code == 200
-            token = login_response.json()["access_token"]
+            token = invite_auth["access_token"]
 
             # Test POST absence as unrelated parent
             absence_data = {"date": date.today().isoformat(), "reason": "sick"}
@@ -685,7 +679,7 @@ class TestAbsenceSystem:
             db.close()
 
 
-def test_duplicate_absence_returns_400():
+def test_duplicate_absence_returns_400(auth_token_via_invite):
     """Test that submitting duplicate absence returns 400 Bad Request."""
     db = TestingSessionLocal()
     try:
@@ -700,16 +694,6 @@ def test_duplicate_absence_returns_400():
         db.commit()
         db.refresh(group)
 
-        parent = Parent(
-            full_name="Test Parent",
-            email="test@example.com",
-            phone_num="+1234567890",
-            daycare_id=daycare.id,
-        )
-        db.add(parent)
-        db.commit()
-        db.refresh(parent)
-
         kid = Kid(
             full_name="Test Kid",
             dob=date(2020, 1, 1),
@@ -721,16 +705,19 @@ def test_duplicate_absence_returns_400():
         db.commit()
         db.refresh(kid)
 
-        # Link parent to kid
+        invite_auth = auth_token_via_invite(
+            role="parent",
+            daycare_id=str(daycare.id),
+            name="Test Parent",
+            phone_num="+1234567890",
+        )
+        token = invite_auth["access_token"]
+
+        parent = db.query(Parent).get(int(invite_auth["user_id"]))
+        assert parent is not None
         parent.kids.append(kid)
         db.commit()
 
-        # Get parent JWT token
-        login_response = client.post(
-            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
-        )
-        assert login_response.status_code == 200
-        token = login_response.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
 
         # Create first absence
@@ -766,7 +753,7 @@ def test_duplicate_absence_returns_400():
         db.close()
 
 
-def test_unique_absence_returns_200():
+def test_unique_absence_returns_200(auth_token_via_invite):
     """Test that submitting unique absence returns 200 OK."""
     db = TestingSessionLocal()
     try:
@@ -781,16 +768,6 @@ def test_unique_absence_returns_200():
         db.commit()
         db.refresh(group)
 
-        parent = Parent(
-            full_name="Test Parent",
-            email="test@example.com",
-            phone_num="+1234567890",
-            daycare_id=daycare.id,
-        )
-        db.add(parent)
-        db.commit()
-        db.refresh(parent)
-
         kid = Kid(
             full_name="Test Kid",
             dob=date(2020, 1, 1),
@@ -802,16 +779,19 @@ def test_unique_absence_returns_200():
         db.commit()
         db.refresh(kid)
 
-        # Link parent to kid
+        invite_auth = auth_token_via_invite(
+            role="parent",
+            daycare_id=str(daycare.id),
+            name="Test Parent",
+            phone_num="+1234567890",
+        )
+        token = invite_auth["access_token"]
+
+        parent = db.query(Parent).get(int(invite_auth["user_id"]))
+        assert parent is not None
         parent.kids.append(kid)
         db.commit()
 
-        # Get parent JWT token
-        login_response = client.post(
-            "/api/v1/auth/dev-login", json={"parent_id": str(parent.id)}
-        )
-        assert login_response.status_code == 200
-        token = login_response.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
 
         # Create absence for today
